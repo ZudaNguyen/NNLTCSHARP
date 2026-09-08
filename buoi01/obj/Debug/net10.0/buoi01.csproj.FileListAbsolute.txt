@@ -1,0 +1,15 @@
+F:\Learn_C#\NNLTCSHARP\buoi01\bin\Debug\net10.0\buoi01.exe
+F:\Learn_C#\NNLTCSHARP\buoi01\bin\Debug\net10.0\buoi01.deps.json
+F:\Learn_C#\NNLTCSHARP\buoi01\bin\Debug\net10.0\buoi01.runtimeconfig.json
+F:\Learn_C#\NNLTCSHARP\buoi01\bin\Debug\net10.0\buoi01.dll
+F:\Learn_C#\NNLTCSHARP\buoi01\bin\Debug\net10.0\buoi01.pdb
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\buoi01.GeneratedMSBuildEditorConfig.editorconfig
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\buoi01.AssemblyInfoInputs.cache
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\buoi01.AssemblyInfo.cs
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\buoi01.csproj.CoreCompileInputs.cache
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\buoi01.sourcelink.json
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\buoi01.dll
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\refint\buoi01.dll
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\buoi01.pdb
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\buoi01.genruntimeconfig.cache
+F:\Learn_C#\NNLTCSHARP\buoi01\obj\Debug\net10.0\ref\buoi01.dll
