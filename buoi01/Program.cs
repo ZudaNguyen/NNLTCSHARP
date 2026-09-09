@@ -1,22 +1,32 @@
-﻿using System;
-namespace NMLT.Buoi01
+﻿/*
+* CHƯƠNG TRÌNH IN NHÃN THÔNG TIN 
+* Tác giả : Võ Minh Vỹ
+* Ngày viết: 09/09/2026
+*
+* Phát biểu đề bài:Viết chương trình c# in ra màn hình nhãn thông tin gồm 5 dòng
+* Ý tưởng:dùng câu lệnh Console.writeline() xuất dòng 
+* Mã giả:
+Bắt đầu
+*     In dòng 1: "************************"
+*     In dòng 2: "* Truong: Dai Hoc HUFLIT *"
+*     In dòng 3: "* Khoa: CNTT            *"
+*     In dòng 4: "* Ho ten:               *"
+*     In dòng 5: "************************"
+*   Kết thúc
+*/
+using System;
+
+namespace buoi01
 {
-class HamSo
-{
-public static void Main(string []args)
-{
-// Khai báo biến
-double x, fx;
-// Nhập dữ liệu
-Console.Write("Moi ban nhap vao gia tri cua bien so x: ");
-x = double.Parse(Console.ReadLine());
-// Xử lý
-fx = x + Math.Pow(x, 5) / (1 * 2 * 3 * 4 * 5) + Math.Sqrt(Math.Abs(x)) /
-Math.Pow(x, 3.0 / 2);
-// Xuất dữ liệu
-Console.WriteLine("Gia tri cua ham so f({0}) = {1:#.00}.", x, fx);
-// Dừng chương trình chờ nhập phím
-Console.Read();
-}
-}
+    public class Bai01
+    {
+        public static void Main(string[] args)
+        {
+            Console.WriteLine("************************");
+            Console.WriteLine("* Truong: Dai Hoc HUFLIT *");
+            Console.WriteLine("* Khoa: CNTT            *");
+            Console.WriteLine("* Ho ten:               *");
+            Console.WriteLine("************************");
+        }
+    }
 }
