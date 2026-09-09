@@ -1,0 +1,15 @@
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\bin\Debug\net10.0\Baitap4.exe
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\bin\Debug\net10.0\Baitap4.deps.json
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\bin\Debug\net10.0\Baitap4.runtimeconfig.json
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\bin\Debug\net10.0\Baitap4.dll
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\bin\Debug\net10.0\Baitap4.pdb
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\Baitap4.GeneratedMSBuildEditorConfig.editorconfig
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\Baitap4.AssemblyInfoInputs.cache
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\Baitap4.AssemblyInfo.cs
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\Baitap4.csproj.CoreCompileInputs.cache
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\Baitap4.sourcelink.json
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\Baitap4.dll
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\refint\Baitap4.dll
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\Baitap4.pdb
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\Baitap4.genruntimeconfig.cache
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\obj\Debug\net10.0\ref\Baitap4.dll

@@ -1,0 +1,12 @@
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\bin\Debug\net10.0\MyLib.deps.json
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\bin\Debug\net10.0\MyLib.dll
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\bin\Debug\net10.0\MyLib.pdb
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\obj\Debug\net10.0\MyLib.GeneratedMSBuildEditorConfig.editorconfig
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\obj\Debug\net10.0\MyLib.AssemblyInfoInputs.cache
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\obj\Debug\net10.0\MyLib.AssemblyInfo.cs
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\obj\Debug\net10.0\MyLib.csproj.CoreCompileInputs.cache
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\obj\Debug\net10.0\MyLib.sourcelink.json
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\obj\Debug\net10.0\MyLib.dll
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\obj\Debug\net10.0\refint\MyLib.dll
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\obj\Debug\net10.0\MyLib.pdb
+D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\HienNhan\Baitap4\MyLib\obj\Debug\net10.0\ref\MyLib.dll
