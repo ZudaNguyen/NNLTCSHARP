@@ -1,0 +1,21 @@
+is_global = true
+build_property.TargetFramework = net10.0
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v10.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = BaiTap01
+<<<<<<< HEAD:NgDang/BaiTap01/obj/Debug/net10.0/BaiTap01.GeneratedMSBuildEditorConfig.editorconfig
+build_property.ProjectDir = D:\sgu\2026-2027\CSharp\BUOI1\NNLTCSHARP\NgDang\BaiTap01\
+=======
+build_property.ProjectDir = /Users/admin/Code/NNLTCSHARP/NgDang/BaiTap01/
+>>>>>>> f5fcc5ad8f274c290def7990c2a3411819111d67:NgDang/Buoi01.Bai02/obj/Debug/net10.0/BaiTap01.GeneratedMSBuildEditorConfig.editorconfig
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.EffectiveAnalysisLevelStyle = 10.0
+build_property.EnableCodeStyleSeverity = 
