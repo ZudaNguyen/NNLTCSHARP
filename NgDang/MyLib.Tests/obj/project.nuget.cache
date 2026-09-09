@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "4rlXiwGZC9w=",
+  "dgSpecHash": "Pv6SgGlJxxw=",
   "success": true,
-  "projectFilePath": "/Users/admin/Code/NNLTCSHARP/MyLib.Tests/MyLib.Tests.csproj",
+  "projectFilePath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj",
   "expectedPackageFiles": [
     "/Users/admin/.nuget/packages/coverlet.collector/6.0.4/coverlet.collector.6.0.4.nupkg.sha512",
     "/Users/admin/.nuget/packages/microsoft.codecoverage/17.14.1/microsoft.codecoverage.17.14.1.nupkg.sha512",

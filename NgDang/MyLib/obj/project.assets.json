@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/MyLib/MyLib.csproj",
+      "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj",
       "projectName": "MyLib",
-      "projectPath": "/Users/admin/Code/NNLTCSHARP/MyLib/MyLib.csproj",
+      "projectPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj",
       "packagesPath": "/Users/admin/.nuget/packages/",
-      "outputPath": "/Users/admin/Code/NNLTCSHARP/MyLib/obj/",
+      "outputPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/admin/.nuget/NuGet/NuGet.Config"

@@ -1,0 +1,12 @@
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/bin/Debug/net10.0/MyLib.deps.json
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/bin/Debug/net10.0/MyLib.dll
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/bin/Debug/net10.0/MyLib.pdb
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/Debug/net10.0/MyLib.GeneratedMSBuildEditorConfig.editorconfig
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/Debug/net10.0/MyLib.AssemblyInfoInputs.cache
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/Debug/net10.0/MyLib.AssemblyInfo.cs
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/Debug/net10.0/MyLib.csproj.CoreCompileInputs.cache
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/Debug/net10.0/MyLib.sourcelink.json
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/Debug/net10.0/MyLib.dll
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/Debug/net10.0/refint/MyLib.dll
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/Debug/net10.0/MyLib.pdb
+/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/Debug/net10.0/ref/MyLib.dll

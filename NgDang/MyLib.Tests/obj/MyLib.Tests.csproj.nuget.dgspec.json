@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/admin/Code/NNLTCSHARP/MyLib.Tests/MyLib.Tests.csproj": {}
+    "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj": {}
   },
   "projects": {
-    "/Users/admin/Code/NNLTCSHARP/MyLib.Tests/MyLib.Tests.csproj": {
+    "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/MyLib.Tests/MyLib.Tests.csproj",
+        "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj",
         "projectName": "MyLib.Tests",
-        "projectPath": "/Users/admin/Code/NNLTCSHARP/MyLib.Tests/MyLib.Tests.csproj",
+        "projectPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj",
         "packagesPath": "/Users/admin/.nuget/packages/",
-        "outputPath": "/Users/admin/Code/NNLTCSHARP/MyLib.Tests/obj/",
+        "outputPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/admin/.nuget/NuGet/NuGet.Config"
@@ -27,8 +27,8 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "/Users/admin/Code/NNLTCSHARP/MyLib/MyLib.csproj": {
-                "projectPath": "/Users/admin/Code/NNLTCSHARP/MyLib/MyLib.csproj"
+              "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj": {
+                "projectPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj"
               }
             }
           }
@@ -360,14 +360,14 @@
         }
       }
     },
-    "/Users/admin/Code/NNLTCSHARP/MyLib/MyLib.csproj": {
+    "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/MyLib/MyLib.csproj",
+        "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj",
         "projectName": "MyLib",
-        "projectPath": "/Users/admin/Code/NNLTCSHARP/MyLib/MyLib.csproj",
+        "projectPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj",
         "packagesPath": "/Users/admin/.nuget/packages/",
-        "outputPath": "/Users/admin/Code/NNLTCSHARP/MyLib/obj/",
+        "outputPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/admin/.nuget/NuGet/NuGet.Config"
