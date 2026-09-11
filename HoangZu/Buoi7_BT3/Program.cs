@@ -8,6 +8,20 @@
 *   - Sử dụng vòng lặp while với điều kiện dừng là khi giá trị tuyệt đối của phần tử hiện tại (4.0 / (2n + 1)) nhỏ hơn epsilon.
 *   - Ở mỗi bước lặp, cộng/trừ phần tử đó vào tổng và đổi dấu cho phần tử tiếp theo.
 *   - Sai số thực tế được tính bằng độ lệch giữa số Pi vừa tính và hằng số Math.PI của hệ thống.
+*
+* Mã giả:
+*   Nhập độ sai số epsilon
+*   Khởi tạo pi = 0.0
+*   Khởi tạo n = 0
+*   Khởi tạo term = 4.0 / (2 * n + 1)
+*   Khởi tạo sign = 1.0
+*   Trong khi (term >= epsilon) thực hiện:
+*       pi = pi + sign * term
+*       sign = -sign
+*       n = n + 1
+*       term = 4.0 / (2 * n + 1)
+*   saiSoThucTe = Giá trị tuyệt đối của (Số Pi chuẩn - pi)
+*   In ra kết quả pi và saiSoThucTe
 */
 
 using System;
