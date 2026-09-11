@@ -1,5 +1,5 @@
 ﻿/*
-* CHƯƠNG TRÌNH PHÂN TÍCH THỪA SỐ NGUYÊN TỐ (CẢI TIẾN)
+* CHƯƠNG TRÌNH PHÂN TÍCH THỪA SỐ NGUYÊN TỐ 
 * Tác giả : Nguyễn Huỳnh Hoàng Vũ
 * Ngày viết: 10/09/2026
 *
@@ -9,8 +9,29 @@
 *   - Nếu n chia hết cho i, dùng vòng lặp while để đếm số lần chia hết (số mũ) và thu gọn n = n / i.
 *   - In ra kết quả dưới dạng cơ_số^số_mũ (nếu mũ > 1) hoặc cơ_số (nếu mũ = 1).
 *   - Nếu sau vòng lặp mà n vẫn còn lớn hơn 1, thì phần còn lại chính là một số nguyên tố.
+*
+* Mã giả:
+*   Nhập số nguyên n
+*   Nếu (n > 1) thực hiện:
+*       In "n = "
+*       isFirst = true
+*       tempN = n
+*       Cho i chạy từ 2, trong khi (i * i <= tempN) tăng i lên 1:
+*           Nếu (tempN chia hết cho i) thì:
+*               count = 0
+*               Trong khi (tempN chia hết cho i) thực hiện:
+*                   count = count + 1
+*                   tempN = tempN / i
+*               Nếu (isFirst là false) thì in " x "
+*               Nếu (count > 1) thì in "i^count"
+*               Ngược lại thì in "i"
+*               isFirst = false
+*       Nếu (tempN > 1) thực hiện:
+*           Nếu (isFirst là false) thì in " x "
+*           In "tempN"
+*   Ngược lại:
+*       In "Vui long nhap mot so nguyen lon hon 1."
 */
-
 using System;
 
 namespace PhanTichThuaSo
