@@ -8,6 +8,17 @@
 *   - Sử dụng vòng lặp while.
 *   - Ở mỗi bước lặp, kiểm tra phần tử hiện tại có >= epsilon hay không. Nếu có thì cộng dồn vào tổng S và tăng n lên 1.
 *   - Vòng lặp tự động dừng khi phần tử hiện tại nhỏ hơn epsilon.
+*
+* Mã giả:
+*   Nhập số thực a và số thực epsilon
+*   Khởi tạo S = 0
+*   Khởi tạo n = 0
+*   Khởi tạo term = 1 / a
+*   Trong khi (term >= epsilon) thực hiện:
+*       S = S + term
+*       n = n + 1
+*       term = 1 / (a + n)
+*   In ra giá trị của S
 */
 
 using System;
