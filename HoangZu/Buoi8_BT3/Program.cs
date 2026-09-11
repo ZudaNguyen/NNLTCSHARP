@@ -9,6 +9,28 @@
 *   - Dùng thuật toán Euclid để tìm Ước chung lớn nhất (UCLN) của giá trị tuyệt đối tử số và mẫu số.
 *   - Chia cả tử số và mẫu số cho UCLN để được phân số rút gọn.
 *   - Đưa dấu trừ (nếu có) từ mẫu số lên tử số để phân số hiển thị đẹp mắt hơn (ví dụ: thay vì 2/-3 thì đổi thành -2/3).
+*
+* Mã giả:
+*   Nhập tuSo, mauSo
+*   Nếu (mauSo == 0) thì:
+*       In ra thông báo lỗi và kết thúc chương trình
+*   Lưu tuSoBanDau = tuSo, mauSoBanDau = mauSo
+*   Nếu (mauSo < 0) thì:
+*       tuSo = -tuSo
+*       mauSo = -mauSo
+*   a = Giá trị tuyệt đối của tuSo
+*   b = Giá trị tuyệt đối của mauSo
+*   Trong khi (b != 0) thực hiện:
+*       temp = b
+*       b = a % b
+*       a = temp
+*   ucln = a
+*   tuSoRutGon = tuSo / ucln
+*   mauSoRutGon = mauSo / ucln
+*   Nếu (mauSoRutGon == 1 hoặc tuSoRutGon == 0) thì:
+*       In kết quả chỉ gồm tuSoRutGon
+*   Ngược lại:
+*       In kết quả dạng tuSoRutGon/mauSoRutGon
 */
 
 using System;
