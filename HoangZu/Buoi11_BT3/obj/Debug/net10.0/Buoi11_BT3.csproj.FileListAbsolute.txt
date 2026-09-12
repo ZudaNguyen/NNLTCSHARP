@@ -1,0 +1,14 @@
+C:\Baitap\Buoi11_BT3\bin\Debug\net10.0\Buoi11_BT3.exe
+C:\Baitap\Buoi11_BT3\bin\Debug\net10.0\Buoi11_BT3.deps.json
+C:\Baitap\Buoi11_BT3\bin\Debug\net10.0\Buoi11_BT3.runtimeconfig.json
+C:\Baitap\Buoi11_BT3\bin\Debug\net10.0\Buoi11_BT3.dll
+C:\Baitap\Buoi11_BT3\bin\Debug\net10.0\Buoi11_BT3.pdb
+C:\Baitap\Buoi11_BT3\obj\Debug\net10.0\Buoi11_BT3.GeneratedMSBuildEditorConfig.editorconfig
+C:\Baitap\Buoi11_BT3\obj\Debug\net10.0\Buoi11_BT3.AssemblyInfoInputs.cache
+C:\Baitap\Buoi11_BT3\obj\Debug\net10.0\Buoi11_BT3.AssemblyInfo.cs
+C:\Baitap\Buoi11_BT3\obj\Debug\net10.0\Buoi11_BT3.csproj.CoreCompileInputs.cache
+C:\Baitap\Buoi11_BT3\obj\Debug\net10.0\Buoi11_BT3.dll
+C:\Baitap\Buoi11_BT3\obj\Debug\net10.0\refint\Buoi11_BT3.dll
+C:\Baitap\Buoi11_BT3\obj\Debug\net10.0\Buoi11_BT3.pdb
+C:\Baitap\Buoi11_BT3\obj\Debug\net10.0\Buoi11_BT3.genruntimeconfig.cache
+C:\Baitap\Buoi11_BT3\obj\Debug\net10.0\ref\Buoi11_BT3.dll
