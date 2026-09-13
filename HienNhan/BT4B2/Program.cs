@@ -1,6 +1,6 @@
 /*
 * CHƯƠNG TRÌNH TÌM QUÍ CỦA THÁNG
-* Tác giả : Nguyen Van Hien Nhan - 3123411207
+* Tác giả : Nguyễn Văn Hiền Nhân
 * Ngày viết: 13/09/2026
 *
 * Phát biểu đề bài: Nhập vào tháng. Hãy cho biết tháng đó thuộc quí nào?

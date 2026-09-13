@@ -1,6 +1,6 @@
 /*
 * CHƯƠNG TRÌNH ĐỔI SANG GIỜ PHÚT GIÂY
-* Tác giả : Nguyen Van Hien Nhan - 3123411207
+* Tác giả : Nguyễn Văn Hiền Nhân
 * Ngày viết: 12/09/2026
 *
 * Phát biểu đề bài: Một thiết bị hoạt động được t giây. 
