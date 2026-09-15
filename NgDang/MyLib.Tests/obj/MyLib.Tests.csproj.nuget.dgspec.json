@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.tests/MyLib.Tests.csproj": {}
+    "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj": {}
   },
   "projects": {
-    "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.tests/MyLib.Tests.csproj": {
+    "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.tests/MyLib.Tests.csproj",
+        "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj",
         "projectName": "MyLib.Tests",
-        "projectPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.tests/MyLib.Tests.csproj",
+        "projectPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj",
         "packagesPath": "/Users/admin/.nuget/packages/",
-        "outputPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.tests/obj/",
+        "outputPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/admin/.nuget/NuGet/NuGet.Config"

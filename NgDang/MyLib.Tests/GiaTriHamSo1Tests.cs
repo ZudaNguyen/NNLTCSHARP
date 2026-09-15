@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace MyLib.Tests
 {
+    [Trait("Buoi", "03")]
     public class GiaTriHamSo1Tests
     {
         [Theory]

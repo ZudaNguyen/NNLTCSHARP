@@ -3,6 +3,7 @@ using MyLib;
 
 namespace MyLib.Tests
 {
+    [Trait("Buoi", "02")]
     public class LuyThuaNhanhTests
     {
         [Theory]
