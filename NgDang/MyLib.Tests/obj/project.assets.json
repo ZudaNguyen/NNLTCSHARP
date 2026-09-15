@@ -930,40 +930,33 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\nhanh\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "/Users/admin/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\MyLib.Tests\\MyLib.Tests.csproj",
+      "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj",
       "projectName": "MyLib.Tests",
-      "projectPath": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\MyLib.Tests\\MyLib.Tests.csproj",
-      "packagesPath": "C:\\Users\\nhanh\\.nuget\\packages\\",
-      "outputPath": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\MyLib.Tests\\obj\\",
+      "projectPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/MyLib.Tests.csproj",
+      "packagesPath": "/Users/admin/.nuget/packages/",
+      "outputPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib.Tests/obj/",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\nhanh\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "/Users/admin/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "C:\\Program Files\\dotnet\\library-packs": {},
+        "/usr/local/share/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\MyLib\\MyLib.csproj": {
-              "projectPath": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\MyLib\\MyLib.csproj"
+            "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj": {
+              "projectPath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj"
             }
           }
         }
@@ -978,7 +971,7 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.200"
+      "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
       "net10.0": {
@@ -1017,7 +1010,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.203/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.102/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",
