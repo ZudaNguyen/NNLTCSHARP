@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\Buoi02.Bai02.csproj": {}
+    "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\Buoi02.Bai02.csproj": {}
   },
   "projects": {
-    "d:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\Buoi02.Bai02.csproj": {
+    "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\Buoi02.Bai02.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\Buoi02.Bai02.csproj",
+        "projectUniqueName": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\Buoi02.Bai02.csproj",
         "projectName": "Buoi02.Bai02",
-        "projectPath": "d:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\Buoi02.Bai02.csproj",
+        "projectPath": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\Buoi02.Bai02.csproj",
         "packagesPath": "C:\\Users\\nhanh\\.nuget\\packages\\",
-        "outputPath": "d:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\obj\\",
+        "outputPath": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\Buoi02.Bai02\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
