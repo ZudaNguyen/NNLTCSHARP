@@ -1,18 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ZTxMdecRLnw=",
+  "dgSpecHash": "6+eOTAOHvB8=",
   "success": true,
-  "projectFilePath": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\MyLib\\MyLib.csproj",
+  "projectFilePath": "/Users/admin/Code/NNLTCSHARP/NgDang/MyLib/MyLib.csproj",
   "expectedPackageFiles": [],
-  "logs": [
-    {
-      "code": "Undefined",
-      "level": "Warning",
-      "message": "Problem reading the cache file D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\MyLib\\obj\\project.nuget.cache : '<' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 2 | BytePositionInLine: 0.",
-      "projectPath": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\MyLib\\MyLib.csproj",
-      "warningLevel": 1,
-      "filePath": "D:\\sgu\\2026-2027\\CSharp\\BUOI1\\NNLTCSHARP\\NgDang\\MyLib\\MyLib.csproj",
-      "targetGraphs": []
-    }
-  ]
+  "logs": []
 }
