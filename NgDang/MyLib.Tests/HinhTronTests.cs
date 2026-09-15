@@ -4,6 +4,7 @@ using MyLib; // Bắt buộc phải có dòng này để test các hàm trong My
 
 namespace MyLib.Tests
 {
+    [Trait("Buoi", "01")]
     public class HinhTronTests
     {
         [Theory]
