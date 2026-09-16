@@ -27,8 +27,8 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "F:\\Learn_C#\\NNLTCSHARP\\MinhVy\\MyLib\\MyLib.csproj": {
-                "projectPath": "F:\\Learn_C#\\NNLTCSHARP\\MinhVy\\MyLib\\MyLib.csproj"
+              "/Users/admin/Code/NNLTCSHARP/MinhVy/MyLib/MyLib.csproj": {
+                "projectPath": "/Users/admin/Code/NNLTCSHARP/MinhVy/MyLib/MyLib.csproj"
               }
             }
           }
@@ -43,11 +43,10 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.400"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
-          "framework": "net10.0",
           "targetAlias": "net10.0",
           "imports": [
             "net461",
@@ -65,7 +64,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.400/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.102/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -343,33 +342,27 @@
         }
       }
     },
-    "F:\\Learn_C#\\NNLTCSHARP\\MinhVy\\MyLib\\MyLib.csproj": {
+    "/Users/admin/Code/NNLTCSHARP/MinhVy/MyLib/MyLib.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\Learn_C#\\NNLTCSHARP\\MinhVy\\MyLib\\MyLib.csproj",
+        "projectUniqueName": "/Users/admin/Code/NNLTCSHARP/MinhVy/MyLib/MyLib.csproj",
         "projectName": "MyLib",
-        "projectPath": "F:\\Learn_C#\\NNLTCSHARP\\MinhVy\\MyLib\\MyLib.csproj",
-        "packagesPath": "C:\\Users\\dell\\.nuget\\packages\\",
-        "outputPath": "F:\\Learn_C#\\NNLTCSHARP\\MinhVy\\MyLib\\obj\\",
+        "projectPath": "/Users/admin/Code/NNLTCSHARP/MinhVy/MyLib/MyLib.csproj",
+        "packagesPath": "/Users/admin/.nuget/packages/",
+        "outputPath": "/Users/admin/Code/NNLTCSHARP/MinhVy/MyLib/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\dell\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/admin/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "/usr/local/share/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
-            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {}
           }
