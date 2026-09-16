@@ -1,4 +1,11 @@
-﻿using System;
+﻿/*
+* THƯ VIỆN TÍNH TỔNG ĐOẠN [A, B]
+* Tác giả: Võ Minh Vỹ
+* Ngày viết: 15/09/2026
+*
+* Ý tưởng: Tong(a, b) = Sum(1..b) - Sum(1..a-1)
+*/
+using System;
 using MyLib;
 namespace Buoi2_BT1
 {
