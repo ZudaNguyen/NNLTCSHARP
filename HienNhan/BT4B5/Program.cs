@@ -1,4 +1,4 @@
-/*
+﻿/*
 * CHƯƠNG TRÌNH TÌM SỐ NGUYÊN DƯƠNG N BÉ NHẤT
 * Tác giả : Nguyễn Văn Hiền Nhân
 * Ngày viết: 15/09/2026

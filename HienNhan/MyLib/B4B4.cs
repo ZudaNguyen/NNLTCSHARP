@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace MyLib
 {
@@ -6,20 +7,25 @@ namespace MyLib
     {
         public static string PhanLoaiTamGiac(double a, double b, double c)
         {
+            // Dùng InvariantCulture để đảm bảo số thực luôn in ra bằng dấu chấm
+            string aStr = a.ToString(CultureInfo.InvariantCulture);
+            string bStr = b.ToString(CultureInfo.InvariantCulture);
+            string cStr = c.ToString(CultureInfo.InvariantCulture);
+
             // Kiểm tra điều kiện tồn tại tam giác
             if (a <= 0 || b <= 0 || c <= 0 || a + b <= c || a + c <= b || b + c <= a)
             {
-                return $"Ba so ({a}, {b}, {c}) khong tao thanh tam giac.";
+                return $"Ba so ({aStr}, {bStr}, {cStr}) khong tao thanh tam giac.";
             }
 
-            string tienTo = $"Ba so ({a}, {b}, {c}) tao thanh duoc tam giac.\nTam giac tao thanh la tam giac ";
+            string tienTo = $"Ba so ({aStr}, {bStr}, {cStr}) tao thanh duoc tam giac.\nTam giac tao thanh la tam giac ";
             string loai = "thuong";
 
-            bool isDeu = (a == b) && (b == c);
-            bool isCan = (a == b) || (b == c) || (a == c);
+            // Dùng sai số nhỏ để so sánh số thực, tránh lỗi bộ nhớ
+            double saiSo = 1e-6;
+            bool isDeu = Math.Abs(a - b) < saiSo && Math.Abs(b - c) < saiSo;
+            bool isCan = Math.Abs(a - b) < saiSo || Math.Abs(b - c) < saiSo || Math.Abs(a - c) < saiSo;
             
-            // Dùng sai số nhỏ để tránh lỗi so sánh số thực khi bình phương
-            double saiSo = 1e-5;
             bool isVuong = Math.Abs(a * a + b * b - c * c) < saiSo ||
                            Math.Abs(a * a + c * c - b * b) < saiSo ||
                            Math.Abs(b * b + c * c - a * a) < saiSo;

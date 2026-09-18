@@ -1,6 +1,6 @@
-/*
+﻿/*
 * CHƯƠNG TRÌNH TÌM NGÀY TRƯỚC ĐÓ
-* Tác giả : Nguyen Van Hien Nhan - 3123411207
+* Tác giả : Nguyễn Văn Hiền Nhân
 * Ngày viết: 15/09/2026
 *
 * Phát biểu đề bài: Nhập vào ngày, tháng, năm. Hỏi ngày trước đó là ngày nào?
@@ -27,19 +27,22 @@
 *  End
 */
 
-using system;
+using System;
 
 class Program
 {
     static void Main (String[] args){
-        Console.WriteLine("Nhập ngày: ");
-        int day = Convert.ToInt32(Console.ReadLine());
-        Console.WriteLine("Nhập tháng: ");
-        int month = Convert.ToInt32(Console.ReadLine());
-        Console.WriteLine("Nhập năm: ");
-        int year = Convert.ToInt32(Console.ReadLine());
+        Console.Write("Moi ban nhap ngay: ");
+        bool ngayHopLe = int.TryParse(Console.ReadLine(), out int day);
+        
+        Console.Write("Moi ban nhap thang: ");
+        bool monthHopLe = int.TryParse(Console.ReadLine(), out int month);
+        
+        Console.Write("Moi ban nhap nam: ");
+        bool yearHopLe = int.TryParse(Console.ReadLine(), out int year);
 
-        if(ngayHopLe && monthHopLe && yearHopLe){
+        if (ngayHopLe && monthHopLe && yearHopLe) 
+        {
             String result = MyLib.B4B7.NgayTruoc(day, month, year);
             Console.WriteLine($"Ngày trước đó là: {result}");
         } else {

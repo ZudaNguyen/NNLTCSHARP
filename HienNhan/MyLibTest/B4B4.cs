@@ -11,6 +11,8 @@ namespace MyLibTest
         [InlineData(3, 4, 3, "Ba so (3, 4, 3) tao thanh duoc tam giac.\nTam giac tao thanh la tam giac can.")]
         [InlineData(2, 4, 7, "Ba so (2, 4, 7) khong tao thanh tam giac.")]
         [InlineData(0, 5, 5, "Ba so (0, 5, 5) khong tao thanh tam giac.")]
+        // Thêm test case số thập phân để kiểm chứng CultureInfo
+        [InlineData(1.5, 1.5, 1.5, "Ba so (1.5, 1.5, 1.5) tao thanh duoc tam giac.\nTam giac tao thanh la tam giac deu.")] 
         public void Test_PhanLoaiTamGiac_NhieuTruongHop(double a, double b, double c, string mongDoi)
         {
             // Act

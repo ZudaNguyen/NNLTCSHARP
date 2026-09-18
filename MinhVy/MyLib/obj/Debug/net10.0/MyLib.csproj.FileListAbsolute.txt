@@ -1,11 +1,11 @@
+F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\bin\Debug\net10.0\MyLib.deps.json
+F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\bin\Debug\net10.0\MyLib.dll
+F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\bin\Debug\net10.0\MyLib.pdb
 F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\obj\Debug\net10.0\MyLib.GeneratedMSBuildEditorConfig.editorconfig
 F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\obj\Debug\net10.0\MyLib.AssemblyInfoInputs.cache
 F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\obj\Debug\net10.0\MyLib.AssemblyInfo.cs
 F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\obj\Debug\net10.0\MyLib.csproj.CoreCompileInputs.cache
 F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\obj\Debug\net10.0\MyLib.sourcelink.json
-F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\bin\Debug\net10.0\MyLib.deps.json
-F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\bin\Debug\net10.0\MyLib.dll
-F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\bin\Debug\net10.0\MyLib.pdb
 F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\obj\Debug\net10.0\MyLib.dll
 F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\obj\Debug\net10.0\refint\MyLib.dll
 F:\Learn_C#\NNLTCSHARP\MinhVy\MyLib\obj\Debug\net10.0\MyLib.pdb

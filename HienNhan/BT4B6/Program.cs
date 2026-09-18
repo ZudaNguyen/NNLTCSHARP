@@ -1,4 +1,4 @@
-/*
+﻿/*
 * CHƯƠNG TRÌNH KIỂM TRA SỐ HOÀN HẢO
 * Tác giả : Nguyễn Văn Hiền Nhân
 * Ngày viết: 15/09/2026
