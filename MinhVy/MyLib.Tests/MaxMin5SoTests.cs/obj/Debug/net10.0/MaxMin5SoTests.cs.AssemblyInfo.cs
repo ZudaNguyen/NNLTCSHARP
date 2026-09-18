@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MaxMin5SoTests.cs")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+84803ec2ee102a160f4e920d32167837d5f67c46")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2898bd99544585793ba12eff345496d9c598cb0d")]
 [assembly: System.Reflection.AssemblyProductAttribute("MaxMin5SoTests.cs")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MaxMin5SoTests.cs")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
