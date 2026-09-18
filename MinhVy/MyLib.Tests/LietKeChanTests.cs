@@ -12,7 +12,7 @@ namespace MyLib.Tests
             int[] input = new int[] { 2, 3, 5, 6 };
             List<int> expected = new List<int> { 6, 2 };
 
-            List<int> actual = LietKeChanLib.LietKeSoChanTuPhaiSangTrai(input);
+            List<int> actual = Buoi9_LietKeChanLib.lietKeSoChan(input);
 
             Assert.Equal(expected, actual);
         }
@@ -21,7 +21,7 @@ namespace MyLib.Tests
         public void Test_LietKeSoChanTuPhaiSangTrai_KhongCoSoChan()
         {
             int[] input = new int[] { 1, 3, 5, 7 };
-            List<int> actual = LietKeChanLib.LietKeSoChanTuPhaiSangTrai(input);
+            List<int> actual = Buoi9_LietKeChanLib.lietKeSoChan(input);
 
             Assert.Empty(actual);
         }
