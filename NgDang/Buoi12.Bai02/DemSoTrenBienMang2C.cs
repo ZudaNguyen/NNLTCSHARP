@@ -1,3 +1,21 @@
+/*
+ * CHƯƠNG TRÌNH ĐẾM SỐ TRÊN BIÊN MA TRẬN
+ * Tác giả    : Nguyễn Phúc Hải Đăng
+ * Ngày tạo  : 19/09/2026
+ * 
+ * Phát biểu đề tài: Cho ma trận số thực có n dòng và m cột. Viết chương trình đếm số lượng các số dương, âm, và số không nằm trên biên của ma trận.
+ * Ý tưởng: Sử dụng 2 vòng lặp lồng nhau duyệt ma trận. Các phần tử biên là các phần tử thỏa mãn điều kiện thuộc dòng đầu (i=0), dòng cuối (i=n-1), cột đầu (j=0) hoặc cột cuối (j=m-1). Từ đó phân loại dấu để đếm.
+ * Mã giả:
+ *   1. Bắt đầu
+ *   2. Nhập n, m và tạo ma trận số thực kích thước n x m
+ *   3. In ma trận
+ *   4. Lặp i từ 0 đến n-1, Lặp j từ 0 đến m-1
+ *   5. Kiểm tra nếu [i, j] nằm trên biên
+ *   6. Tại phần tử biên, nếu giá trị > 0 thì đếm dương++, < 0 thì đếm âm++, == 0 thì đếm không++
+ *   7. Xuất số lượng 3 biến đếm ra màn hình
+ *   8. Kết thúc
+ */
+
 using System;
 using MyLib;
 

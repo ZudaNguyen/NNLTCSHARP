@@ -1,3 +1,22 @@
+/*
+ * CHƯƠNG TRÌNH TÌM GIÁ TRỊ CHẴN ĐẦU TIÊN VÀ CUỐI CÙNG
+ * Tác giả    : Nguyễn Phúc Hải Đăng
+ * Ngày tạo  : 16/09/2026
+ * 
+ * Phát biểu đề tài: Cho dãy số nguyên n phần tử. Hãy tìm giá trị chẵn dương đầu tiên và cuối cùng của dãy số đó.
+ * Ý tưởng: Duyệt mảng một chiều từ đầu đến cuối. Khi phát hiện một phần tử thỏa mãn (> 0 và chẵn), ghi nhận nó làm vị trí đầu tiên (nếu chưa có), sau đó liên tục ghi đè nó làm vị trí cuối cùng cho đến khi hết mảng.
+ * Mã giả:
+ *   1. Bắt đầu
+ *   2. Nhập mảng số nguyên n phần tử
+ *   3. Khởi tạo viTriDau = -1, viTriCuoi = -1
+ *   4. Duyệt mảng từ 0 đến n-1
+ *   5. Nếu phần tử tại i là chẵn và lớn hơn 0:
+ *      5a. Nếu viTriDau == -1, gán viTriDau = i
+ *      5b. Gán viTriCuoi = i
+ *   6. In ra màn hình vị trí và giá trị tương ứng
+ *   7. Kết thúc
+ */
+
 using System;
 using MyLib;
 

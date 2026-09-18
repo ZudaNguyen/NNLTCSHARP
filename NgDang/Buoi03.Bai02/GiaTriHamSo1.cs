@@ -1,3 +1,19 @@
+/*
+ * CHƯƠNG TRÌNH TÍNH GIÁ TRỊ HÀM SỐ
+ * Tác giả    : Nguyễn Phúc Hải Đăng
+ * Ngày tạo  : 11/09/2026
+ * 
+ * Phát biểu đề tài: Cho số thực x. Hãy tính giá trị của hàm số f1(x) và f2(x) theo các khoảng điều kiện cho trước.
+ * Ý tưởng: Dùng cấu trúc rẽ nhánh if-else để kiểm tra giá trị của x nằm trong khoảng nào, sau đó áp dụng công thức toán học tương ứng.
+ * Mã giả:
+ *   1. Bắt đầu
+ *   2. Nhập giá trị số thực x
+ *   3. Tính f1: Nếu x <= 0 thì f1 = 0, nếu 0 < x <= 1 thì f1 = x, ngược lại f1 = x^4
+ *   4. Tính f2: Nếu x <= 2 thì f2 = x^2 + 4x + 5, ngược lại f2 = 1 / (x^2 + 4x + 5)
+ *   5. Xuất giá trị f1(x) và f2(x)
+ *   6. Kết thúc
+ */
+
 using System;
 using MyLib;
 
