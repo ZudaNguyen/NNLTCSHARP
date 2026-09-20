@@ -1,4 +1,19 @@
-﻿using System;
+﻿// * Tác giả : Võ Minh Vỹ
+
+// *
+// * Phát biểu đề bài:
+// *   Viết các phương thức nhận vào 5 số thực a, b, c, d, e 
+// *   và trả về giá trị lớn nhất (Max), nhỏ nhất (Min).
+// *
+// * Ý tưởng:
+// *   Sử dụng hàm Math.Max và Math.Min lồng nhau để so sánh 5 số mà không làm thay đổi biến gốc.
+// *
+// * Mã giả:
+// *   Hàm TimMax(a, b, c, d, e):
+// *     Trả về Math.Max(a, Math.Max(b, Math.Max(c, Math.Max(d, e))))
+// *   Hàm TimMin(a, b, c, d, e):
+// *     Trả về Math.Min(a, Math.Min(b, Math.Min(c, Math.Min(d, e))))
+using System;
 using MyLib;
 namespace Buoi3_BT1
 {
