@@ -16,7 +16,7 @@ namespace MyLib.Tests
         public void Test_TaoTamGiacRong_Height3()
         {
             int h = 3;
-            List<string> actual = InHinhTamGiacVaVuongLib.TaoTamGiacRong(h);
+            List<string> actual = Buoi7_InHinhTamGiacVaVuongLib.InHinh(h);
 
             Assert.Equal(3, actual.Count);
             Assert.Equal("    *", actual[0]);

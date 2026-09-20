@@ -26,7 +26,7 @@ namespace Buoi5_BT1
         public static void Main()
         {
             Console.WriteLine("nhap so nguyen n:");
-            int n=int.Parse(Console.ReadLine());
+            int n = int.Parse(Console.ReadLine() ?? "0");
             
             long ketqua=Buoi5_GiaiThua.TinhGiaiThua(n);
           Console.WriteLine("ket qua="+ketqua);
