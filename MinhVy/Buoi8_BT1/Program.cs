@@ -26,9 +26,9 @@ public class Program
     public static void Main()
     {
         Console.WriteLine("nhap k:");
-        int k=int.Parse(Console.ReadLine());
+        int k = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException("Không nhận được giá trị k."));
         Console.WriteLine("nhap n:");
-        int n=int.Parse(Console.ReadLine());
+        int n = int.Parse(Console.ReadLine() ?? throw new InvalidOperationException("Không nhận được giá trị n."));
         long ketqua=Buoi8_GiaiThuaLib.tinhToHop(k,n);
         Console.WriteLine($"C({k}, {n}) = {ketqua}.");
     }
