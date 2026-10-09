@@ -1,27 +1,32 @@
 CREATE TABLE [TheLoai] (
   [MaTheLoai] int PRIMARY KEY IDENTITY(1, 1),
-  [TenTheLoai] varchar(100) NOT NULL,
-  [MoTa] varchar(500)
+  [TenTheLoai] nvarchar(100) NOT NULL, -- Nên dùng nvarchar cho tiếng Việt
+  [MoTa] nvarchar(500),
+  [IsDeleted] bit DEFAULT (0) -- Thêm: Cờ xóa mềm
 )
 GO
 
 CREATE TABLE [TacGia] (
   [MaTacGia] int PRIMARY KEY IDENTITY(1, 1),
-  [TenTacGia] varchar(150) NOT NULL,
-  [QuocTich] varchar(100),
-  [GioiThieu] varchar(500)
+  [TenTacGia] nvarchar(150) NOT NULL,
+  [QuocTich] nvarchar(100),
+  [GioiThieu] nvarchar(500),
+  [IsDeleted] bit DEFAULT (0) -- Thêm: Cờ xóa mềm
 )
 GO
 
 CREATE TABLE [Sach] (
   [MaSach] int PRIMARY KEY IDENTITY(1, 1),
-  [TenSach] varchar(200) NOT NULL,
+  [TenSach] nvarchar(200) NOT NULL,
   [ISBN] varchar(20),
   [NamXuatBan] int,
-  [NhaXuatBan] varchar(150),
+  [NhaXuatBan] nvarchar(150),
   [SoLuong] int NOT NULL DEFAULT (0),
   [SoLuongCon] int NOT NULL DEFAULT (0),
-  [MaTheLoai] int
+  [MaTheLoai] int,
+  [HinhAnh] varchar(500), -- Thêm: Lưu đường dẫn ảnh phục vụ Web
+  [MoTaChiTiet] nvarchar(max), -- Thêm: Mô tả dài cho Web
+  [IsDeleted] bit DEFAULT (0) -- Thêm: Cờ xóa mềm
 )
 GO
 
@@ -34,25 +39,26 @@ GO
 
 CREATE TABLE [DocGia] (
   [MaDocGia] int PRIMARY KEY IDENTITY(1, 1),
-  [HoTen] varchar(150) NOT NULL,
+  [HoTen] nvarchar(150) NOT NULL,
   [NgaySinh] date,
-  [GioiTinh] varchar(20),
-  [DiaChi] varchar(250),
+  [GioiTinh] nvarchar(20),
+  [DiaChi] nvarchar(250),
   [SoDienThoai] varchar(15),
   [Email] varchar(150),
   [NgayDangKy] date,
-  [TrangThai] varchar(50)
+  [TrangThai] nvarchar(50)
 )
 GO
 
 CREATE TABLE [NhanVien] (
   [MaNhanVien] int PRIMARY KEY IDENTITY(1, 1),
-  [HoTen] varchar(150) NOT NULL,
+  [HoTen] nvarchar(150) NOT NULL,
   [SoDienThoai] varchar(15),
   [Email] varchar(150),
   [TaiKhoan] varchar(100) UNIQUE,
   [MatKhau] varchar(255),
-  [ChucVu] varchar(100)
+  [ChucVu] nvarchar(100),
+  [IsDeleted] bit DEFAULT (0) -- Thêm: Cờ xóa mềm
 )
 GO
 
@@ -62,7 +68,8 @@ CREATE TABLE [PhieuMuon] (
   [MaNhanVien] int NOT NULL,
   [NgayMuon] date,
   [HanTra] date,
-  [TrangThai] varchar(50)
+  [TrangThai] nvarchar(50),
+  [NgayTao] datetime DEFAULT GETDATE() -- Thêm: Dấu vết thời gian tạo phiếu
 )
 GO
 
@@ -72,7 +79,7 @@ CREATE TABLE [ChiTiet_PhieuMuon] (
   [SoLuong] int DEFAULT (1),
   [NgayTra] date,
   [TienPhat] decimal(18,2) DEFAULT (0),
-  [TinhTrangSach] varchar(200),
+  [TinhTrangSach] nvarchar(200),
   PRIMARY KEY ([MaPhieuMuon], [MaSach])
 )
 GO
