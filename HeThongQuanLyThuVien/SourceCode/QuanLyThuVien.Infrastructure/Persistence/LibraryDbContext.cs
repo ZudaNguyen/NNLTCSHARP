@@ -10,6 +10,7 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
     public DbSet<TheLoai> TheLoai => Set<TheLoai>();
     public DbSet<TacGia> TacGia => Set<TacGia>();
     public DbSet<SachTacGia> SachTacGia => Set<SachTacGia>();
+    public DbSet<DocGia> DocGia => Set<DocGia>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -64,6 +65,25 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
                 .WithMany(tacGia => tacGia.SachTacGias)
                 .HasForeignKey(link => link.MaTacGia)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DocGia>(entity =>
+        {
+            entity.ToTable("DocGia");
+            entity.HasKey(reader => reader.MaDocGia);
+            entity.Property(reader => reader.MaDocGia).ValueGeneratedOnAdd();
+            entity.Property(reader => reader.HoTen).HasMaxLength(200).IsRequired();
+            entity.Property(reader => reader.NgaySinh).HasColumnType("date");
+            entity.Property(reader => reader.GioiTinh).HasMaxLength(20).IsRequired();
+            entity.Property(reader => reader.SoDienThoai).HasMaxLength(11).IsRequired();
+            entity.Property(reader => reader.Email).HasMaxLength(254);
+            entity.Property(reader => reader.DiaChi).HasMaxLength(500);
+            entity.Property(reader => reader.NgayDangKy).HasColumnType("date").HasDefaultValueSql("CONVERT(date, GETDATE())");
+            entity.Property(reader => reader.TrangThai).HasMaxLength(20).HasDefaultValue("Hoạt động").IsRequired();
+            entity.HasIndex(reader => reader.Email).IsUnique().HasFilter("[Email] IS NOT NULL");
+            entity.HasIndex(reader => reader.HoTen);
+            entity.HasIndex(reader => reader.SoDienThoai);
+            entity.HasIndex(reader => reader.TrangThai);
         });
     }
 }

@@ -21,6 +21,7 @@ if (!string.IsNullOrWhiteSpace(connectionString))
     builder.Services.AddScoped<ISachService, SachService>();
     builder.Services.AddScoped<ITheLoaiService, TheLoaiService>();
     builder.Services.AddScoped<ITacGiaService, TacGiaService>();
+    builder.Services.AddScoped<IDocGiaService, DocGiaService>();
 }
 
 var app = builder.Build();

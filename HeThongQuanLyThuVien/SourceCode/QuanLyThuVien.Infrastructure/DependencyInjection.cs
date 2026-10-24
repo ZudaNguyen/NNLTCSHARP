@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddScoped<ISachRepository, SachRepository>();
         services.AddScoped<ITheLoaiRepository, TheLoaiRepository>();
         services.AddScoped<ITacGiaRepository, TacGiaRepository>();
+        services.AddScoped<IDocGiaRepository, DocGiaRepository>();
 
         return services;
     }

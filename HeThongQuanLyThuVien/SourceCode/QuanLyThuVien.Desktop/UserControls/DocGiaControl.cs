@@ -2,11 +2,16 @@
 using System.Drawing;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using QuanLyThuVien.Application.DTOs;
+using QuanLyThuVien.Desktop.Services;
 
 namespace QuanLyThuVien.Desktop.UserControls
 {
     public partial class DocGiaControl : UserControl
     {
+        private readonly DocGiaApiClient _apiClient = new();
+        private readonly System.Windows.Forms.Timer _filterTimer = new() { Interval = 300 };
+        private CancellationTokenSource? _loadCancellation;
         private readonly Color PaperCream = Color.FromArgb(247, 243, 233);
         private readonly Color CardBg = Color.FromArgb(255, 252, 245);
         private readonly Color WoodDark = Color.FromArgb(44, 30, 22);
@@ -33,7 +38,12 @@ namespace QuanLyThuVien.Desktop.UserControls
         {
             InitializeComponent();
             SetupDocGiaUI();
-            LoadMockData();
+            Load += async (_, _) => await LoadReadersAsync();
+            _filterTimer.Tick += async (_, _) =>
+            {
+                _filterTimer.Stop();
+                await LoadReadersAsync();
+            };
         }
 
         private void SetupDocGiaUI()
@@ -176,7 +186,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Width = 240,
                 Font = new Font("Segoe UI", 10)
             };
-            txtTimKiem.TextChanged += (s, e) => FilterGrid();
+            txtTimKiem.TextChanged += (s, e) => ScheduleFilter();
 
             Label lblLoc = new Label
             {
@@ -196,7 +206,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             };
             cboLocTrangThai.Items.AddRange(new object[] { "-- Tất cả --", "Hoạt động", "Khóa thẻ" });
             cboLocTrangThai.SelectedIndex = 0;
-            cboLocTrangThai.SelectedIndexChanged += (s, e) => FilterGrid();
+            cboLocTrangThai.SelectedIndexChanged += (s, e) => ScheduleFilter();
 
             pnlFilter.Controls.AddRange(new Control[] { lblTim, txtTimKiem, lblLoc, cboLocTrangThai });
 
@@ -308,13 +318,6 @@ namespace QuanLyThuVien.Desktop.UserControls
             return btn;
         }
 
-        private void LoadMockData()
-        {
-            dgvDocGia.Rows.Add("1", "Nguyễn Văn A", "15/05/2004", "Nam", "0901234567", "nguyenvana@gmail.com", "Quận 5, TP.HCM", "10/01/2026", "Hoạt động");
-            dgvDocGia.Rows.Add("2", "Trần Thị B", "20/11/2005", "Nữ", "0912345678", "tranthib@gmail.com", "Quận 1, TP.HCM", "12/02/2026", "Hoạt động");
-            dgvDocGia.Rows.Add("3", "Lê Hoàng C", "08/03/2003", "Nam", "0987654321", "lehoangc@gmail.com", "Nhà Bè, TP.HCM", "05/03/2026", "Khóa thẻ");
-        }
-
         private bool ValidateDocGia(string currentId = "")
         {
             if (string.IsNullOrWhiteSpace(txtHoTen.Text))
@@ -341,44 +344,34 @@ namespace QuanLyThuVien.Desktop.UserControls
                     return false;
                 }
 
-                // Kiểm tra Unique Email theo yêu cầu rà soát Database
-                foreach (DataGridViewRow row in dgvDocGia.Rows)
-                {
-                    string rowId = row.Cells["MaDocGia"].Value?.ToString();
-                    string rowEmail = row.Cells["Email"].Value?.ToString();
-                    if (rowId != currentId && string.Equals(rowEmail, email, StringComparison.OrdinalIgnoreCase))
-                    {
-                        MessageBox.Show("Email này đã được đăng ký cho một độc giả khác (Vi phạm Unique Index)!", "Trùng dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return false;
-                    }
-                }
             }
 
             return true;
         }
 
-        private void BtnThem_Click(object sender, EventArgs e)
+        private async void BtnThem_Click(object? sender, EventArgs e)
         {
             if (!ValidateDocGia()) return;
-
-            int newId = dgvDocGia.Rows.Count + 1;
-            dgvDocGia.Rows.Add(
-                newId.ToString(),
-                txtHoTen.Text.Trim(),
-                dtpNgaySinh.Value.ToString("dd/MM/yyyy"),
-                cboGioiTinh.SelectedItem.ToString(),
-                txtSoDienThoai.Text.Trim(),
-                txtEmail.Text.Trim(),
-                txtDiaChi.Text.Trim(),
-                DateTime.Now.ToString("dd/MM/yyyy"),
-                cboTrangThai.SelectedItem.ToString()
-            );
-
-            MessageBox.Show("Đã cấp thẻ độc giả mới thành công!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            ClearForm();
+            try
+            {
+                await _apiClient.CreateAsync(new CreateDocGiaDto
+                {
+                    HoTen = txtHoTen.Text.Trim(),
+                    NgaySinh = dtpNgaySinh.Value.Date,
+                    GioiTinh = cboGioiTinh.SelectedItem?.ToString() ?? "Nam",
+                    SoDienThoai = txtSoDienThoai.Text.Trim(),
+                    Email = txtEmail.Text.Trim(),
+                    DiaChi = txtDiaChi.Text.Trim(),
+                    TrangThai = cboTrangThai.SelectedItem?.ToString() ?? "Hoạt động"
+                }, CancellationToken.None);
+                await LoadReadersAsync();
+                MessageBox.Show("Đã cấp thẻ độc giả mới thành công!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ClearForm();
+            }
+            catch (Exception exception) { ShowApiError(exception); }
         }
 
-        private void BtnSua_Click(object sender, EventArgs e)
+        private async void BtnSua_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(txtMaDocGia.Text) || dgvDocGia.CurrentRow == null)
             {
@@ -388,30 +381,39 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             if (!ValidateDocGia(txtMaDocGia.Text)) return;
 
-            DataGridViewRow row = dgvDocGia.CurrentRow;
-            row.Cells["HoTen"].Value = txtHoTen.Text.Trim();
-            row.Cells["NgaySinh"].Value = dtpNgaySinh.Value.ToString("dd/MM/yyyy");
-            row.Cells["GioiTinh"].Value = cboGioiTinh.SelectedItem.ToString();
-            row.Cells["SoDienThoai"].Value = txtSoDienThoai.Text.Trim();
-            row.Cells["Email"].Value = txtEmail.Text.Trim();
-            row.Cells["DiaChi"].Value = txtDiaChi.Text.Trim();
-            row.Cells["TrangThai"].Value = cboTrangThai.SelectedItem.ToString();
-
-            MessageBox.Show("Cập nhật hồ sơ độc giả thành công!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (!int.TryParse(txtMaDocGia.Text, out var id)) return;
+            try
+            {
+                var updated = await _apiClient.UpdateAsync(id, new UpdateDocGiaDto
+                {
+                    HoTen = txtHoTen.Text.Trim(),
+                    NgaySinh = dtpNgaySinh.Value.Date,
+                    GioiTinh = cboGioiTinh.SelectedItem?.ToString() ?? "Nam",
+                    SoDienThoai = txtSoDienThoai.Text.Trim(),
+                    Email = txtEmail.Text.Trim(),
+                    DiaChi = txtDiaChi.Text.Trim()
+                }, CancellationToken.None);
+                await LoadReadersAsync();
+                SelectReader(updated.MaDocGia);
+                MessageBox.Show("Cập nhật hồ sơ độc giả thành công!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception exception) { ShowApiError(exception); }
         }
 
-        private void BtnKhoaMo_Click(object sender, EventArgs e)
+        private async void BtnKhoaMo_Click(object? sender, EventArgs e)
         {
             if (dgvDocGia.CurrentRow == null) return;
-
-            string currentStatus = dgvDocGia.CurrentRow.Cells["TrangThai"].Value.ToString();
-            string newStatus = currentStatus == "Hoạt động" ? "Khóa thẻ" : "Hoạt động";
-
-            // Quy tắc: Không xóa cứng dữ liệu đã phát sinh phiếu, chỉ khóa thẻ
-            dgvDocGia.CurrentRow.Cells["TrangThai"].Value = newStatus;
-            cboTrangThai.SelectedItem = newStatus;
-
-            MessageBox.Show($"Đã chuyển trạng thái thẻ của độc giả sang [{newStatus}]!", "Phân quyền thẻ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (!int.TryParse(dgvDocGia.CurrentRow.Cells["MaDocGia"].Value?.ToString(), out var id)) return;
+            var currentStatus = dgvDocGia.CurrentRow.Cells["TrangThai"].Value?.ToString() ?? "Hoạt động";
+            var newStatus = currentStatus == "Hoạt động" ? "Khóa thẻ" : "Hoạt động";
+            try
+            {
+                await _apiClient.UpdateTrangThaiAsync(id, newStatus, CancellationToken.None);
+                await LoadReadersAsync();
+                SelectReader(id);
+                MessageBox.Show($"Đã chuyển trạng thái thẻ của độc giả sang [{newStatus}]!", "Phân quyền thẻ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception exception) { ShowApiError(exception); }
         }
 
         private void DgvDocGia_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -433,23 +435,50 @@ namespace QuanLyThuVien.Desktop.UserControls
                 dtpNgayDangKy.Value = ndk;
         }
 
-        private void FilterGrid()
+        private void ScheduleFilter()
         {
-            string kw = txtTimKiem.Text.Trim().ToLower();
-            string st = cboLocTrangThai.SelectedIndex > 0 ? cboLocTrangThai.SelectedItem.ToString() : "";
+            _filterTimer.Stop();
+            _filterTimer.Start();
+        }
 
+        private async Task LoadReadersAsync()
+        {
+            _loadCancellation?.Cancel();
+            _loadCancellation?.Dispose();
+            _loadCancellation = new CancellationTokenSource();
+            var token = _loadCancellation.Token;
+            var status = cboLocTrangThai.SelectedIndex > 0 ? cboLocTrangThai.SelectedItem?.ToString() : null;
+            try
+            {
+                var readers = await _apiClient.GetAllAsync(txtTimKiem.Text, status, token);
+                dgvDocGia.Rows.Clear();
+                foreach (var reader in readers)
+                    dgvDocGia.Rows.Add(reader.MaDocGia, reader.HoTen, reader.NgaySinh.ToString("dd/MM/yyyy"), reader.GioiTinh,
+                        reader.SoDienThoai, reader.Email ?? string.Empty, reader.DiaChi ?? string.Empty,
+                        reader.NgayDangKy.ToString("dd/MM/yyyy"), reader.TrangThai);
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception exception) { ShowApiError(exception); }
+        }
+
+        private void SelectReader(int id)
+        {
             foreach (DataGridViewRow row in dgvDocGia.Rows)
             {
-                string ten = row.Cells["HoTen"].Value?.ToString().ToLower() ?? "";
-                string sdt = row.Cells["SoDienThoai"].Value?.ToString().ToLower() ?? "";
-                string mail = row.Cells["Email"].Value?.ToString().ToLower() ?? "";
-                string trangThai = row.Cells["TrangThai"].Value?.ToString() ?? "";
-
-                bool matchKw = string.IsNullOrEmpty(kw) || ten.Contains(kw) || sdt.Contains(kw) || mail.Contains(kw);
-                bool matchSt = string.IsNullOrEmpty(st) || trangThai == st;
-
-                row.Visible = matchKw && matchSt;
+                if (row.Cells["MaDocGia"].Value?.ToString() != id.ToString()) continue;
+                row.Selected = true;
+                dgvDocGia.CurrentCell = row.Cells[0];
+                DgvDocGia_CellClick(dgvDocGia, new DataGridViewCellEventArgs(0, row.Index));
+                return;
             }
+        }
+
+        private static void ShowApiError(Exception exception)
+        {
+            var message = exception is HttpRequestException
+                ? $"Lỗi API độc giả: {exception.Message}"
+                : $"Không thể xử lý dữ liệu độc giả: {exception.Message}";
+            MessageBox.Show(message, "Lỗi API độc giả", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         private void ClearForm()
