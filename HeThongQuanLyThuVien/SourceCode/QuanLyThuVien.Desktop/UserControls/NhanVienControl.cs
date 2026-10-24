@@ -1,290 +1,337 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using QuanLyThuVien.Application.DTOs;
+using QuanLyThuVien.Desktop.Services;
 
 namespace QuanLyThuVien.Desktop.UserControls
 {
     public partial class NhanVienControl : UserControl
     {
+        private readonly NhanVienApiClient _apiClient = new();
+        private readonly System.Windows.Forms.Timer _filterTimer = new() { Interval = 350 };
         private readonly Color PaperCream = Color.FromArgb(247, 243, 233);
         private readonly Color CardBg = Color.FromArgb(255, 252, 245);
         private readonly Color WoodDark = Color.FromArgb(44, 30, 22);
         private readonly Color Burgundy = Color.FromArgb(122, 40, 34);
         private readonly Color ForestGreen = Color.FromArgb(45, 106, 79);
 
-        // Các Control nhập liệu (Bảng NhanVien)
-        private TextBox txtMaNhanVien, txtHoTen, txtSoDienThoai, txtEmail;
-        private TextBox txtTaiKhoan, txtMatKhau;
-        private ComboBox cboChucVu;
-
-        // Bảng danh sách
-        private TextBox txtTimKiem;
+        private TextBox txtMaNhanVien, txtHoTen, txtSoDienThoai, txtEmail, txtTimKiem;
+        private ComboBox cboChucVu, cboLocChucVu, cboLocTrangThai;
         private DataGridView dgvNhanVien;
+        private Button btnThem, btnSua, btnTrangThai;
+        private CancellationTokenSource? _loadCancellation;
 
         public NhanVienControl()
         {
             InitializeComponent();
             SetupNhanVienUI();
-            LoadMockData();
+            Load += async (_, _) => await LoadEmployeesAsync();
+            _filterTimer.Tick += async (_, _) =>
+            {
+                _filterTimer.Stop();
+                await LoadEmployeesAsync();
+            };
         }
 
         private void SetupNhanVienUI()
         {
-            this.Dock = DockStyle.Fill;
-            this.BackColor = PaperCream;
-            this.Padding = new Padding(20);
+            Dock = DockStyle.Fill;
+            BackColor = PaperCream;
+            Padding = new Padding(20);
 
-            // ==========================================
-            // 1. FORM HỒ SƠ THỦ THƯ (TOP PANEL)
-            // ==========================================
-            Panel pnlForm = new Panel
+            var pnlForm = new Panel { Dock = DockStyle.Top, Height = 220, BackColor = CardBg, BorderStyle = BorderStyle.FixedSingle };
+            pnlForm.Controls.Add(new Label
             {
-                Dock = DockStyle.Top,
-                Height = 220,
-                BackColor = CardBg,
-                BorderStyle = BorderStyle.FixedSingle
-            };
+                Text = "Hồ sơ Nhân viên Thư viện", Font = new Font("Georgia", 11.5f, FontStyle.Bold),
+                ForeColor = Burgundy, Location = new Point(15, 10), AutoSize = true
+            });
 
-            Label lblTitle = new Label
-            {
-                Text = "🔑 Hồ Sơ Quản Trị & Thủ Thư (Bảng NhanVien)",
-                Font = new Font("Georgia", 11.5f, FontStyle.Bold),
-                ForeColor = Burgundy,
-                Location = new Point(15, 10),
-                AutoSize = true
-            };
-            pnlForm.Controls.Add(lblTitle);
-
-            // Cột 1: Thông tin cá nhân
             AddLabel(pnlForm, "Mã NV:", 15, 45);
             txtMaNhanVien = AddTextBox(pnlForm, 105, 42, 95);
             txtMaNhanVien.ReadOnly = true;
             txtMaNhanVien.BackColor = Color.FromArgb(235, 230, 220);
             txtMaNhanVien.PlaceholderText = "Tự động";
-
             AddLabel(pnlForm, "Họ và tên (*):", 15, 85);
             txtHoTen = AddTextBox(pnlForm, 105, 82, 285);
-
             AddLabel(pnlForm, "Điện thoại:", 15, 125);
             txtSoDienThoai = AddTextBox(pnlForm, 105, 122, 130);
-
             AddLabel(pnlForm, "Email:", 245, 125);
             txtEmail = AddTextBox(pnlForm, 295, 122, 225);
 
-            // Cột 2: Thông tin tài khoản & Phân quyền
-            AddLabel(pnlForm, "Tên tài khoản (*):", 420, 45);
-            txtTaiKhoan = AddTextBox(pnlForm, 550, 42, 180);
-
-            AddLabel(pnlForm, "Mật khẩu (*):", 420, 85);
-            txtMatKhau = AddTextBox(pnlForm, 550, 82, 180);
-            txtMatKhau.PasswordChar = '●'; // Ẩn mật khẩu
-
-            AddLabel(pnlForm, "Phân quyền (Chức vụ):", 530, 125);
+            AddLabel(pnlForm, "Chức vụ (*):", 530, 45);
             cboChucVu = new ComboBox
             {
-                Location = new Point(690, 122),
-                Width = 140,
-                Font = new Font("Segoe UI", 10),
-                DropDownStyle = ComboBoxStyle.DropDownList
+                Location = new Point(650, 42), Width = 180, Font = new Font("Segoe UI", 10),
+                DropDownStyle = ComboBoxStyle.DropDown
             };
-            cboChucVu.Items.AddRange(new object[] { "Admin", "Thủ thư" });
-            cboChucVu.SelectedIndex = 1;
+            cboChucVu.Items.AddRange(new object[] { "Thủ thư", "Nhân viên" });
+            cboChucVu.Text = "Thủ thư";
             pnlForm.Controls.Add(cboChucVu);
-
-            // Nút chức năng
-            FlowLayoutPanel flpButtons = new FlowLayoutPanel
+            var lblSecurity = new Label
             {
-                Location = new Point(15, 165),
-                Size = new Size(900, 42),
-                WrapContents = false
+                Text = "Thông tin đăng nhập và phân quyền được quản lý riêng; màn hình này chỉ quản lý hồ sơ nhân viên.",
+                Location = new Point(530, 82), Size = new Size(350, 48), Font = new Font("Segoe UI", 9, FontStyle.Italic),
+                ForeColor = Burgundy
             };
+            pnlForm.Controls.Add(lblSecurity);
 
-            Button btnThem = CreateButton("➕ Cấp Tài Khoản", ForestGreen);
-            Button btnSua = CreateButton("✏️ Cập Nhật Quyền", Color.FromArgb(180, 120, 20));
-            Button btnXoa = CreateButton("🔒 Khóa / Thu Hồi", Burgundy);
-            Button btnLamMoi = CreateButton("🔄 Làm Mới Form", Color.FromArgb(90, 75, 65));
-
-            btnThem.Click += BtnThem_Click;
-            btnSua.Click += BtnSua_Click;
-            btnXoa.Click += BtnXoa_Click;
-            btnLamMoi.Click += (s, e) => ClearForm();
-
-            flpButtons.Controls.AddRange(new Control[] { btnThem, btnSua, btnXoa, btnLamMoi });
+            var flpButtons = new FlowLayoutPanel { Location = new Point(15, 165), Size = new Size(900, 42), WrapContents = false };
+            btnThem = CreateButton("➕ Thêm nhân viên", ForestGreen);
+            btnSua = CreateButton("✏️ Cập nhật hồ sơ", Color.FromArgb(180, 120, 20));
+            btnTrangThai = CreateButton("🔒 Ngừng hoạt động", Burgundy);
+            var btnLichSu = CreateButton("📜 Lịch sử", Color.FromArgb(74, 53, 37));
+            var btnLamMoi = CreateButton("🔄 Làm mới Form", Color.FromArgb(90, 75, 65));
+            btnThem.Click += async (_, _) => await CreateEmployeeAsync();
+            btnSua.Click += async (_, _) => await UpdateEmployeeAsync();
+            btnTrangThai.Click += async (_, _) => await ToggleStatusAsync();
+            btnLichSu.Click += async (_, _) => await ViewStatusHistoryAsync();
+            btnLamMoi.Click += (_, _) => ClearForm();
+            flpButtons.Controls.AddRange(new Control[] { btnThem, btnSua, btnTrangThai, btnLichSu, btnLamMoi });
             pnlForm.Controls.Add(flpButtons);
 
-            // ==========================================
-            // 2. TÌM KIẾM & LƯỚI DỮ LIỆU (MIDDLE & BOTTOM)
-            // ==========================================
-            Panel pnlFilter = new Panel { Dock = DockStyle.Top, Height = 52, BackColor = PaperCream };
-            Label lblTim = new Label { Text = "🔍 Tra cứu Nhân sự:", Font = new Font("Georgia", 10, FontStyle.Bold), ForeColor = WoodDark, Location = new Point(5, 16), AutoSize = true };
-            txtTimKiem = new TextBox { Location = new Point(165, 13), Width = 300, Font = new Font("Segoe UI", 10) };
-            txtTimKiem.TextChanged += (s, e) => FilterGrid();
-            pnlFilter.Controls.AddRange(new Control[] { lblTim, txtTimKiem });
+            var pnlFilter = new Panel { Dock = DockStyle.Top, Height = 56, BackColor = PaperCream };
+            pnlFilter.Controls.Add(new Label { Text = "Tra cứu:", Font = new Font("Georgia", 10, FontStyle.Bold), ForeColor = WoodDark, Location = new Point(5, 17), AutoSize = true });
+            txtTimKiem = new TextBox { Location = new Point(85, 13), Width = 235, Font = new Font("Segoe UI", 10) };
+            txtTimKiem.TextChanged += (_, _) => ScheduleLoad();
+            cboLocChucVu = CreateFilterCombo(330, 12, 180, "Tất cả chức vụ");
+            cboLocTrangThai = CreateFilterCombo(520, 12, 180, "Hoạt động");
+            cboLocTrangThai.Items.Insert(1, "Ngừng hoạt động");
+            cboLocTrangThai.Items.Insert(2, "Tất cả trạng thái");
+            cboLocChucVu.SelectedIndexChanged += FilterComboChanged;
+            cboLocTrangThai.SelectedIndexChanged += (_, _) => ScheduleLoad();
+            pnlFilter.Controls.AddRange(new Control[] { txtTimKiem, cboLocChucVu, cboLocTrangThai });
 
-            Panel pnlGrid = new Panel { Dock = DockStyle.Fill, BackColor = CardBg, BorderStyle = BorderStyle.FixedSingle, Padding = new Padding(10) };
+            var pnlGrid = new Panel { Dock = DockStyle.Fill, BackColor = CardBg, BorderStyle = BorderStyle.FixedSingle, Padding = new Padding(10) };
             dgvNhanVien = new DataGridView
             {
-                Dock = DockStyle.Fill,
-                BackgroundColor = CardBg,
-                BorderStyle = BorderStyle.None,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect = false,
-                ReadOnly = true,
-                AllowUserToAddRows = false,
-                RowHeadersVisible = false,
-                EnableHeadersVisualStyles = false,
-                Font = new Font("Segoe UI", 9.5f),
-                ColumnHeadersHeight = 38,
-                RowTemplate = { Height = 32 },
-                GridColor = Color.FromArgb(225, 215, 195)
+                Dock = DockStyle.Fill, BackgroundColor = CardBg, BorderStyle = BorderStyle.None,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = false, ReadOnly = true, AllowUserToAddRows = false, RowHeadersVisible = false,
+                EnableHeadersVisualStyles = false, Font = new Font("Segoe UI", 9.5f), ColumnHeadersHeight = 38,
+                RowTemplate = { Height = 32 }, GridColor = Color.FromArgb(225, 215, 195)
             };
-
             dgvNhanVien.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgvNhanVien.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
             dgvNhanVien.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
             dgvNhanVien.DefaultCellStyle.BackColor = CardBg; dgvNhanVien.DefaultCellStyle.ForeColor = WoodDark;
             dgvNhanVien.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 195, 160); dgvNhanVien.DefaultCellStyle.SelectionForeColor = WoodDark;
-
             dgvNhanVien.Columns.Add("MaNV", "Mã NV"); dgvNhanVien.Columns["MaNV"].FillWeight = 50;
             dgvNhanVien.Columns.Add("HoTen", "Họ và Tên"); dgvNhanVien.Columns["HoTen"].FillWeight = 140;
             dgvNhanVien.Columns.Add("SoDienThoai", "Số Điện Thoại"); dgvNhanVien.Columns["SoDienThoai"].FillWeight = 90;
-            dgvNhanVien.Columns.Add("Email", "Email"); dgvNhanVien.Columns["Email"].FillWeight = 120;
-            dgvNhanVien.Columns.Add("TaiKhoan", "Tài Khoản"); dgvNhanVien.Columns["TaiKhoan"].FillWeight = 100;
-            dgvNhanVien.Columns.Add("ChucVu", "Chức Vụ"); dgvNhanVien.Columns["ChucVu"].FillWeight = 80;
-            dgvNhanVien.Columns.Add("TrangThai", "Trạng Thái"); dgvNhanVien.Columns["TrangThai"].FillWeight = 80;
-
+            dgvNhanVien.Columns.Add("Email", "Email"); dgvNhanVien.Columns["Email"].FillWeight = 130;
+            dgvNhanVien.Columns.Add("ChucVu", "Chức Vụ"); dgvNhanVien.Columns["ChucVu"].FillWeight = 85;
+            dgvNhanVien.Columns.Add("TrangThai", "Trạng Thái"); dgvNhanVien.Columns["TrangThai"].FillWeight = 90;
             dgvNhanVien.CellClick += DgvNhanVien_CellClick;
+            dgvNhanVien.SelectionChanged += (_, _) => UpdateStatusButton();
             pnlGrid.Controls.Add(dgvNhanVien);
-
-            this.Controls.Add(pnlGrid); this.Controls.Add(pnlFilter); this.Controls.Add(pnlForm);
+            Controls.Add(pnlGrid); Controls.Add(pnlFilter); Controls.Add(pnlForm);
         }
 
-        private void AddLabel(Control parent, string text, int x, int y)
+        private ComboBox CreateFilterCombo(int x, int y, int width, string first)
         {
-            parent.Controls.Add(new Label { Text = text, Location = new Point(x, y), Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = WoodDark, AutoSize = true });
+            var combo = new ComboBox { Location = new Point(x, y), Width = width, Font = new Font("Segoe UI", 9.5f), DropDownStyle = ComboBoxStyle.DropDownList };
+            combo.Items.Add(first);
+            combo.SelectedIndex = 0;
+            return combo;
         }
+
+        private void AddLabel(Control parent, string text, int x, int y) =>
+            parent.Controls.Add(new Label { Text = text, Location = new Point(x, y), Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = WoodDark, AutoSize = true });
 
         private TextBox AddTextBox(Control parent, int x, int y, int width)
         {
-            TextBox txt = new TextBox { Location = new Point(x, y), Width = width, Font = new Font("Segoe UI", 10), BackColor = Color.FromArgb(255, 253, 248), BorderStyle = BorderStyle.FixedSingle };
-            parent.Controls.Add(txt); return txt;
+            var txt = new TextBox { Location = new Point(x, y), Width = width, Font = new Font("Segoe UI", 10), BackColor = Color.FromArgb(255, 253, 248), BorderStyle = BorderStyle.FixedSingle };
+            parent.Controls.Add(txt);
+            return txt;
         }
 
         private Button CreateButton(string text, Color bg)
         {
-            Button btn = new Button { Text = text, Size = new Size(185, 36), Margin = new Padding(0, 0, 12, 0), Font = new Font("Georgia", 9.5f, FontStyle.Bold), BackColor = bg, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            btn.FlatAppearance.BorderSize = 0; return btn;
+            var button = new Button { Text = text, Size = new Size(165, 36), Margin = new Padding(0, 0, 12, 0), Font = new Font("Georgia", 9.5f, FontStyle.Bold), BackColor = bg, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
+            button.FlatAppearance.BorderSize = 0;
+            return button;
         }
 
-        private void LoadMockData()
+        private void ScheduleLoad()
         {
-            dgvNhanVien.Rows.Add("1", "Quản Trị Viên Hệ Thống", "0900000000", "admin@thuvien.com", "admin", "Admin", "Hoạt động");
-            dgvNhanVien.Rows.Add("2", "Nguyễn Thủ Thư", "0911111111", "thuthu01@thuvien.com", "thuthu01", "Thủ thư", "Hoạt động");
+            _filterTimer.Stop();
+            _filterTimer.Start();
         }
 
-        private bool ValidateInput(string currentId = "")
+        private async Task LoadEmployeesAsync()
         {
-            if (string.IsNullOrWhiteSpace(txtHoTen.Text) || string.IsNullOrWhiteSpace(txtTaiKhoan.Text))
+            if (IsDisposed || !IsHandleCreated) return;
+            _loadCancellation?.Cancel();
+            _loadCancellation?.Dispose();
+            _loadCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+            try
             {
-                MessageBox.Show("Họ tên và Tài khoản không được để trống!", "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                var status = cboLocTrangThai.SelectedItem?.ToString();
+                if (status == "Tất cả trạng thái") status = null;
+                var job = cboLocChucVu.SelectedItem?.ToString();
+                if (job == "Tất cả chức vụ") job = null;
+                var employees = await _apiClient.GetAllAsync(txtTimKiem.Text, status, job, _loadCancellation.Token);
+                dgvNhanVien.Rows.Clear();
+                foreach (var employee in employees)
+                    dgvNhanVien.Rows.Add(employee.MaNhanVien, employee.HoTen, employee.SoDienThoai, employee.Email, employee.ChucVu, employee.TrangThai);
+                var selectedJob = cboLocChucVu.SelectedItem?.ToString();
+                var jobs = employees.Select(x => x.ChucVu).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+                cboLocChucVu.SelectedIndexChanged -= FilterComboChanged;
+                cboLocChucVu.Items.Clear(); cboLocChucVu.Items.Add("Tất cả chức vụ"); cboLocChucVu.Items.AddRange(jobs.Cast<object>().ToArray());
+                cboLocChucVu.SelectedItem = jobs.Contains(selectedJob ?? "") ? selectedJob : "Tất cả chức vụ";
+                cboLocChucVu.SelectedIndexChanged += FilterComboChanged;
+                UpdateStatusButton();
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                if (!IsDisposed) MessageBox.Show($"Không tải được danh sách nhân viên. Kiểm tra API ({Environment.GetEnvironmentVariable("QUANLYTHUVIEN_API_URL") ?? "http://localhost:5058/"}).\n{ex.Message}", "Lỗi API nhân viên", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void FilterComboChanged(object? sender, EventArgs e) => ScheduleLoad();
+
+        private async Task CreateEmployeeAsync()
+        {
+            if (!ValidateInput()) return;
+            try
+            {
+                SetBusy(true);
+                var created = await _apiClient.CreateAsync(BuildCreateDto(), CancellationToken.None);
+                await LoadEmployeesAsync();
+                ClearForm();
+                MessageBox.Show($"Đã thêm nhân viên #{created.MaNhanVien}.", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex) { ShowApiError(ex); }
+            finally { SetBusy(false); }
+        }
+
+        private async Task UpdateEmployeeAsync()
+        {
+            if (!int.TryParse(txtMaNhanVien.Text, out var id))
+            {
+                MessageBox.Show("Chọn nhân viên cần cập nhật.", "Thiếu nhân viên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!ValidateInput()) return;
+            try
+            {
+                SetBusy(true);
+                await _apiClient.UpdateAsync(id, BuildUpdateDto(), CancellationToken.None);
+                await LoadEmployeesAsync();
+                MessageBox.Show("Đã cập nhật hồ sơ nhân viên.", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex) { ShowApiError(ex); }
+            finally { SetBusy(false); }
+        }
+
+        private async Task ToggleStatusAsync()
+        {
+            if (!int.TryParse(txtMaNhanVien.Text, out var id) || dgvNhanVien.CurrentRow == null) return;
+            var current = dgvNhanVien.CurrentRow.Cells["TrangThai"].Value?.ToString();
+            var next = current == "Hoạt động" ? "Ngừng hoạt động" : "Hoạt động";
+            var prompt = next == "Ngừng hoạt động" ? "ngừng hoạt động" : "khôi phục hoạt động";
+            if (MessageBox.Show($"Bạn muốn {prompt} nhân viên này?", "Xác nhận trạng thái", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            try
+            {
+                SetBusy(true);
+                await _apiClient.UpdateStatusAsync(id, next, CancellationToken.None);
+                await LoadEmployeesAsync();
+                MessageBox.Show($"Đã cập nhật trạng thái: {next}.", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex) { ShowApiError(ex); }
+            finally { SetBusy(false); }
+        }
+
+        private async Task ViewStatusHistoryAsync()
+        {
+            if (!int.TryParse(txtMaNhanVien.Text, out var id))
+            {
+                MessageBox.Show("Chọn nhân viên cần xem lịch sử.", "Thiếu nhân viên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            try
+            {
+                var history = await _apiClient.GetStatusHistoryAsync(id, CancellationToken.None);
+                var message = history.Count == 0
+                    ? "Nhân viên chưa có lần thay đổi trạng thái nào."
+                    : string.Join(Environment.NewLine, history.Select(item =>
+                        $"{item.ThayDoiLuc:dd/MM/yyyy HH:mm:ss}: {item.TrangThaiCu} → {item.TrangThaiMoi}"));
+                MessageBox.Show(message, "Lịch sử trạng thái", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex) { ShowApiError(ex); }
+        }
+
+        private CreateNhanVienDto BuildCreateDto() => new()
+        {
+            HoTen = txtHoTen.Text.Trim(), SoDienThoai = EmptyToNull(txtSoDienThoai.Text),
+            Email = EmptyToNull(txtEmail.Text), ChucVu = cboChucVu.Text.Trim()
+        };
+
+        private UpdateNhanVienDto BuildUpdateDto() => new()
+        {
+            HoTen = txtHoTen.Text.Trim(), SoDienThoai = EmptyToNull(txtSoDienThoai.Text),
+            Email = EmptyToNull(txtEmail.Text), ChucVu = cboChucVu.Text.Trim()
+        };
+
+        private bool ValidateInput()
+        {
+            if (string.IsNullOrWhiteSpace(txtHoTen.Text) || txtHoTen.Text.Trim().Length > 200 || string.IsNullOrWhiteSpace(cboChucVu.Text) || cboChucVu.Text.Trim().Length > 100)
+            {
+                MessageBox.Show("Họ tên (tối đa 200 ký tự) và chức vụ (tối đa 100 ký tự) là bắt buộc.", "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
-
-            // Kiểm tra UNIQUE Tài khoản
-            string taiKhoan = txtTaiKhoan.Text.Trim();
-            foreach (DataGridViewRow row in dgvNhanVien.Rows)
+            var phone = txtSoDienThoai.Text.Trim();
+            if (phone.Length > 0 && !Regex.IsMatch(phone, "^0[0-9]{9,10}$"))
             {
-                string rowId = row.Cells["MaNV"].Value?.ToString();
-                string rowTaiKhoan = row.Cells["TaiKhoan"].Value?.ToString();
-                if (rowId != currentId && string.Equals(rowTaiKhoan, taiKhoan, StringComparison.OrdinalIgnoreCase))
-                {
-                    MessageBox.Show("Tên tài khoản này đã tồn tại! Vui lòng chọn tên đăng nhập khác.", "Trùng dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    txtTaiKhoan.Focus();
-                    return false;
-                }
+                MessageBox.Show("Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 chữ số.", "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+            var email = txtEmail.Text.Trim();
+            if (email.Length > 254 || (email.Length > 0 && !Regex.IsMatch(email, @"^[^\s@]+@[^\s@]+\.[^\s@]+$")))
+            {
+                MessageBox.Show("Email không hợp lệ hoặc vượt quá 254 ký tự.", "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
             }
             return true;
         }
 
-        private void BtnThem_Click(object sender, EventArgs e)
-        {
-            if (!ValidateInput()) return;
-            if (string.IsNullOrWhiteSpace(txtMatKhau.Text))
-            {
-                MessageBox.Show("Vui lòng khởi tạo mật khẩu cho nhân viên mới!", "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            dgvNhanVien.Rows.Add(
-                (dgvNhanVien.Rows.Count + 1).ToString(),
-                txtHoTen.Text.Trim(), txtSoDienThoai.Text.Trim(), txtEmail.Text.Trim(),
-                txtTaiKhoan.Text.Trim(), cboChucVu.SelectedItem.ToString(), "Hoạt động"
-            );
-            MessageBox.Show("Đã cấp tài khoản nhân viên mới thành công!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            ClearForm();
-        }
-
-        private void BtnSua_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrEmpty(txtMaNhanVien.Text) || dgvNhanVien.CurrentRow == null) return;
-            if (!ValidateInput(txtMaNhanVien.Text)) return;
-
-            DataGridViewRow row = dgvNhanVien.CurrentRow;
-            row.Cells["HoTen"].Value = txtHoTen.Text.Trim();
-            row.Cells["SoDienThoai"].Value = txtSoDienThoai.Text.Trim();
-            row.Cells["Email"].Value = txtEmail.Text.Trim();
-            row.Cells["TaiKhoan"].Value = txtTaiKhoan.Text.Trim();
-            row.Cells["ChucVu"].Value = cboChucVu.SelectedItem.ToString();
-
-            MessageBox.Show("Cập nhật quyền và hồ sơ thành công! (Mật khẩu chỉ thay đổi nếu có nhập mới)", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private void BtnXoa_Click(object sender, EventArgs e)
-        {
-            if (dgvNhanVien.CurrentRow == null) return;
-            if (dgvNhanVien.CurrentRow.Cells["TaiKhoan"].Value.ToString().ToLower() == "admin")
-            {
-                MessageBox.Show("Không thể khóa tài khoản Admin tối cao của hệ thống!", "Từ chối", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            string currentStatus = dgvNhanVien.CurrentRow.Cells["TrangThai"].Value.ToString();
-            string newStatus = currentStatus == "Hoạt động" ? "Đã khóa (Nghỉ việc)" : "Hoạt động";
-            dgvNhanVien.CurrentRow.Cells["TrangThai"].Value = newStatus;
-
-            MessageBox.Show($"Tài khoản đã được chuyển sang trạng thái: [{newStatus}]", "Cập nhật trạng thái", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private void DgvNhanVien_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void DgvNhanVien_CellClick(object? sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
-            DataGridViewRow row = dgvNhanVien.Rows[e.RowIndex];
+            var row = dgvNhanVien.Rows[e.RowIndex];
             txtMaNhanVien.Text = row.Cells["MaNV"].Value?.ToString();
             txtHoTen.Text = row.Cells["HoTen"].Value?.ToString();
             txtSoDienThoai.Text = row.Cells["SoDienThoai"].Value?.ToString();
             txtEmail.Text = row.Cells["Email"].Value?.ToString();
-            txtTaiKhoan.Text = row.Cells["TaiKhoan"].Value?.ToString();
-            cboChucVu.SelectedItem = row.Cells["ChucVu"].Value?.ToString();
-            txtMatKhau.Clear(); // Không hiển thị lại mật khẩu cũ vì lý do bảo mật
+            cboChucVu.Text = row.Cells["ChucVu"].Value?.ToString();
+            UpdateStatusButton();
         }
 
-        private void FilterGrid()
+        private void UpdateStatusButton()
         {
-            string kw = txtTimKiem.Text.Trim().ToLower();
-            foreach (DataGridViewRow row in dgvNhanVien.Rows)
-            {
-                string ten = row.Cells["HoTen"].Value?.ToString().ToLower() ?? "";
-                string tk = row.Cells["TaiKhoan"].Value?.ToString().ToLower() ?? "";
-                row.Visible = string.IsNullOrEmpty(kw) || ten.Contains(kw) || tk.Contains(kw);
-            }
+            if (btnTrangThai == null) return;
+            var status = dgvNhanVien?.CurrentRow?.Cells["TrangThai"].Value?.ToString();
+            btnTrangThai.Text = status == "Hoạt động" ? "🔒 Ngừng hoạt động" : "♻ Khôi phục hoạt động";
         }
+
+        private void SetBusy(bool busy)
+        {
+            btnThem.Enabled = btnSua.Enabled = btnTrangThai.Enabled = !busy;
+            Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
+        }
+
+        private void ShowApiError(Exception ex) => MessageBox.Show(ex.Message, "Lỗi API nhân viên", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+        private static string? EmptyToNull(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
         private void ClearForm()
         {
             txtMaNhanVien.Clear(); txtHoTen.Clear(); txtSoDienThoai.Clear(); txtEmail.Clear();
-            txtTaiKhoan.Clear(); txtMatKhau.Clear(); cboChucVu.SelectedIndex = 1; txtHoTen.Focus();
+            cboChucVu.Text = "Thủ thư"; dgvNhanVien.ClearSelection(); UpdateStatusButton(); txtHoTen.Focus();
         }
     }
 }

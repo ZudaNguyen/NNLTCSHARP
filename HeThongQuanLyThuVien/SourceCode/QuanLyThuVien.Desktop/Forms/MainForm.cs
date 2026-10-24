@@ -85,7 +85,7 @@ namespace QuanLyThuVien.Desktop.Forms
             btnSach.Click += (s, e) => { SetActiveButton(btnSach); LoadUserControl(new SachControl(), "📚 Kho Sách & Ấn phẩm"); };
             btnTacGiaTheLoai.Click += (s, e) => { SetActiveButton(btnTacGiaTheLoai); LoadUserControl(new TacGiaTheLoaiControl(), "✒️ Danh mục Tác giả & Thể loại"); };
             btnDocGia.Click += (s, e) => { SetActiveButton(btnDocGia); LoadUserControl(new DocGiaControl(), "🪪 Hồ sơ Thẻ Độc giả"); };
-            btnPhieuMuon.Click += (s, e) => { SetActiveButton(btnPhieuMuon); LoadUserControl(new MuonTraControl(), "📝 Sổ theo dõi Mượn / Trả sách"); };
+            btnPhieuMuon.Click += (s, e) => { SetActiveButton(btnPhieuMuon); LoadUserControl(new MuonTraControl(_username), "📝 Sổ theo dõi Mượn / Trả sách"); };
             btnNhanVien.Click += (s, e) => { SetActiveButton(btnNhanVien); LoadUserControl(new NhanVienControl(), "🔑 Hồ sơ Nhân viên & Phân quyền"); };
             btnBaoCao.Click += (s, e) => { SetActiveButton(btnBaoCao); LoadUserControl(new BaoCaoControl(), "📊 Báo cáo & Thống kê Thư viện"); };
 
