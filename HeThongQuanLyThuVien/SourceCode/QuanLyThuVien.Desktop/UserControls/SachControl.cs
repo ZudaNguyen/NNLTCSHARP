@@ -38,6 +38,7 @@ namespace QuanLyThuVien.Desktop.UserControls
         private ComboBox cboLocTheLoai;
         private ComboBox cboTrangThaiSach;
         private DataGridView dgvSach;
+        private Button? btnXoaSach;
         private readonly SachApiClient apiClient = new();
         private CancellationTokenSource? searchCancellation;
         private bool loadingLookups;
@@ -209,17 +210,17 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             Button btnThem = CreateActionButton("➕ Ghi Sổ Mới (Thêm)", Color.FromArgb(45, 106, 79));
             Button btnSua = CreateActionButton("✏️ Tu Chỉnh (Sửa)", Color.FromArgb(180, 120, 20));
-            Button btnXoa = CreateActionButton("🗃️ Lưu Kho Ẩn (Xóa mềm)", Burgundy);
+            btnXoaSach = CreateActionButton("🗃️ Lưu Kho Ẩn (Xóa mềm)", Burgundy);
             Button btnLamMoi = CreateActionButton("🔄 Làm Mới Form", Color.FromArgb(90, 75, 65));
 
             btnThem.Click += BtnThem_Click;
             btnSua.Click += BtnSua_Click;
-            btnXoa.Click += BtnXoa_Click;
+            btnXoaSach.Click += BtnXoa_Click;
             btnLamMoi.Click += (s, e) => ClearForm();
 
             flpButtons.Controls.Add(btnThem);
             flpButtons.Controls.Add(btnSua);
-            flpButtons.Controls.Add(btnXoa);
+            flpButtons.Controls.Add(btnXoaSach);
             flpButtons.Controls.Add(btnLamMoi);
             pnlForm.Controls.Add(flpButtons);
 
@@ -484,6 +485,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 if (cancellationToken.IsCancellationRequested || IsDisposed)
                     return;
 
+                ResetBookSelection();
                 dgvSach.Rows.Clear();
                 foreach (var book in books)
                 {
@@ -577,6 +579,12 @@ namespace QuanLyThuVien.Desktop.UserControls
                 return;
             }
 
+            if (dgvSach.CurrentRow.Tag is SachDto selectedBook && selectedBook.IsDeleted)
+            {
+                MessageBox.Show("Sách đang ẩn không thể chỉnh sửa. Hãy khôi phục sách trước.", "Sách đã ẩn", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             if (!ValidateInput(out _)) return;
 
             try
@@ -596,6 +604,28 @@ namespace QuanLyThuVien.Desktop.UserControls
             if (!int.TryParse(txtMaSach.Text, out var id) || dgvSach.CurrentRow == null)
             {
                 MessageBox.Show("Vui lòng chọn ấn phẩm cần lưu kho ẩn!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (dgvSach.CurrentRow.Tag is SachDto selectedBook && selectedBook.IsDeleted)
+            {
+                var restoreConfirm = MessageBox.Show(
+                    $"Khôi phục sách [{selectedBook.TenSach}] về trạng thái hoạt động?",
+                    "Xác nhận khôi phục", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (restoreConfirm != DialogResult.Yes) return;
+
+                try
+                {
+                    await apiClient.RestoreAsync(id, CancellationToken.None);
+                    ClearForm();
+                    cboTrangThaiSach.SelectedIndex = 0;
+                    await LoadBooksAsync();
+                    MessageBox.Show("Đã khôi phục sách về trạng thái hoạt động.", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception exception)
+                {
+                    ShowApiError(exception);
+                }
                 return;
             }
 
@@ -646,6 +676,8 @@ namespace QuanLyThuVien.Desktop.UserControls
             if (row.Tag is not SachDto book) return;
 
             txtMaSach.Text = book.MaSach.ToString();
+            btnXoaSach!.Text = book.IsDeleted ? "↩ Khôi phục sách" : "🗃️ Lưu Kho Ẩn (Xóa mềm)";
+            btnXoaSach.BackColor = book.IsDeleted ? Color.FromArgb(45, 106, 79) : Burgundy;
             txtISBN.Text = book.ISBN;
             txtTenSach.Text = book.TenSach;
             cboTheLoai.SelectedItem = cboTheLoai.Items
@@ -704,6 +736,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
         private void ClearForm()
         {
+            ResetBookSelection();
             txtMaSach.Clear();
             txtISBN.Clear();
             txtTenSach.Clear();
@@ -718,6 +751,17 @@ namespace QuanLyThuVien.Desktop.UserControls
             for (int i = 0; i < clbTacGia.Items.Count; i++)
                 clbTacGia.SetItemChecked(i, false);
             txtTenSach.Focus();
+        }
+
+        private void ResetBookSelection()
+        {
+            txtMaSach.Clear();
+            dgvSach.ClearSelection();
+            if (btnXoaSach is not null)
+            {
+                btnXoaSach.Text = "🗃️ Lưu Kho Ẩn (Xóa mềm)";
+                btnXoaSach.BackColor = Burgundy;
+            }
         }
     }
 }

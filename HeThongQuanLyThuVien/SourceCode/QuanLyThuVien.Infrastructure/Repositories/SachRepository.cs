@@ -51,6 +51,13 @@ public sealed class SachRepository(LibraryDbContext dbContext) : ISachRepository
                 .ThenInclude(link => link.TacGia)
             .FirstOrDefaultAsync(sach => sach.MaSach == id && !sach.IsDeleted, cancellationToken);
 
+    public Task<Sach?> GetByIdIncludingDeletedAsync(int id, CancellationToken cancellationToken) =>
+        dbContext.Sach
+            .Include(sach => sach.TheLoai)
+            .Include(sach => sach.SachTacGias)
+                .ThenInclude(link => link.TacGia)
+            .FirstOrDefaultAsync(sach => sach.MaSach == id, cancellationToken);
+
     public Task<bool> IsIsbnInUseAsync(
         string isbn,
         int? excludingId,

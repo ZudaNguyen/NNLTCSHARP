@@ -94,6 +94,25 @@ public sealed class SachService(ISachRepository repository) : ISachService
         return true;
     }
 
+    public async Task<bool> RestoreAsync(int id, CancellationToken cancellationToken)
+    {
+        var sach = await repository.GetByIdIncludingDeletedAsync(id, cancellationToken);
+        if (sach is null) return false;
+        if (!sach.IsDeleted) return true;
+
+        if (!await repository.CategoryExistsAsync(sach.MaTheLoai, cancellationToken))
+            throw new BookRuleException("Không thể khôi phục sách vì thể loại đang bị ẩn. Hãy khôi phục thể loại trước.");
+
+        var authorIds = sach.SachTacGias.Select(link => link.MaTacGia).Distinct().ToArray();
+        var activeAuthorIds = await repository.GetExistingAuthorIdsAsync(authorIds, cancellationToken);
+        if (activeAuthorIds.Count != authorIds.Length)
+            throw new BookRuleException("Không thể khôi phục sách vì có tác giả đang bị ẩn. Hãy khôi phục tác giả trước.");
+
+        sach.IsDeleted = false;
+        await repository.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     public async Task<SachLookupsDto> GetLookupsAsync(CancellationToken cancellationToken)
     {
         var categories = await repository.GetCategoriesAsync(cancellationToken);

@@ -36,6 +36,7 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
             entity.ToTable("TheLoai");
             entity.HasKey(theLoai => theLoai.MaTheLoai);
             entity.Property(theLoai => theLoai.TenTheLoai).HasMaxLength(150).IsRequired();
+            entity.Property(theLoai => theLoai.MoTa).HasMaxLength(2000);
             entity.Property(theLoai => theLoai.IsDeleted).HasDefaultValue(false);
             entity.HasIndex(theLoai => theLoai.TenTheLoai).IsUnique();
         });

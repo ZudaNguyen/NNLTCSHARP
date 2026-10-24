@@ -12,6 +12,7 @@ public interface ISachRepository
         CancellationToken cancellationToken);
 
     Task<Sach?> GetByIdAsync(int id, CancellationToken cancellationToken);
+    Task<Sach?> GetByIdIncludingDeletedAsync(int id, CancellationToken cancellationToken);
     Task<bool> IsIsbnInUseAsync(string isbn, int? excludingId, CancellationToken cancellationToken);
     Task<bool> CategoryExistsAsync(int maTheLoai, CancellationToken cancellationToken);
     Task<IReadOnlySet<int>> GetExistingAuthorIdsAsync(IEnumerable<int> authorIds, CancellationToken cancellationToken);

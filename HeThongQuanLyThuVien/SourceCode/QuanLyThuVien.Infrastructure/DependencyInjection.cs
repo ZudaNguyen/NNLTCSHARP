@@ -15,6 +15,8 @@ public static class DependencyInjection
         services.AddDbContext<LibraryDbContext>(options =>
             options.UseSqlServer(connectionString));
         services.AddScoped<ISachRepository, SachRepository>();
+        services.AddScoped<ITheLoaiRepository, TheLoaiRepository>();
+        services.AddScoped<ITacGiaRepository, TacGiaRepository>();
 
         return services;
     }

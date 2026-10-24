@@ -69,6 +69,12 @@ internal sealed class SachApiClient
         await EnsureSuccessAsync(response, cancellationToken);
     }
 
+    public async Task RestoreAsync(int id, CancellationToken cancellationToken)
+    {
+        using var response = await HttpClient.PostAsync($"api/sach/{id}/restore", content: null, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+    }
+
     private static HttpClient CreateHttpClient()
     {
         var configuredAddress = Environment.GetEnvironmentVariable("QUANLYTHUVIEN_API_URL");

@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Drawing;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using QuanLyThuVien.Application.DTOs;
+using QuanLyThuVien.Desktop.Services;
 
 namespace QuanLyThuVien.Desktop.UserControls
 {
@@ -15,16 +20,26 @@ namespace QuanLyThuVien.Desktop.UserControls
         // Nửa trái: Bảng TheLoai
         private TextBox txtMaTheLoai, txtTenTheLoai, txtMoTaTL;
         private DataGridView dgvTheLoai;
+        private TextBox txtTimTheLoai;
+        private ComboBox cboTrangThaiTheLoai;
+        private Button btnAnTheLoai;
 
         // Nửa phải: Bảng TacGia
         private TextBox txtMaTacGia, txtTenTacGia, txtQuocTich, txtGioiThieuTG;
         private DataGridView dgvTacGia;
+        private TextBox txtTimTacGia;
+        private ComboBox cboTrangThaiTacGia;
+        private Button btnAnTacGia;
+        private readonly CatalogApiClient _api = new();
+        private CancellationTokenSource? _searchTheLoaiCts;
+        private CancellationTokenSource? _searchTacGiaCts;
+        private bool _loadingInitialData;
 
         public TacGiaTheLoaiControl()
         {
             InitializeComponent();
             SetupSplitUI();
-            LoadMockData();
+            _ = LoadInitialDataAsync();
         }
 
         private void SetupSplitUI()
@@ -56,7 +71,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Padding = new Padding(12)
             };
 
-            Panel pnlTLTop = new Panel { Dock = DockStyle.Top, Height = 215 };
+            Panel pnlTLTop = new Panel { Dock = DockStyle.Top, Height = 282 };
             Label lblTLTitle = new Label
             {
                 Text = "🔖 Danh Mục Thể Loại (Bảng TheLoai)",
@@ -91,16 +106,23 @@ namespace QuanLyThuVien.Desktop.UserControls
             FlowLayoutPanel flpTLBtns = new FlowLayoutPanel { Location = new Point(5, 165), Size = new Size(420, 40) };
             Button btnThemTL = CreateMiniButton("➕ Thêm", ForestGreen);
             Button btnSuaTL = CreateMiniButton("✏️ Sửa", Color.FromArgb(180, 120, 20));
-            Button btnXoaTL = CreateMiniButton("🗃️ Ẩn (Xóa)", Burgundy);
+            btnAnTheLoai = CreateMiniButton("🗃️ Ẩn (Xóa)", Burgundy);
             Button btnMoiTL = CreateMiniButton("🔄 Mới", Color.FromArgb(90, 75, 65));
 
             btnThemTL.Click += BtnThemTL_Click;
             btnSuaTL.Click += BtnSuaTL_Click;
-            btnXoaTL.Click += BtnXoaTL_Click;
-            btnMoiTL.Click += (s, e) => { txtMaTheLoai.Clear(); txtTenTheLoai.Clear(); txtMoTaTL.Clear(); };
+            btnAnTheLoai.Click += BtnXoaTL_Click;
+            btnMoiTL.Click += (_, _) => ClearTheLoai();
 
-            flpTLBtns.Controls.AddRange(new Control[] { btnThemTL, btnSuaTL, btnXoaTL, btnMoiTL });
+            flpTLBtns.Controls.AddRange(new Control[] { btnThemTL, btnSuaTL, btnAnTheLoai, btnMoiTL });
             pnlTLTop.Controls.Add(flpTLBtns);
+            AddLabel(pnlTLTop, "Tìm:", 5, 216);
+            txtTimTheLoai = AddTextBox(pnlTLTop, 85, 213, 280);
+            txtTimTheLoai.PlaceholderText = "Tên thể loại hoặc mô tả";
+            txtTimTheLoai.TextChanged += (_, _) => QueueSearch(true);
+            AddLabel(pnlTLTop, "Trạng thái:", 5, 249);
+            cboTrangThaiTheLoai = CreateStatusFilter(pnlTLTop, 85, 245, 220);
+            cboTrangThaiTheLoai.SelectedIndexChanged += (_, _) => QueueSearch(true);
 
             dgvTheLoai = CreateStyledGrid();
             dgvTheLoai.Columns.Add("MaTL", "Mã TL");
@@ -115,9 +137,11 @@ namespace QuanLyThuVien.Desktop.UserControls
             {
                 if (e.RowIndex < 0) return;
                 var row = dgvTheLoai.Rows[e.RowIndex];
+                var item = row.Tag as TheLoaiDto;
                 txtMaTheLoai.Text = row.Cells["MaTL"].Value?.ToString();
                 txtTenTheLoai.Text = row.Cells["TenTL"].Value?.ToString();
                 txtMoTaTL.Text = row.Cells["MoTa"].Value?.ToString();
+                SetRestoreButton(btnAnTheLoai, item?.IsDeleted == true);
             };
 
             pnlTheLoai.Controls.Add(dgvTheLoai);
@@ -135,7 +159,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Padding = new Padding(12)
             };
 
-            Panel pnlTGTop = new Panel { Dock = DockStyle.Top, Height = 215 };
+            Panel pnlTGTop = new Panel { Dock = DockStyle.Top, Height = 282 };
             Label lblTGTitle = new Label
             {
                 Text = "✒️ Hồ Sơ Tác Giả (Bảng TacGia)",
@@ -173,16 +197,23 @@ namespace QuanLyThuVien.Desktop.UserControls
             FlowLayoutPanel flpTGBtns = new FlowLayoutPanel { Location = new Point(5, 165), Size = new Size(450, 40) };
             Button btnThemTG = CreateMiniButton("➕ Thêm", ForestGreen);
             Button btnSuaTG = CreateMiniButton("✏️ Sửa", Color.FromArgb(180, 120, 20));
-            Button btnXoaTG = CreateMiniButton("🗃️ Ẩn (Xóa)", Burgundy);
+            btnAnTacGia = CreateMiniButton("🗃️ Ẩn (Xóa)", Burgundy);
             Button btnMoiTG = CreateMiniButton("🔄 Mới", Color.FromArgb(90, 75, 65));
 
             btnThemTG.Click += BtnThemTG_Click;
             btnSuaTG.Click += BtnSuaTG_Click;
-            btnXoaTG.Click += BtnXoaTG_Click;
-            btnMoiTG.Click += (s, e) => { txtMaTacGia.Clear(); txtTenTacGia.Clear(); txtQuocTich.Clear(); txtGioiThieuTG.Clear(); };
+            btnAnTacGia.Click += BtnXoaTG_Click;
+            btnMoiTG.Click += (_, _) => ClearTacGia();
 
-            flpTGBtns.Controls.AddRange(new Control[] { btnThemTG, btnSuaTG, btnXoaTG, btnMoiTG });
+            flpTGBtns.Controls.AddRange(new Control[] { btnThemTG, btnSuaTG, btnAnTacGia, btnMoiTG });
             pnlTGTop.Controls.Add(flpTGBtns);
+            AddLabel(pnlTGTop, "Tìm:", 5, 216);
+            txtTimTacGia = AddTextBox(pnlTGTop, 90, 213, 330);
+            txtTimTacGia.PlaceholderText = "Tên tác giả, quốc tịch hoặc giới thiệu";
+            txtTimTacGia.TextChanged += (_, _) => QueueSearch(false);
+            AddLabel(pnlTGTop, "Trạng thái:", 5, 249);
+            cboTrangThaiTacGia = CreateStatusFilter(pnlTGTop, 90, 245, 260);
+            cboTrangThaiTacGia.SelectedIndexChanged += (_, _) => QueueSearch(false);
 
             dgvTacGia = CreateStyledGrid();
             dgvTacGia.Columns.Add("MaTG", "Mã TG");
@@ -199,10 +230,12 @@ namespace QuanLyThuVien.Desktop.UserControls
             {
                 if (e.RowIndex < 0) return;
                 var row = dgvTacGia.Rows[e.RowIndex];
+                var item = row.Tag as TacGiaDto;
                 txtMaTacGia.Text = row.Cells["MaTG"].Value?.ToString();
                 txtTenTacGia.Text = row.Cells["TenTG"].Value?.ToString();
                 txtQuocTich.Text = row.Cells["QuocTich"].Value?.ToString();
                 txtGioiThieuTG.Text = row.Cells["GioiThieu"].Value?.ToString();
+                SetRestoreButton(btnAnTacGia, item?.IsDeleted == true);
             };
 
             pnlTacGia.Controls.Add(dgvTacGia);
@@ -243,6 +276,26 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 195, 160);
             dgv.DefaultCellStyle.SelectionForeColor = WoodDark;
             return dgv;
+        }
+
+        private static ComboBox CreateStatusFilter(Control parent, int x, int y, int width)
+        {
+            var combo = new ComboBox
+            {
+                Location = new Point(x, y),
+                Width = width,
+                Font = new Font("Segoe UI", 9.5f),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            combo.Items.AddRange(["Đang hoạt động", "Đã ẩn", "Tất cả"]);
+            parent.Controls.Add(combo);
+            return combo;
+        }
+
+        private static void SetRestoreButton(Button button, bool isDeleted)
+        {
+            button.Text = isDeleted ? "↩ Hiện lại" : "🗃️ Ẩn (Xóa)";
+            button.BackColor = isDeleted ? Color.FromArgb(45, 106, 79) : Color.FromArgb(122, 40, 34);
         }
 
         private void AddLabel(Control parent, string text, int x, int y)
@@ -288,72 +341,184 @@ namespace QuanLyThuVien.Desktop.UserControls
             return btn;
         }
 
-        private void LoadMockData()
+        private async Task LoadInitialDataAsync()
         {
-            dgvTheLoai.Rows.Add("1", "Công nghệ thông tin", "Sách lập trình, CSDL, mạng máy tính", "Hoạt động");
-            dgvTheLoai.Rows.Add("2", "Văn học kinh điển", "Tiểu thuyết, tác phẩm văn học nổi tiếng", "Hoạt động");
-            dgvTheLoai.Rows.Add("3", "Kinh tế - Quản trị", "Kiến thức quản lý, tài chính doanh nghiệp", "Hoạt động");
-
-            dgvTacGia.Rows.Add("1", "Robert C. Martin", "Mỹ", "Chuyên gia kỹ nghệ phần mềm (Uncle Bob)", "Hoạt động");
-            dgvTacGia.Rows.Add("2", "Đỗ Như Tài", "Việt Nam", "Giảng viên CNTT, tác giả giáo trình C#", "Hoạt động");
-            dgvTacGia.Rows.Add("3", "Paulo Coelho", "Brazil", "Tiểu thuyết gia nổi tiếng với Nhà Giả Kim", "Hoạt động");
+            _loadingInitialData = true;
+            cboTrangThaiTheLoai.SelectedIndex = 0;
+            cboTrangThaiTacGia.SelectedIndex = 0;
+            _loadingInitialData = false;
+            try { await RefreshTheLoaiAsync(CancellationToken.None); await RefreshTacGiaAsync(CancellationToken.None); }
+            catch (Exception ex) { ShowApiError(ex); }
         }
 
-        // --- SỰ KIỆN THỂ LOẠI ---
-        private void BtnThemTL_Click(object sender, EventArgs e)
+        private void QueueSearch(bool category)
         {
-            if (string.IsNullOrWhiteSpace(txtTenTheLoai.Text))
+            if (_loadingInitialData) return;
+            if (category) { _searchTheLoaiCts?.Cancel(); _searchTheLoaiCts?.Dispose(); _searchTheLoaiCts = new(); _ = SearchTheLoaiAfterDelayAsync(_searchTheLoaiCts.Token); }
+            else { _searchTacGiaCts?.Cancel(); _searchTacGiaCts?.Dispose(); _searchTacGiaCts = new(); _ = SearchTacGiaAfterDelayAsync(_searchTacGiaCts.Token); }
+        }
+
+        private async Task SearchTheLoaiAfterDelayAsync(CancellationToken token)
+        {
+            try { await Task.Delay(300, token); await RefreshTheLoaiAsync(token); }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { if (!token.IsCancellationRequested) ShowApiError(ex); }
+        }
+
+        private async Task SearchTacGiaAfterDelayAsync(CancellationToken token)
+        {
+            try { await Task.Delay(300, token); await RefreshTacGiaAsync(token); }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { if (!token.IsCancellationRequested) ShowApiError(ex); }
+        }
+
+        private async Task RefreshTheLoaiAsync(CancellationToken token)
+        {
+            var onlyDeleted = cboTrangThaiTheLoai.SelectedIndex == 1;
+            var includeDeleted = cboTrangThaiTheLoai.SelectedIndex == 2;
+            var items = await _api.GetTheLoaiAsync(txtTimTheLoai.Text, includeDeleted, onlyDeleted, token);
+            ClearTheLoai();
+            dgvTheLoai.Rows.Clear();
+            foreach (var item in items)
             {
-                MessageBox.Show("Tên thể loại không được để trống!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                var index = dgvTheLoai.Rows.Add(item.MaTheLoai, item.TenTheLoai, item.MoTa ?? string.Empty, item.IsDeleted ? "Đã ẩn" : "Hoạt động");
+                dgvTheLoai.Rows[index].Tag = item;
+            }
+        }
+
+        private async Task RefreshTacGiaAsync(CancellationToken token)
+        {
+            var onlyDeleted = cboTrangThaiTacGia.SelectedIndex == 1;
+            var includeDeleted = cboTrangThaiTacGia.SelectedIndex == 2;
+            var items = await _api.GetTacGiaAsync(txtTimTacGia.Text, includeDeleted, onlyDeleted, token);
+            ClearTacGia();
+            dgvTacGia.Rows.Clear();
+            foreach (var item in items)
+            {
+                var index = dgvTacGia.Rows.Add(item.MaTacGia, item.TenTacGia, item.QuocTich ?? string.Empty, item.GioiThieu ?? string.Empty, item.IsDeleted ? "Đã ẩn" : "Hoạt động");
+                dgvTacGia.Rows[index].Tag = item;
+            }
+        }
+
+        private async void BtnThemTL_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtTenTheLoai.Text)) { WarnRequired("Tên thể loại"); return; }
+            try
+            {
+                await _api.CreateTheLoaiAsync(new TheLoaiWriteDto { TenTheLoai = txtTenTheLoai.Text, MoTa = txtMoTaTL.Text }, CancellationToken.None);
+                ClearTheLoai(); await RefreshTheLoaiAsync(CancellationToken.None); ShowSuccess("Đã thêm thể loại.");
+            }
+            catch (Exception ex) { ShowApiError(ex); }
+        }
+
+        private async void BtnSuaTL_Click(object sender, EventArgs e)
+        {
+            if (!int.TryParse(txtMaTheLoai.Text, out var id)) { WarnSelect("thể loại"); return; }
+            if (dgvTheLoai.CurrentRow?.Tag is TheLoaiDto { IsDeleted: true }) { WarnDeleted("thể loại"); return; }
+            if (string.IsNullOrWhiteSpace(txtTenTheLoai.Text)) { WarnRequired("Tên thể loại"); return; }
+            try
+            {
+                await _api.UpdateTheLoaiAsync(id, new TheLoaiWriteDto { TenTheLoai = txtTenTheLoai.Text, MoTa = txtMoTaTL.Text }, CancellationToken.None);
+                await RefreshTheLoaiAsync(CancellationToken.None); ShowSuccess("Đã cập nhật thể loại.");
+            }
+            catch (Exception ex) { ShowApiError(ex); }
+        }
+
+        private async void BtnXoaTL_Click(object sender, EventArgs e)
+        {
+            if (!int.TryParse(txtMaTheLoai.Text, out var id)) { WarnSelect("thể loại"); return; }
+            var isDeleted = dgvTheLoai.CurrentRow?.Tag is TheLoaiDto { IsDeleted: true };
+            if (isDeleted)
+            {
+                if (MessageBox.Show("Khôi phục thể loại đã chọn về trạng thái hoạt động?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+                try
+                {
+                    await _api.RestoreTheLoaiAsync(id, CancellationToken.None);
+                    ClearTheLoai(); cboTrangThaiTheLoai.SelectedIndex = 0;
+                    await RefreshTheLoaiAsync(CancellationToken.None); ShowSuccess("Đã khôi phục thể loại.");
+                }
+                catch (Exception ex) { ShowApiError(ex); }
                 return;
             }
-            int id = dgvTheLoai.Rows.Count + 1;
-            dgvTheLoai.Rows.Add(id.ToString(), txtTenTheLoai.Text.Trim(), txtMoTaTL.Text.Trim(), "Hoạt động");
-            txtMaTheLoai.Clear(); txtTenTheLoai.Clear(); txtMoTaTL.Clear();
-        }
-
-        private void BtnSuaTL_Click(object sender, EventArgs e)
-        {
-            if (dgvTheLoai.CurrentRow == null || string.IsNullOrEmpty(txtMaTheLoai.Text)) return;
-            dgvTheLoai.CurrentRow.Cells["TenTL"].Value = txtTenTheLoai.Text.Trim();
-            dgvTheLoai.CurrentRow.Cells["MoTa"].Value = txtMoTaTL.Text.Trim();
-            MessageBox.Show("Đã cập nhật Thể loại!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private void BtnXoaTL_Click(object sender, EventArgs e)
-        {
-            if (dgvTheLoai.CurrentRow == null) return;
-            dgvTheLoai.CurrentRow.Cells["TrangThai"].Value = "Đã ẩn";
-            MessageBox.Show("Đã chuyển Thể loại sang trạng thái Ẩn (IsDeleted = 1)!", "Xóa mềm", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        // --- SỰ KIỆN TÁC GIẢ ---
-        private void BtnThemTG_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(txtTenTacGia.Text))
+            if (MessageBox.Show("Ẩn thể loại đã chọn?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            try
             {
-                MessageBox.Show("Tên tác giả không được để trống!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                await _api.DeleteTheLoaiAsync(id, CancellationToken.None); ClearTheLoai();
+                await RefreshTheLoaiAsync(CancellationToken.None); ShowSuccess("Đã ẩn thể loại.");
+            }
+            catch (Exception ex) { ShowApiError(ex); }
+        }
+
+        private async void BtnThemTG_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtTenTacGia.Text)) { WarnRequired("Tên tác giả"); return; }
+            try
+            {
+                await _api.CreateTacGiaAsync(new TacGiaWriteDto { TenTacGia = txtTenTacGia.Text, QuocTich = txtQuocTich.Text, GioiThieu = txtGioiThieuTG.Text }, CancellationToken.None);
+                ClearTacGia(); await RefreshTacGiaAsync(CancellationToken.None); ShowSuccess("Đã thêm tác giả.");
+            }
+            catch (Exception ex) { ShowApiError(ex); }
+        }
+
+        private async void BtnSuaTG_Click(object sender, EventArgs e)
+        {
+            if (!int.TryParse(txtMaTacGia.Text, out var id)) { WarnSelect("tác giả"); return; }
+            if (dgvTacGia.CurrentRow?.Tag is TacGiaDto { IsDeleted: true }) { WarnDeleted("tác giả"); return; }
+            if (string.IsNullOrWhiteSpace(txtTenTacGia.Text)) { WarnRequired("Tên tác giả"); return; }
+            try
+            {
+                await _api.UpdateTacGiaAsync(id, new TacGiaWriteDto { TenTacGia = txtTenTacGia.Text, QuocTich = txtQuocTich.Text, GioiThieu = txtGioiThieuTG.Text }, CancellationToken.None);
+                await RefreshTacGiaAsync(CancellationToken.None); ShowSuccess("Đã cập nhật tác giả.");
+            }
+            catch (Exception ex) { ShowApiError(ex); }
+        }
+
+        private async void BtnXoaTG_Click(object sender, EventArgs e)
+        {
+            if (!int.TryParse(txtMaTacGia.Text, out var id)) { WarnSelect("tác giả"); return; }
+            var isDeleted = dgvTacGia.CurrentRow?.Tag is TacGiaDto { IsDeleted: true };
+            if (isDeleted)
+            {
+                if (MessageBox.Show("Khôi phục tác giả đã chọn về trạng thái hoạt động?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+                try
+                {
+                    await _api.RestoreTacGiaAsync(id, CancellationToken.None);
+                    ClearTacGia(); cboTrangThaiTacGia.SelectedIndex = 0;
+                    await RefreshTacGiaAsync(CancellationToken.None); ShowSuccess("Đã khôi phục tác giả.");
+                }
+                catch (Exception ex) { ShowApiError(ex); }
                 return;
             }
-            int id = dgvTacGia.Rows.Count + 1;
-            dgvTacGia.Rows.Add(id.ToString(), txtTenTacGia.Text.Trim(), txtQuocTich.Text.Trim(), txtGioiThieuTG.Text.Trim(), "Hoạt động");
-            txtMaTacGia.Clear(); txtTenTacGia.Clear(); txtQuocTich.Clear(); txtGioiThieuTG.Clear();
+            if (MessageBox.Show("Ẩn tác giả đã chọn?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            try
+            {
+                await _api.DeleteTacGiaAsync(id, CancellationToken.None); ClearTacGia();
+                await RefreshTacGiaAsync(CancellationToken.None); ShowSuccess("Đã ẩn tác giả.");
+            }
+            catch (Exception ex) { ShowApiError(ex); }
         }
 
-        private void BtnSuaTG_Click(object sender, EventArgs e)
+        private void ClearTheLoai()
         {
-            if (dgvTacGia.CurrentRow == null || string.IsNullOrEmpty(txtMaTacGia.Text)) return;
-            dgvTacGia.CurrentRow.Cells["TenTG"].Value = txtTenTacGia.Text.Trim();
-            dgvTacGia.CurrentRow.Cells["QuocTich"].Value = txtQuocTich.Text.Trim();
-            dgvTacGia.CurrentRow.Cells["GioiThieu"].Value = txtGioiThieuTG.Text.Trim();
-            MessageBox.Show("Đã cập nhật Tác giả!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            txtMaTheLoai.Clear(); txtTenTheLoai.Clear(); txtMoTaTL.Clear(); dgvTheLoai.ClearSelection();
+            SetRestoreButton(btnAnTheLoai, false);
         }
 
-        private void BtnXoaTG_Click(object sender, EventArgs e)
+        private void ClearTacGia()
         {
-            if (dgvTacGia.CurrentRow == null) return;
-            dgvTacGia.CurrentRow.Cells["TrangThai"].Value = "Đã ẩn";
-            MessageBox.Show("Đã chuyển Tác giả sang trạng thái Ẩn (IsDeleted = 1)!", "Xóa mềm", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            txtMaTacGia.Clear(); txtTenTacGia.Clear(); txtQuocTich.Clear(); txtGioiThieuTG.Clear(); dgvTacGia.ClearSelection();
+            SetRestoreButton(btnAnTacGia, false);
+        }
+        private static void WarnDeleted(string entity) => MessageBox.Show($"Không thể sửa {entity} đang ẩn. Hãy khôi phục trước.", "Dữ liệu đã ẩn", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        private static void WarnRequired(string field) => MessageBox.Show($"{field} không được để trống.", "Dữ liệu chưa hợp lệ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        private static void WarnSelect(string entity) => MessageBox.Show($"Vui lòng chọn {entity} trong danh sách.", "Chưa chọn dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        private static void ShowSuccess(string message) => MessageBox.Show(message, "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        private static void ShowApiError(Exception exception)
+        {
+            var message = exception is HttpRequestException http && http.StatusCode is null
+                ? "Không kết nối được API. Hãy kiểm tra API đang chạy tại localhost:5058."
+                : exception.Message;
+            MessageBox.Show(message, "Lỗi API danh mục", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

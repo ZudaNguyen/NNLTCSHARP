@@ -80,4 +80,18 @@ public sealed class SachController(ISachService sachService) : ControllerBase
         var deleted = await sachService.SoftDeleteAsync(id, cancellationToken);
         return deleted ? NoContent() : NotFound();
     }
+
+    [HttpPost("{id:int}/restore")]
+    public async Task<IActionResult> Restore(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var restored = await sachService.RestoreAsync(id, cancellationToken);
+            return restored ? NoContent() : NotFound();
+        }
+        catch (BookRuleException exception)
+        {
+            return Conflict(new ProblemDetails { Title = exception.Message, Status = StatusCodes.Status409Conflict });
+        }
+    }
 }

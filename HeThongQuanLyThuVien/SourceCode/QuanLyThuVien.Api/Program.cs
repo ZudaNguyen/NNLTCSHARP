@@ -19,6 +19,8 @@ if (!string.IsNullOrWhiteSpace(connectionString))
 {
     builder.Services.AddInfrastructure(connectionString);
     builder.Services.AddScoped<ISachService, SachService>();
+    builder.Services.AddScoped<ITheLoaiService, TheLoaiService>();
+    builder.Services.AddScoped<ITacGiaService, TacGiaService>();
 }
 
 var app = builder.Build();

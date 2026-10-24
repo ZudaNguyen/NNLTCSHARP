@@ -15,5 +15,6 @@ public interface ISachService
     Task<SachDto> CreateAsync(SachWriteDto request, CancellationToken cancellationToken);
     Task<SachDto?> UpdateAsync(int id, SachWriteDto request, CancellationToken cancellationToken);
     Task<bool> SoftDeleteAsync(int id, CancellationToken cancellationToken);
+    Task<bool> RestoreAsync(int id, CancellationToken cancellationToken);
     Task<SachLookupsDto> GetLookupsAsync(CancellationToken cancellationToken);
 }
