@@ -11,5 +11,7 @@ public class TacGia
 
     public string? GioiThieu { get; set; }
 
-    public bool? IsDeleted { get; set; }
+    public bool IsDeleted { get; set; }
+
+    public ICollection<SachTacGia> SachTacGias { get; set; } = new List<SachTacGia>();
 }

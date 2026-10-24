@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
+using QuanLyThuVien.Application.DTOs;
+using QuanLyThuVien.Desktop.Services;
 
 namespace QuanLyThuVien.Desktop.UserControls
 {
@@ -31,14 +36,17 @@ namespace QuanLyThuVien.Desktop.UserControls
         // Các Control Tìm kiếm & Danh sách
         private TextBox txtTimKiem;
         private ComboBox cboLocTheLoai;
-        private CheckBox chkHienThiDaXoa;
+        private ComboBox cboTrangThaiSach;
         private DataGridView dgvSach;
+        private readonly SachApiClient apiClient = new();
+        private CancellationTokenSource? searchCancellation;
+        private bool loadingLookups;
 
         public SachControl()
         {
             InitializeComponent();
             SetupSachUI();
-            LoadMockData();
+            _ = LoadInitialDataAsync();
         }
 
         private void SetupSachUI()
@@ -221,7 +229,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Panel pnlFilter = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 55,
+                Height = 82,
                 BackColor = PaperCream,
                 Padding = new Padding(0, 10, 0, 5)
             };
@@ -242,7 +250,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Font = new Font("Segoe UI", 10),
                 BackColor = Color.White
             };
-            txtTimKiem.TextChanged += (s, e) => FilterGrid();
+            txtTimKiem.TextChanged += FilterChanged;
 
             Label lblLocTL = new Label
             {
@@ -260,19 +268,28 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Font = new Font("Segoe UI", 10),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
-            cboLocTheLoai.SelectedIndexChanged += (s, e) => FilterGrid();
+            cboLocTheLoai.SelectedIndexChanged += FilterChanged;
 
-            chkHienThiDaXoa = new CheckBox
+            Label lblTrangThaiSach = new Label
             {
-                Text = "Hiển thị sách đã ẩn (IsDeleted)",
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Italic),
-                ForeColor = Burgundy,
-                Location = new Point(735, 17),
+                Text = "Trạng thái:",
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+                ForeColor = WoodDark,
+                Location = new Point(5, 57),
                 AutoSize = true
             };
-            chkHienThiDaXoa.CheckedChanged += (s, e) => FilterGrid();
+            cboTrangThaiSach = new ComboBox
+            {
+                Location = new Point(85, 52),
+                Width = 200,
+                Font = new Font("Segoe UI", 9.5f),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboTrangThaiSach.Items.AddRange(["Đang hoạt động", "Đã ẩn", "Tất cả"]);
+            cboTrangThaiSach.SelectedIndexChanged += FilterChanged;
 
-            pnlFilter.Controls.Add(chkHienThiDaXoa);
+            pnlFilter.Controls.Add(cboTrangThaiSach);
+            pnlFilter.Controls.Add(lblTrangThaiSach);
             pnlFilter.Controls.Add(cboLocTheLoai);
             pnlFilter.Controls.Add(lblLocTL);
             pnlFilter.Controls.Add(txtTimKiem);
@@ -391,31 +408,116 @@ namespace QuanLyThuVien.Desktop.UserControls
             return btn;
         }
 
-        private void LoadMockData()
+        private async Task LoadInitialDataAsync()
         {
-            // Dữ liệu mẫu Thể loại
-            string[] theLoais = { "Công nghệ thông tin", "Văn học kinh điển", "Kinh tế - Quản trị", "Kỹ năng sống" };
-            cboTheLoai.Items.AddRange(theLoais);
-            cboTheLoai.SelectedIndex = 0;
+            loadingLookups = true;
+            try
+            {
+                var lookups = await apiClient.GetLookupsAsync(CancellationToken.None);
 
-            cboLocTheLoai.Items.Add("-- Tất cả thể loại --");
-            cboLocTheLoai.Items.AddRange(theLoais);
-            cboLocTheLoai.SelectedIndex = 0;
+                cboTheLoai.DisplayMember = nameof(TheLoaiOptionDto.TenTheLoai);
+                cboTheLoai.Items.Clear();
+                foreach (var category in lookups.TheLoai)
+                    cboTheLoai.Items.Add(category);
+                if (cboTheLoai.Items.Count > 0)
+                    cboTheLoai.SelectedIndex = 0;
 
-            // Dữ liệu mẫu Tác giả
-            clbTacGia.Items.AddRange(new object[] {
-                "Robert C. Martin",
-                "Nguyễn Nhật Ánh",
-                "Dale Carnegie",
-                "Đỗ Như Tài",
-                "Paulo Coelho"
-            });
+                cboLocTheLoai.DisplayMember = nameof(TheLoaiOptionDto.TenTheLoai);
+                cboLocTheLoai.Items.Clear();
+                cboLocTheLoai.Items.Add(new TheLoaiOptionDto
+                {
+                    MaTheLoai = 0,
+                    TenTheLoai = "-- Tất cả thể loại --"
+                });
+                foreach (var category in lookups.TheLoai)
+                    cboLocTheLoai.Items.Add(category);
+                cboLocTheLoai.SelectedIndex = 0;
 
-            // Dữ liệu mẫu Bảng Sách
-            dgvSach.Rows.Add("1", "978-0132350884", "Clean Code - Mã Sạch", "Công nghệ thông tin", "Robert C. Martin", "2022", "NXB Trẻ", "20", "15", "Hoạt động");
-            dgvSach.Rows.Add("2", "978-6041145678", "Giáo trình Lập trình C# .NET", "Công nghệ thông tin", "Đỗ Như Tài", "2026", "NXB Đại học", "50", "42", "Hoạt động");
-            dgvSach.Rows.Add("3", "978-6042098765", "Nhà Giả Kim", "Văn học kinh điển", "Paulo Coelho", "2020", "NXB Hội Nhà Văn", "15", "0", "Hoạt động");
-            dgvSach.Rows.Add("4", "978-6041001122", "Đắc Nhân Tâm (Bản cũ)", "Kỹ năng sống", "Dale Carnegie", "2015", "NXB Tổng Hợp", "5", "5", "Đã ẩn");
+                cboTrangThaiSach.SelectedIndex = 0;
+
+                clbTacGia.DisplayMember = nameof(TacGiaOptionDto.TenTacGia);
+                clbTacGia.Items.Clear();
+                foreach (var author in lookups.TacGia)
+                    clbTacGia.Items.Add(author);
+            }
+            catch (Exception exception)
+            {
+                ShowApiError(exception);
+            }
+            finally
+            {
+                loadingLookups = false;
+            }
+
+            await LoadBooksAsync();
+        }
+
+        private async void FilterChanged(object? sender, EventArgs e)
+        {
+            if (!loadingLookups)
+                await LoadBooksAsync();
+        }
+
+        private async Task LoadBooksAsync()
+        {
+            searchCancellation?.Cancel();
+            searchCancellation?.Dispose();
+            searchCancellation = new CancellationTokenSource();
+            var cancellationToken = searchCancellation.Token;
+
+            var selectedCategory = cboLocTheLoai.SelectedItem as TheLoaiOptionDto;
+            int? categoryId = selectedCategory is { MaTheLoai: > 0 }
+                ? selectedCategory.MaTheLoai
+                : null;
+            var onlyDeleted = cboTrangThaiSach.SelectedIndex == 1;
+            var includeDeleted = cboTrangThaiSach.SelectedIndex == 2;
+
+            try
+            {
+                var books = await apiClient.GetBooksAsync(
+                    txtTimKiem.Text,
+                    categoryId,
+                    includeDeleted,
+                    onlyDeleted,
+                    cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested || IsDisposed)
+                    return;
+
+                dgvSach.Rows.Clear();
+                foreach (var book in books)
+                {
+                    var rowIndex = dgvSach.Rows.Add(
+                        book.MaSach,
+                        book.ISBN,
+                        book.TenSach,
+                        book.TenTheLoai,
+                        string.Join(", ", book.TenTacGia),
+                        book.NamXB,
+                        book.NhaXB ?? string.Empty,
+                        book.SoLuong,
+                        book.SoLuongCon,
+                        book.IsDeleted ? "Đã ẩn" : "Hoạt động");
+                    dgvSach.Rows[rowIndex].Tag = book;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // A newer search request superseded this one.
+            }
+            catch (Exception exception)
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                    ShowApiError(exception);
+            }
+        }
+
+        private static void ShowApiError(Exception exception)
+        {
+            var message = exception is HttpRequestException
+                ? exception.Message
+                : $"Không thể hoàn tất thao tác sách: {exception.Message}";
+            MessageBox.Show(message, "Lỗi API sách", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         private bool ValidateInput(out string selectedAuthors)
@@ -423,7 +525,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             selectedAuthors = "";
             List<string> authors = new List<string>();
             foreach (var item in clbTacGia.CheckedItems)
-                authors.Add(item.ToString());
+                authors.Add(item.ToString() ?? string.Empty);
 
             selectedAuthors = string.Join(", ", authors);
 
@@ -450,63 +552,48 @@ namespace QuanLyThuVien.Desktop.UserControls
             return true;
         }
 
-        private void BtnThem_Click(object sender, EventArgs e)
+        private async void BtnThem_Click(object sender, EventArgs e)
         {
-            if (!ValidateInput(out string tacGiaStr)) return;
+            if (!ValidateInput(out _)) return;
 
-            int newId = dgvSach.Rows.Count + 1;
-            dgvSach.Rows.Add(
-                newId.ToString(),
-                txtISBN.Text.Trim(),
-                txtTenSach.Text.Trim(),
-                cboTheLoai.SelectedItem?.ToString(),
-                tacGiaStr,
-                numNamXB.Value.ToString(),
-                txtNhaXB.Text.Trim(),
-                numSoLuong.Value.ToString(),
-                numSoLuong.Value.ToString(),
-                "Hoạt động"
-            );
-
-            MessageBox.Show("Đã ghi sổ ấn phẩm mới thành công!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            ClearForm();
+            try
+            {
+                var created = await apiClient.CreateAsync(BuildWriteRequest(), CancellationToken.None);
+                MessageBox.Show($"Đã thêm sách mã {created.MaSach}.", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ClearForm();
+                await LoadBooksAsync();
+            }
+            catch (Exception exception)
+            {
+                ShowApiError(exception);
+            }
         }
 
-        private void BtnSua_Click(object sender, EventArgs e)
+        private async void BtnSua_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(txtMaSach.Text) || dgvSach.CurrentRow == null)
+            if (!int.TryParse(txtMaSach.Text, out var id) || dgvSach.CurrentRow == null)
             {
                 MessageBox.Show("Vui lòng chọn một ấn phẩm dưới bảng trước khi tu chỉnh!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            if (!ValidateInput(out string tacGiaStr)) return;
+            if (!ValidateInput(out _)) return;
 
-            DataGridViewRow row = dgvSach.CurrentRow;
-            int slDangMuon = int.Parse(row.Cells["SoLuong"].Value.ToString()) - int.Parse(row.Cells["SoLuongCon"].Value.ToString());
-
-            if (numSoLuong.Value < slDangMuon)
+            try
             {
-                MessageBox.Show($"Hiện đang có {slDangMuon} cuốn được độc giả mượn. Tổng số lượng không thể nhỏ hơn {slDangMuon}!",
-                                "Vi phạm quy tắc tồn kho", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                await apiClient.UpdateAsync(id, BuildWriteRequest(), CancellationToken.None);
+                MessageBox.Show("Đã cập nhật thông tin sách.", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                await LoadBooksAsync();
             }
-
-            row.Cells["ISBN"].Value = txtISBN.Text.Trim();
-            row.Cells["TenSach"].Value = txtTenSach.Text.Trim();
-            row.Cells["TheLoai"].Value = cboTheLoai.SelectedItem?.ToString();
-            row.Cells["TacGia"].Value = tacGiaStr;
-            row.Cells["NamXB"].Value = numNamXB.Value.ToString();
-            row.Cells["NhaXB"].Value = txtNhaXB.Text.Trim();
-            row.Cells["SoLuong"].Value = numSoLuong.Value.ToString();
-            row.Cells["SoLuongCon"].Value = (numSoLuong.Value - slDangMuon).ToString();
-
-            MessageBox.Show("Cập nhật thông tin ấn phẩm thành công!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            catch (Exception exception)
+            {
+                ShowApiError(exception);
+            }
         }
 
-        private void BtnXoa_Click(object sender, EventArgs e)
+        private async void BtnXoa_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(txtMaSach.Text) || dgvSach.CurrentRow == null)
+            if (!int.TryParse(txtMaSach.Text, out var id) || dgvSach.CurrentRow == null)
             {
                 MessageBox.Show("Vui lòng chọn ấn phẩm cần lưu kho ẩn!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
@@ -518,10 +605,37 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             if (confirm == DialogResult.Yes)
             {
-                dgvSach.CurrentRow.Cells["TrangThai"].Value = "Đã ẩn";
-                FilterGrid();
-                ClearForm();
+                try
+                {
+                    await apiClient.DeleteAsync(id, CancellationToken.None);
+                    ClearForm();
+                    cboTrangThaiSach.SelectedIndex = 1;
+                }
+                catch (Exception exception)
+                {
+                    ShowApiError(exception);
+                }
             }
+        }
+
+        private SachWriteDto BuildWriteRequest()
+        {
+            var category = cboTheLoai.SelectedItem as TheLoaiOptionDto;
+            return new SachWriteDto
+            {
+                ISBN = txtISBN.Text.Trim(),
+                TenSach = txtTenSach.Text.Trim(),
+                MaTheLoai = category?.MaTheLoai ?? 0,
+                NamXB = (int)numNamXB.Value,
+                NhaXB = txtNhaXB.Text.Trim(),
+                SoLuong = (int)numSoLuong.Value,
+                MoTa = txtMoTa.Text.Trim(),
+                HinhAnh = currentImagePath,
+                MaTacGia = clbTacGia.CheckedItems
+                    .Cast<TacGiaOptionDto>()
+                    .Select(author => author.MaTacGia)
+                    .ToList()
+            };
         }
 
         private void DgvSach_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -529,43 +643,49 @@ namespace QuanLyThuVien.Desktop.UserControls
             if (e.RowIndex < 0) return;
 
             DataGridViewRow row = dgvSach.Rows[e.RowIndex];
-            txtMaSach.Text = row.Cells["MaSach"].Value?.ToString();
-            txtISBN.Text = row.Cells["ISBN"].Value?.ToString();
-            txtTenSach.Text = row.Cells["TenSach"].Value?.ToString();
-            cboTheLoai.SelectedItem = row.Cells["TheLoai"].Value?.ToString();
-            numNamXB.Value = decimal.TryParse(row.Cells["NamXB"].Value?.ToString(), out decimal nam) ? nam : 2026;
-            txtNhaXB.Text = row.Cells["NhaXB"].Value?.ToString();
-            numSoLuong.Value = decimal.TryParse(row.Cells["SoLuong"].Value?.ToString(), out decimal sl) ? sl : 0;
-            numSoLuongCon.Value = decimal.TryParse(row.Cells["SoLuongCon"].Value?.ToString(), out decimal slCon) ? slCon : 0;
+            if (row.Tag is not SachDto book) return;
 
-            // Tích chọn lại các tác giả tương ứng
-            string tacGiaCell = row.Cells["TacGia"].Value?.ToString() ?? "";
+            txtMaSach.Text = book.MaSach.ToString();
+            txtISBN.Text = book.ISBN;
+            txtTenSach.Text = book.TenSach;
+            cboTheLoai.SelectedItem = cboTheLoai.Items
+                .Cast<TheLoaiOptionDto>()
+                .FirstOrDefault(category => category.MaTheLoai == book.MaTheLoai);
+            numNamXB.Value = Math.Clamp(book.NamXB, (int)numNamXB.Minimum, (int)numNamXB.Maximum);
+            txtNhaXB.Text = book.NhaXB ?? string.Empty;
+            numSoLuong.Value = Math.Clamp(book.SoLuong, (int)numSoLuong.Minimum, (int)numSoLuong.Maximum);
+            numSoLuongCon.Value = Math.Clamp(book.SoLuongCon, (int)numSoLuongCon.Minimum, (int)numSoLuongCon.Maximum);
+            txtMoTa.Text = book.MoTa ?? string.Empty;
+            currentImagePath = book.HinhAnh ?? string.Empty;
+            DisplayCover(currentImagePath);
+
             for (int i = 0; i < clbTacGia.Items.Count; i++)
             {
-                string itemText = clbTacGia.Items[i].ToString();
-                clbTacGia.SetItemChecked(i, tacGiaCell.Contains(itemText));
+                if (clbTacGia.Items[i] is TacGiaOptionDto author)
+                    clbTacGia.SetItemChecked(i, book.MaTacGia.Contains(author.MaTacGia));
             }
         }
 
-        private void FilterGrid()
+        private void DisplayCover(string imagePath)
         {
-            string keyword = txtTimKiem.Text.Trim().ToLower();
-            string selectedCategory = cboLocTheLoai.SelectedIndex > 0 ? cboLocTheLoai.SelectedItem.ToString() : "";
-            bool showDeleted = chkHienThiDaXoa.Checked;
+            picBiaSach.Image?.Dispose();
+            picBiaSach.Image = null;
+            if (string.IsNullOrWhiteSpace(imagePath) || !File.Exists(imagePath))
+                return;
 
-            foreach (DataGridViewRow row in dgvSach.Rows)
+            try
             {
-                string tenSach = row.Cells["TenSach"].Value?.ToString().ToLower() ?? "";
-                string isbn = row.Cells["ISBN"].Value?.ToString().ToLower() ?? "";
-                string tacGia = row.Cells["TacGia"].Value?.ToString().ToLower() ?? "";
-                string theLoai = row.Cells["TheLoai"].Value?.ToString() ?? "";
-                string trangThai = row.Cells["TrangThai"].Value?.ToString() ?? "";
-
-                bool matchKeyword = string.IsNullOrEmpty(keyword) || tenSach.Contains(keyword) || isbn.Contains(keyword) || tacGia.Contains(keyword);
-                bool matchCategory = string.IsNullOrEmpty(selectedCategory) || theLoai == selectedCategory;
-                bool matchDeleted = showDeleted || trangThai != "Đã ẩn";
-
-                row.Visible = matchKeyword && matchCategory && matchDeleted;
+                using var imageStream = new MemoryStream(File.ReadAllBytes(imagePath));
+                using var image = Image.FromStream(imageStream);
+                picBiaSach.Image = new Bitmap(image);
+            }
+            catch (IOException)
+            {
+                // Missing or inaccessible cover images don't prevent book editing.
+            }
+            catch (ArgumentException)
+            {
+                // Ignore files that aren't valid image data.
             }
         }
 
@@ -577,7 +697,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     currentImagePath = ofd.FileName;
-                    picBiaSach.Image = Image.FromFile(currentImagePath);
+                    DisplayCover(currentImagePath);
                 }
             }
         }
@@ -592,7 +712,9 @@ namespace QuanLyThuVien.Desktop.UserControls
             numNamXB.Value = 2026;
             numSoLuong.Value = 10;
             numSoLuongCon.Value = 10;
+            picBiaSach.Image?.Dispose();
             picBiaSach.Image = null;
+            currentImagePath = string.Empty;
             for (int i = 0; i < clbTacGia.Items.Count; i++)
                 clbTacGia.SetItemChecked(i, false);
             txtTenSach.Focus();

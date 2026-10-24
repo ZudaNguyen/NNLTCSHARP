@@ -1,5 +1,7 @@
 
 using Microsoft.EntityFrameworkCore;
+using QuanLyThuVien.Application.Interfaces;
+using QuanLyThuVien.Application.Services;
 using QuanLyThuVien.Infrastructure;
 using QuanLyThuVien.Infrastructure.Persistence;
 
@@ -16,28 +18,20 @@ var connectionString = builder.Configuration
 if (!string.IsNullOrWhiteSpace(connectionString))
 {
     builder.Services.AddInfrastructure(connectionString);
+    builder.Services.AddScoped<ISachService, SachService>();
 }
 
 var app = builder.Build();
 
-if (!string.IsNullOrWhiteSpace(connectionString))
-{
-    app.MapGet("/api/sach", async (
-        LibraryDbContext db,
-        CancellationToken cancellationToken) =>
-    {
-        var books = await db.Sach
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        return Results.Ok(books);
-    });
-}
-else
+if (string.IsNullOrWhiteSpace(connectionString))
 {
     app.MapGet("/api/sach", () => Results.Problem(
         "Chưa cấu hình ConnectionStrings:LibraryDb.",
         statusCode: StatusCodes.Status503ServiceUnavailable));
+}
+else
+{
+    app.MapControllers();
 }
 
 // Các API kiểm tra chỉ sử dụng trong Development
@@ -71,9 +65,6 @@ if (app.Environment.IsDevelopment())
             });
     }
 }
-
-// Ánh xạ Controller
-app.MapControllers();
 
 // Chạy ứng dụng
 app.Run();

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using QuanLyThuVien.Application.Interfaces;
 using QuanLyThuVien.Infrastructure.Persistence;
+using QuanLyThuVien.Infrastructure.Repositories;
 
 namespace QuanLyThuVien.Infrastructure;
 
@@ -12,6 +14,7 @@ public static class DependencyInjection
     {
         services.AddDbContext<LibraryDbContext>(options =>
             options.UseSqlServer(connectionString));
+        services.AddScoped<ISachRepository, SachRepository>();
 
         return services;
     }

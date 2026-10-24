@@ -64,7 +64,7 @@ namespace QuanLyThuVien.Desktop.Forms
             Button btnLogout = CreateMenuButton("🚪 Đóng sổ (Đăng xuất)");
             btnLogout.Dock = DockStyle.Bottom;
             btnLogout.BackColor = Color.FromArgb(90, 25, 20);
-            btnLogout.Click += (s, e) => Application.Restart();
+            btnLogout.Click += (s, e) => System.Windows.Forms.Application.Restart();
 
             Button btnBaoCao = CreateMenuButton("📊 Thống kê & Báo cáo");
             Button btnNhanVien = CreateMenuButton("🔑 Quản lý Thủ thư");
