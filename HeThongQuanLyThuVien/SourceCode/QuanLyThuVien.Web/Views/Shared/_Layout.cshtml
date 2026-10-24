@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Thư Viện</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/QuanLyThuVien.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var role = ViewData["Role"]?.ToString() ?? "reader";
+        var roleName = role == "admin" ? "Quản trị viên" : role == "manager" ? "Thủ thư" : "Độc giả";
+        var userName = role == "admin" ? "Nguyễn Minh An" : role == "manager" ? "Trần Thanh Hà" : "Nguyễn Văn An";
+    }
+    <div class="app-shell" data-role="@role">
+        <aside class="sidebar" id="sidebar">
+            <a class="brand" asp-controller="Home" asp-action="Index">
+                <span class="brand-mark">▥</span><span>Thư Viện</span>
+            </a>
+            <nav class="side-nav" aria-label="Điều hướng chính">
+                @if (role == "reader")
+                {
+                    <a class="active" asp-action="Index"><span>⌂</span>Trang chủ</a>
+                    <a href="#search"><span>⌕</span>Tìm kiếm sách</a>
+                    <a href="#categories"><span>▥</span>Danh mục sách</a>
+                    <a href="#borrowed"><span>▤</span>Sách đã mượn</a>
+                    <a href="#history"><span>◷</span>Lịch sử mượn trả</a>
+                    <a href="#account"><span>♙</span>Thông tin cá nhân</a>
+                    <a href="#notifications"><span>♢</span>Thông báo <b class="nav-badge">2</b></a>
+                }
+                else if (role == "manager")
+                {
+                    <a class="active" asp-action="Manager"><span>⌂</span>Tổng quan</a>
+                    <a href="#inventory"><span>▥</span>Quản lý kho sách</a>
+                    <a href="#circulation"><span>⇄</span>Mượn / Trả sách</a>
+                    <a href="#reservation"><span>▣</span>Đặt trước sách</a>
+                    <a href="#members"><span>♟</span>Quản lý thành viên</a>
+                    <a href="#overdue"><span>♢</span>Nhắc nhở quá hạn <b class="nav-badge">3</b></a>
+                    <a href="#report"><span>▥</span>Báo cáo nghiệp vụ</a>
+                }
+                else
+                {
+                    <a class="active" asp-action="Admin"><span>⌂</span>Tổng quan</a>
+                    <a href="#users"><span>♟</span>Quản lý người dùng</a>
+                    <a href="#roles"><span>◇</span>Phân quyền</a>
+                    <a href="#books"><span>▥</span>Quản lý sách</a>
+                    <a href="#categories"><span>▣</span>Danh mục</a>
+                    <a href="#settings"><span>⚙</span>Cấu hình hệ thống</a>
+                    <a href="#report"><span>▥</span>Báo cáo thống kê</a>
+                }
+            </nav>
+            <div class="sidebar-user">
+                <span class="avatar">@(role == "reader" ? "NA" : role == "manager" ? "TH" : "MA")</span>
+                <span><strong>@userName</strong><small>@roleName</small></span>
+                <button title="Cài đặt" aria-label="Cài đặt">⚙</button>
+            </div>
+        </aside>
+        <div class="app-main">
+            <header class="topbar">
+                <button class="menu-toggle" id="menuToggle" aria-label="Mở menu">☰</button>
+                <label class="top-search" for="topSearch"><span>⌕</span><input id="topSearch" name="topSearch" type="search" placeholder="Tìm kiếm..." aria-label="Tìm kiếm" /></label>
+                <div class="top-actions">
+                    <button class="icon-button" aria-label="Thông báo">♢<i></i></button>
+                    <span class="avatar small">@(role == "reader" ? "NA" : role == "manager" ? "TH" : "MA")</span>
+                    <strong>@roleName</strong><span class="chevron">⌄</span>
+                </div>
+            </header>
+            <main role="main" class="page-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

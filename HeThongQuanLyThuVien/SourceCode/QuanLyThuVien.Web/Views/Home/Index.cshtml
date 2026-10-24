@@ -1,0 +1,57 @@
+﻿@{
+    ViewData["Title"] = "Trang chủ độc giả";
+    ViewData["Role"] = "reader";
+}
+<section class="page-heading reader-heading">
+    <div><h1>Chào mừng bạn trở lại!</h1><p>Khám phá thế giới tri thức với hàng ngàn cuốn sách hấp dẫn.</p></div>
+    <div class="date-chip">Thứ sáu, 10 tháng 10, 2026</div>
+</section>
+
+<section class="hero-search" id="search">
+    <div><h2>Tìm cuốn sách tiếp theo của bạn</h2><p>Tìm theo tên sách, tác giả, ISBN hoặc thể loại.</p></div>
+    <form class="search-box" onsubmit="return false"><span>⌕</span><input id="bookSearch" name="bookSearch" placeholder="Tìm kiếm sách, tác giả, thể loại..." aria-label="Tìm kiếm sách" /><button type="submit">Tìm kiếm</button></form>
+</section>
+
+<section class="category-strip" id="categories">
+    <button><i class="tone-blue">▥</i>Văn học</button><button><i class="tone-green">♙</i>Khoa học</button>
+    <button><i class="tone-purple">▣</i>Công nghệ</button><button><i class="tone-orange">▥</i>Kinh tế</button>
+    <button><i class="tone-pink">●</i>Thiếu nhi</button><button><i class="tone-sky">▦</i>Sách khác</button>
+</section>
+
+<div class="reader-grid">
+    <div>
+        <section class="panel books-panel">
+            <div class="panel-title"><h2><span class="title-icon tone-blue">★</span>Sách nổi bật</h2><a href="#">Xem tất cả →</a></div>
+            <div class="book-grid" data-book-list>
+                <article class="book-card" data-title="dune frank herbert khoa học viễn tưởng"><div class="book-cover cover-dune"><small>FRANK HERBERT</small><b>DUNE</b><em>A masterpiece of science fiction</em></div><h3>Dune</h3><p>Frank Herbert</p><span>Khoa học viễn tưởng</span><button>Mượn ngay</button></article>
+                <article class="book-card" data-title="thói quen nguyên tử atomic habits james clear kỹ năng sống"><div class="book-cover cover-atomic"><small>JAMES CLEAR</small><b>Atomic<br />Habits</b><em>Tiny changes, remarkable results</em></div><h3>Thói Quen Nguyên Tử</h3><p>James Clear</p><span>Kỹ năng sống</span><button>Mượn ngay</button></article>
+                <article class="book-card" data-title="đắc nhân tâm dale carnegie kỹ năng sống"><div class="book-cover cover-dacnhantam"><small>DALE CARNEGIE</small><b>ĐẮC NHÂN TÂM</b><em>How to win friends</em></div><h3>Đắc Nhân Tâm</h3><p>Dale Carnegie</p><span>Kỹ năng sống</span><button>Mượn ngay</button></article>
+                <article class="book-card" data-title="nhà giả kim paulo coelho văn học"><div class="book-cover cover-alchemist"><small>PAULO COELHO</small><b>NHÀ GIẢ KIM</b><em>Một tiểu thuyết</em></div><h3>Nhà Giả Kim</h3><p>Paulo Coelho</p><span>Văn học</span><button>Mượn ngay</button></article>
+                <article class="book-card" data-title="vũ trụ carl sagan khoa học"><div class="book-cover cover-cosmos"><small>CARL SAGAN</small><b>VŨ TRỤ</b><em>Cosmos</em></div><h3>Vũ Trụ</h3><p>Carl Sagan</p><span>Khoa học</span><button>Mượn ngay</button></article>
+            </div>
+        </section>
+        <section class="panel books-panel">
+            <div class="panel-title"><h2><span class="title-icon tone-purple">♙</span>Gợi ý cho bạn</h2><a href="#">Xem tất cả →</a></div>
+            <div class="book-grid compact" data-book-list>
+                <article class="book-card" data-title="sapiens yuval noah harari lịch sử"><div class="book-cover cover-sapiens"><small>YUVAL NOAH HARARI</small><b>SAPIENS</b></div><h3>Sapiens</h3><p>Yuval Noah Harari</p><span>Lịch sử</span><button>Mượn ngay</button></article>
+                <article class="book-card" data-title="tư duy nhanh và chậm daniel kahneman tâm lý"><div class="book-cover cover-thinking"><b>TƯ DUY<br />NHANH<br />VÀ CHẬM</b></div><h3>Tư Duy Nhanh Và Chậm</h3><p>Daniel Kahneman</p><span>Tâm lý học</span><button>Mượn ngay</button></article>
+                <article class="book-card" data-title="clean code robert martin công nghệ"><div class="book-cover cover-clean"><small>ROBERT C. MARTIN</small><b>Clean Code</b></div><h3>Clean Code</h3><p>Robert C. Martin</p><span>Công nghệ</span><button>Mượn ngay</button></article>
+                <article class="book-card" data-title="đời thay đổi khi chúng ta thay đổi andrew matthews phát triển bản thân"><div class="book-cover cover-change"><b>ĐỜI THAY ĐỔI<br />KHI CHÚNG TA<br />THAY ĐỔI</b></div><h3>Đời Thay Đổi</h3><p>Andrew Matthews</p><span>Phát triển bản thân</span><button>Mượn ngay</button></article>
+                <article class="book-card" data-title="sống đẹp thích nhất hạnh tâm linh"><div class="book-cover cover-mindful"><b>Sống Đẹp</b><em>Thích Nhất Hạnh</em></div><h3>Sống Đẹp</h3><p>Thích Nhất Hạnh</p><span>Tâm linh</span><button>Mượn ngay</button></article>
+            </div>
+        </section>
+    </div>
+    <aside class="reader-aside">
+        <section class="panel" id="borrowed"><div class="panel-title"><h2><span class="title-icon dark">▣</span>Sách đang mượn</h2><a href="#">Xem tất cả →</a></div>
+            <div class="loan-item"><span class="mini-cover cover-dune">D</span><div><b>Dune</b><small>Frank Herbert</small><em>Hạn trả: 20/10/2026</em></div><strong>›</strong></div>
+            <div class="loan-item"><span class="mini-cover cover-atomic">A</span><div><b>Atomic Habits</b><small>James Clear</small><em>Hạn trả: 25/10/2026</em></div><strong>›</strong></div>
+            <div class="loan-item"><span class="mini-cover cover-alchemist">N</span><div><b>Nhà Giả Kim</b><small>Paulo Coelho</small><em>Hạn trả: 05/11/2026</em></div><strong>›</strong></div>
+        </section>
+        <section class="panel" id="notifications"><div class="panel-title"><h2><span class="title-icon tone-sky">♢</span>Thông báo</h2><a href="#">Xem tất cả →</a></div>
+            <div class="notice"><i class="tone-green">✓</i><p><b>Bạn đã mượn thành công sách Atomic Habits</b><small>2 giờ trước</small></p></div>
+            <div class="notice"><i class="tone-blue">◷</i><p><b>Sách Nhà Giả Kim sắp đến hạn trả</b><small>1 ngày trước</small></p></div>
+            <div class="notice"><i class="tone-orange">★</i><p><b>Thư viện có thêm nhiều đầu sách mới hấp dẫn</b><small>2 ngày trước</small></p></div>
+        </section>
+    </aside>
+</div>
+<section class="reader-banner"><div><h2>Mỗi cuốn sách là một hành trình mới</h2><p>Đọc sách không chỉ là tiếp thu tri thức, mà còn là cách khám phá thế giới và chính bản thân bạn.</p><button>Khám phá ngay →</button></div><div class="book-illustration"><span></span><span></span><span></span></div></section>

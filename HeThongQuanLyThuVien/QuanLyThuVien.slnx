@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/SourceCode/">
+    <Project Path="SourceCode/QuanLyThuVien.Api/QuanLyThuVien.Api.csproj" />
+    <Project Path="SourceCode/QuanLyThuVien.Application/QuanLyThuVien.Application.csproj" />
+    <Project Path="SourceCode/QuanLyThuVien.Desktop/QuanLyThuVien.Desktop.csproj" />
+    <Project Path="SourceCode/QuanLyThuVien.Domain/QuanLyThuVien.Domain.csproj" />
+    <Project Path="SourceCode/QuanLyThuVien.Infrastructure/QuanLyThuVien.Infrastructure.csproj" />
+    <Project Path="SourceCode/QuanLyThuVien.Web/QuanLyThuVien.Web.csproj" />
+  </Folder>
+</Solution>

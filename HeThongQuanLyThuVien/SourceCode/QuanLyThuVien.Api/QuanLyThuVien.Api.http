@@ -1,0 +1,11 @@
+@QuanLyThuVien.Api_HostAddress = http://localhost:5058
+
+GET {{QuanLyThuVien.Api_HostAddress}}/api/dev/ping
+Accept: application/json
+
+###
+
+GET {{QuanLyThuVien.Api_HostAddress}}/api/dev/db-check
+Accept: application/json
+
+###

@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\QuanLyThuVien.Application\QuanLyThuVien.Application.csproj" />
+    <ProjectReference Include="..\QuanLyThuVien.Infrastructure\QuanLyThuVien.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>e43236c1-0027-413d-8239-6ddc2dd79ece</UserSecretsId>
+  </PropertyGroup>
+
+</Project>
