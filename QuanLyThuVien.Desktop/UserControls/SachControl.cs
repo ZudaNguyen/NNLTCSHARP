@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-
+using QuanLyThuVien.Desktop.Models;
+using QuanLyThuVien.Desktop.Repositories;
 namespace QuanLyThuVien.Desktop.UserControls
 {
     public partial class SachControl : UserControl
@@ -38,7 +39,9 @@ namespace QuanLyThuVien.Desktop.UserControls
         {
             InitializeComponent();
             SetupSachUI();
-            LoadMockData();
+
+            LoadDanhMucTuSqlServer();
+            LoadDanhSachSach();
         }
 
         private void SetupSachUI()
@@ -333,6 +336,10 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvSach.Columns["SoLuongCon"].FillWeight = 50;
             dgvSach.Columns.Add("TrangThai", "Trạng Thái");
             dgvSach.Columns["TrangThai"].FillWeight = 70;
+            // Lưu mã thể loại để xác định chính xác
+            // thể loại khi người dùng chọn sách.
+            dgvSach.Columns.Add("MaTheLoai", "Mã thể loại");
+            dgvSach.Columns["MaTheLoai"].Visible = false;
 
             dgvSach.CellClick += DgvSach_CellClick;
 
@@ -391,32 +398,106 @@ namespace QuanLyThuVien.Desktop.UserControls
             return btn;
         }
 
-        private void LoadMockData()
+
+        private void LoadDanhMucTuSqlServer()
         {
-            // Dữ liệu mẫu Thể loại
-            string[] theLoais = { "Công nghệ thông tin", "Văn học kinh điển", "Kinh tế - Quản trị", "Kỹ năng sống" };
-            cboTheLoai.Items.AddRange(theLoais);
-            cboTheLoai.SelectedIndex = 0;
+            try
+            {
+                TheLoaiRepository theLoaiRepo = new TheLoaiRepository();
+                TacGiaRepository tacGiaRepo = new TacGiaRepository();
 
-            cboLocTheLoai.Items.Add("-- Tất cả thể loại --");
-            cboLocTheLoai.Items.AddRange(theLoais);
-            cboLocTheLoai.SelectedIndex = 0;
+                var theLoais = theLoaiRepo.GetAll();
+                var tacGias = tacGiaRepo.GetAll();
 
-            // Dữ liệu mẫu Tác giả
-            clbTacGia.Items.AddRange(new object[] {
-                "Robert C. Martin",
-                "Nguyễn Nhật Ánh",
-                "Dale Carnegie",
-                "Đỗ Như Tài",
-                "Paulo Coelho"
-            });
+                // Xóa dữ liệu cũ
+                cboTheLoai.Items.Clear();
+                cboLocTheLoai.Items.Clear();
+                clbTacGia.Items.Clear();
 
-            // Dữ liệu mẫu Bảng Sách
-            dgvSach.Rows.Add("1", "978-0132350884", "Clean Code - Mã Sạch", "Công nghệ thông tin", "Robert C. Martin", "2022", "NXB Trẻ", "20", "15", "Hoạt động");
-            dgvSach.Rows.Add("2", "978-6041145678", "Giáo trình Lập trình C# .NET", "Công nghệ thông tin", "Đỗ Như Tài", "2026", "NXB Đại học", "50", "42", "Hoạt động");
-            dgvSach.Rows.Add("3", "978-6042098765", "Nhà Giả Kim", "Văn học kinh điển", "Paulo Coelho", "2020", "NXB Hội Nhà Văn", "15", "0", "Hoạt động");
-            dgvSach.Rows.Add("4", "978-6041001122", "Đắc Nhân Tâm (Bản cũ)", "Kỹ năng sống", "Dale Carnegie", "2015", "NXB Tổng Hợp", "5", "5", "Đã ẩn");
+                // Nạp thể loại
+                foreach (var theLoai in theLoais)
+                {
+                    cboTheLoai.Items.Add(theLoai);
+                }
+
+                if (cboTheLoai.Items.Count > 0)
+                {
+                    cboTheLoai.SelectedIndex = 0;
+                }
+
+                // Nạp bộ lọc thể loại
+                cboLocTheLoai.Items.Add("-- Tất cả thể loại --");
+
+                foreach (var theLoai in theLoais)
+                {
+                    cboLocTheLoai.Items.Add(theLoai);
+                }
+
+                cboLocTheLoai.SelectedIndex = 0;
+
+                // Nạp danh sách tác giả
+                foreach (var tacGia in tacGias)
+                {
+                    clbTacGia.Items.Add(tacGia);
+                }
+
+                // Chưa nạp danh sách sách trong bước này
+                dgvSach.Rows.Clear();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Không thể tải dữ liệu từ SQL Server!\n" + ex.Message,
+                    "Lỗi dữ liệu",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
         }
+
+        private void LoadDanhSachSach()
+        {
+            try
+            {
+                SachRepository repository = new SachRepository();
+
+                List<Sach> danhSach = repository.GetAll();
+
+                // Xóa dữ liệu đang hiển thị
+                dgvSach.Rows.Clear();
+
+                foreach (Sach sach in danhSach)
+                {
+                    dgvSach.Rows.Add(
+                        sach.MaSach,
+                        sach.ISBN ?? "",
+                        sach.TenSach,
+                        sach.TenTheLoai,
+                        sach.TenTacGia,
+                        sach.NamXuatBan?.ToString() ?? "",
+                        sach.NhaXuatBan ?? "",
+                        sach.SoLuong,
+                        sach.SoLuongCon,
+                        sach.IsDeleted ? "Đã ẩn" : "Hoạt động",
+                        sach.MaTheLoai
+                    );
+                }
+
+                // Áp dụng bộ lọc hiện tại
+                FilterGrid();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Không thể tải danh sách sách!\n" + ex.Message,
+                    "Lỗi SQL Server",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
+        }
+
+
 
         private bool ValidateInput(out string selectedAuthors)
         {
@@ -532,7 +613,20 @@ namespace QuanLyThuVien.Desktop.UserControls
             txtMaSach.Text = row.Cells["MaSach"].Value?.ToString();
             txtISBN.Text = row.Cells["ISBN"].Value?.ToString();
             txtTenSach.Text = row.Cells["TenSach"].Value?.ToString();
-            cboTheLoai.SelectedItem = row.Cells["TheLoai"].Value?.ToString();
+            cboTheLoai.SelectedIndex = -1;
+
+            if (row.Cells["MaTheLoai"].Value is int maTheLoai)
+            {
+                for (int i = 0; i < cboTheLoai.Items.Count; i++)
+                {
+                    if (cboTheLoai.Items[i] is TheLoai theLoai
+                        && theLoai.MaTheLoai == maTheLoai)
+                    {
+                        cboTheLoai.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
             numNamXB.Value = decimal.TryParse(row.Cells["NamXB"].Value?.ToString(), out decimal nam) ? nam : 2026;
             txtNhaXB.Text = row.Cells["NhaXB"].Value?.ToString();
             numSoLuong.Value = decimal.TryParse(row.Cells["SoLuong"].Value?.ToString(), out decimal sl) ? sl : 0;
