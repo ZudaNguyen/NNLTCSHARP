@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IDocGiaRepository, DocGiaRepository>();
         services.AddScoped<INhanVienRepository, NhanVienRepository>();
         services.AddScoped<IMuonTraRepository, MuonTraRepository>();
+        services.AddScoped<IThongKeRepository, ThongKeRepository>();
         services.AddScoped<ITaiKhoanRepository, TaiKhoanRepository>();
 
         return services;

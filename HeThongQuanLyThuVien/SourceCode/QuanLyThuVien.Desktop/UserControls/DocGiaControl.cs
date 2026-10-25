@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -14,7 +14,6 @@ namespace QuanLyThuVien.Desktop.UserControls
         private CancellationTokenSource? _loadCancellation;
         private readonly Color PaperCream = Color.FromArgb(247, 243, 233);
         private readonly Color CardBg = Color.FromArgb(255, 252, 245);
-        private readonly Color WoodDark = Color.FromArgb(44, 30, 22);
         private readonly Color Burgundy = Color.FromArgb(122, 40, 34);
         private readonly Color ForestGreen = Color.FromArgb(45, 106, 79);
 
@@ -50,102 +49,64 @@ namespace QuanLyThuVien.Desktop.UserControls
         {
             this.Dock = DockStyle.Fill;
             this.BackColor = PaperCream;
-            this.Padding = new Padding(20);
+            this.Padding = new Padding(14);
 
-            // ==========================================
-            // 1. FORM THÔNG TIN THẺ ĐỘC GIẢ (TOP PANEL)
-            // ==========================================
-            Panel pnlForm = new Panel
+            var pnlForm = new Panel
             {
-                Dock = DockStyle.Top,
-                Height = 235,
-                BackColor = CardBg,
-                BorderStyle = BorderStyle.FixedSingle
+                Dock = DockStyle.Top, Height = 284, BackColor = CardBg,
+                BorderStyle = BorderStyle.FixedSingle, Padding = new Padding(10), AutoScroll = true,
+                AutoScrollMinSize = new Size(760, 0)
             };
-
-            Label lblTitle = new Label
+            var fields = new TableLayoutPanel
             {
-                Text = "🪪 Hồ sơ Đăng ký & Quản lý Thẻ Độc Giả (Bảng DocGia)",
-                Font = new Font("Georgia", 11.5f, FontStyle.Bold),
-                ForeColor = Burgundy,
-                Location = new Point(15, 10),
-                AutoSize = true
+                Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 7,
+                BackColor = CardBg, Padding = new Padding(2), Margin = Padding.Empty
             };
-            pnlForm.Controls.Add(lblTitle);
+            fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 108));
+            fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 108));
+            fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            fields.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+            for (var row = 1; row <= 5; row++) fields.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+            fields.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            fields.Controls.Add(new Label
+            {
+                Text = "🪪 Hồ sơ đăng ký & quản lý thẻ độc giả", Dock = DockStyle.Fill,
+                Font = new Font("Georgia", 11.5f, FontStyle.Bold), ForeColor = Burgundy,
+                TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true, Margin = new Padding(3)
+            }, 0, 0);
+            fields.SetColumnSpan(fields.GetControlFromPosition(0, 0)!, 4);
 
-            // Cột 1: Mã ĐG, Họ tên, Ngày sinh, Giới tính
-            AddLabel(pnlForm, "Mã thẻ ĐG:", 15, 45);
-            txtMaDocGia = AddTextBox(pnlForm, 105, 42, 95);
+            txtMaDocGia = AddTextBox();
             txtMaDocGia.ReadOnly = true;
             txtMaDocGia.BackColor = Color.FromArgb(235, 230, 220);
             txtMaDocGia.PlaceholderText = "Tự động";
+            cboGioiTinh = new ComboBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10), DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(3, 4, 6, 4) };
+            cboGioiTinh.Items.AddRange(new object[] { "Nam", "Nữ", "Khác" }); cboGioiTinh.SelectedIndex = 0;
+            txtHoTen = AddTextBox();
+            dtpNgaySinh = new DateTimePicker { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10), Format = DateTimePickerFormat.Short, Value = new DateTime(2005, 1, 1), Margin = new Padding(3, 4, 6, 4) };
+            dtpNgayDangKy = new DateTimePicker { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10), Format = DateTimePickerFormat.Short, Value = DateTime.Now, Enabled = false, Margin = new Padding(3, 4, 6, 4) };
+            txtSoDienThoai = AddTextBox();
+            txtEmail = AddTextBox();
+            txtDiaChi = AddTextBox();
+            cboTrangThai = new ComboBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 10), DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(3, 4, 6, 4) };
+            cboTrangThai.Items.AddRange(new object[] { "Hoạt động", "Khóa thẻ" }); cboTrangThai.SelectedIndex = 0;
+            AddField(fields, "Mã thẻ:", txtMaDocGia, 0, 1);
+            AddField(fields, "Trạng thái:", cboTrangThai, 2, 1);
+            AddField(fields, "Họ và tên:", txtHoTen, 0, 2);
+            AddField(fields, "Giới tính:", cboGioiTinh, 2, 2);
+            AddField(fields, "Ngày sinh:", dtpNgaySinh, 0, 3);
+            AddField(fields, "Ngày cấp thẻ:", dtpNgayDangKy, 2, 3);
+            AddField(fields, "Điện thoại:", txtSoDienThoai, 0, 4);
+            AddField(fields, "Email:", txtEmail, 2, 4);
+            fields.Controls.Add(CreateFieldLabel("Địa chỉ:"), 0, 5);
+            fields.Controls.Add(txtDiaChi, 1, 5);
+            fields.SetColumnSpan(txtDiaChi, 3);
 
-            AddLabel(pnlForm, "Giới tính:", 215, 45);
-            cboGioiTinh = new ComboBox
+            var flpButtons = new FlowLayoutPanel
             {
-                Location = new Point(285, 42),
-                Width = 105,
-                Font = new Font("Segoe UI", 10),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cboGioiTinh.Items.AddRange(new object[] { "Nam", "Nữ", "Khác" });
-            cboGioiTinh.SelectedIndex = 0;
-            pnlForm.Controls.Add(cboGioiTinh);
-
-            AddLabel(pnlForm, "Họ và tên (*):", 15, 85);
-            txtHoTen = AddTextBox(pnlForm, 105, 82, 285);
-
-            AddLabel(pnlForm, "Ngày sinh:", 15, 125);
-            dtpNgaySinh = new DateTimePicker
-            {
-                Location = new Point(105, 122),
-                Width = 135,
-                Font = new Font("Segoe UI", 10),
-                Format = DateTimePickerFormat.Short,
-                Value = new DateTime(2005, 1, 1)
-            };
-            pnlForm.Controls.Add(dtpNgaySinh);
-
-            // Cột 2: SĐT, Email, Địa chỉ, Ngày ĐK, Trạng thái
-            AddLabel(pnlForm, "Điện thoại (*):", 420, 45);
-            txtSoDienThoai = AddTextBox(pnlForm, 520, 42, 150);
-
-            AddLabel(pnlForm, "Ngày cấp thẻ:", 685, 45);
-            dtpNgayDangKy = new DateTimePicker
-            {
-                Location = new Point(785, 42),
-                Width = 130,
-                Font = new Font("Segoe UI", 10),
-                Format = DateTimePickerFormat.Short,
-                Value = DateTime.Now,
-                Enabled = false
-            };
-            pnlForm.Controls.Add(dtpNgayDangKy);
-
-            AddLabel(pnlForm, "Email (Unique):", 420, 85);
-            txtEmail = AddTextBox(pnlForm, 520, 82, 200);
-
-            AddLabel(pnlForm, "Trạng thái:", 730, 85);
-            cboTrangThai = new ComboBox
-            {
-                Location = new Point(805, 82),
-                Width = 110,
-                Font = new Font("Segoe UI", 10),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cboTrangThai.Items.AddRange(new object[] { "Hoạt động", "Khóa thẻ" });
-            cboTrangThai.SelectedIndex = 0;
-            pnlForm.Controls.Add(cboTrangThai);
-
-            AddLabel(pnlForm, "Địa chỉ:", 420, 125);
-            txtDiaChi = AddTextBox(pnlForm, 520, 122, 395);
-
-            // Các nút chức năng
-            FlowLayoutPanel flpButtons = new FlowLayoutPanel
-            {
-                Location = new Point(15, 175),
-                Size = new Size(900, 42),
-                WrapContents = false
+                Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false,
+                FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 3, 0, 0)
             };
 
             Button btnThem = CreateButton("➕ Cấp Thẻ Mới (Thêm)", ForestGreen);
@@ -159,60 +120,25 @@ namespace QuanLyThuVien.Desktop.UserControls
             btnLamMoi.Click += (s, e) => ClearForm();
 
             flpButtons.Controls.AddRange(new Control[] { btnThem, btnSua, btnKhoaMo, btnLamMoi });
-            pnlForm.Controls.Add(flpButtons);
+            fields.Controls.Add(flpButtons, 0, 6);
+            fields.SetColumnSpan(flpButtons, 4);
+            pnlForm.Controls.Add(fields);
 
-            // ==========================================
-            // 2. THANH TÌM KIẾM & LỌC (MIDDLE PANEL)
-            // ==========================================
-            Panel pnlFilter = new Panel
+            var pnlFilter = new FlowLayoutPanel
             {
-                Dock = DockStyle.Top,
-                Height = 52,
-                BackColor = PaperCream
+                Dock = DockStyle.Top, Height = 62, WrapContents = true,
+                FlowDirection = FlowDirection.LeftToRight, AutoScroll = false,
+                BackColor = PaperCream, Padding = new Padding(2, 7, 2, 3)
             };
-
-            Label lblTim = new Label
-            {
-                Text = "🔍 Tìm độc giả (Họ tên / SĐT / Email):",
-                Font = new Font("Georgia", 10, FontStyle.Bold),
-                ForeColor = WoodDark,
-                Location = new Point(5, 16),
-                AutoSize = true
-            };
-
-            txtTimKiem = new TextBox
-            {
-                Location = new Point(275, 13),
-                Width = 240,
-                Font = new Font("Segoe UI", 10)
-            };
+            var lblTim = CreateFieldLabel("🔍 Tìm độc giả:"); lblTim.Width = 120;
+            txtTimKiem = new TextBox { Width = 235, Font = new Font("Segoe UI", 10), Margin = new Padding(3, 5, 12, 3) };
             txtTimKiem.TextChanged += (s, e) => ScheduleFilter();
-
-            Label lblLoc = new Label
-            {
-                Text = "Trạng thái thẻ:",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = WoodDark,
-                Location = new Point(535, 16),
-                AutoSize = true
-            };
-
-            cboLocTrangThai = new ComboBox
-            {
-                Location = new Point(645, 13),
-                Width = 150,
-                Font = new Font("Segoe UI", 10),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cboLocTrangThai.Items.AddRange(new object[] { "-- Tất cả --", "Hoạt động", "Khóa thẻ" });
-            cboLocTrangThai.SelectedIndex = 0;
+            var lblLoc = CreateFieldLabel("Trạng thái thẻ:"); lblLoc.Width = 110;
+            cboLocTrangThai = new ComboBox { Width = 150, Font = new Font("Segoe UI", 10), DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(3, 4, 8, 3) };
+            cboLocTrangThai.Items.AddRange(new object[] { "-- Tất cả --", "Hoạt động", "Khóa thẻ" }); cboLocTrangThai.SelectedIndex = 0;
             cboLocTrangThai.SelectedIndexChanged += (s, e) => ScheduleFilter();
-
             pnlFilter.Controls.AddRange(new Control[] { lblTim, txtTimKiem, lblLoc, cboLocTrangThai });
 
-            // ==========================================
-            // 3. BẢNG DANH SÁCH ĐỘC GIẢ (BOTTOM FILL)
-            // ==========================================
             Panel pnlGrid = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -242,11 +168,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvDocGia.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgvDocGia.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
             dgvDocGia.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
-
-            dgvDocGia.DefaultCellStyle.BackColor = CardBg;
-            dgvDocGia.DefaultCellStyle.ForeColor = WoodDark;
-            dgvDocGia.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 195, 160);
-            dgvDocGia.DefaultCellStyle.SelectionForeColor = WoodDark;
+            QuanLyThuVien.Desktop.Services.DataGridViewStyleHelper.ApplyLibraryStyle(dgvDocGia);
 
             dgvDocGia.Columns.Add("MaDocGia", "Mã ĐG");
             dgvDocGia.Columns["MaDocGia"].FillWeight = 50;
@@ -270,34 +192,49 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvDocGia.CellClick += DgvDocGia_CellClick;
             pnlGrid.Controls.Add(dgvDocGia);
 
-            this.Controls.Add(pnlGrid);
-            this.Controls.Add(pnlFilter);
-            this.Controls.Add(pnlForm);
-        }
-
-        private void AddLabel(Control parent, string text, int x, int y)
-        {
-            parent.Controls.Add(new Label
+            var pageLayout = new TableLayoutPanel
             {
-                Text = text,
-                Location = new Point(x, y),
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                ForeColor = WoodDark,
-                AutoSize = true
-            });
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
+                BackColor = PaperCream, Margin = Padding.Empty, Padding = Padding.Empty
+            };
+            pageLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 284));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            pnlForm.Dock = DockStyle.Fill;
+            pnlFilter.Dock = DockStyle.Fill;
+            pnlGrid.Dock = DockStyle.Fill;
+            pageLayout.Controls.Add(pnlForm, 0, 0);
+            pageLayout.Controls.Add(pnlFilter, 0, 1);
+            pageLayout.Controls.Add(pnlGrid, 0, 2);
+            Controls.Add(pageLayout);
         }
 
-        private TextBox AddTextBox(Control parent, int x, int y, int width)
+        private static Label CreateFieldLabel(string text) => new()
+        {
+            Text = text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = Color.FromArgb(44, 30, 22),
+            AutoEllipsis = true, Margin = new Padding(3)
+        };
+
+        private static void AddField(TableLayoutPanel layout, string label, Control input, int labelColumn, int row)
+        {
+            layout.Controls.Add(CreateFieldLabel(label), labelColumn, row);
+            input.Dock = DockStyle.Fill;
+            input.Margin = new Padding(3, 4, 6, 4);
+            layout.Controls.Add(input, labelColumn + 1, row);
+        }
+
+        private static TextBox AddTextBox()
         {
             TextBox txt = new TextBox
             {
-                Location = new Point(x, y),
-                Width = width,
+                Dock = DockStyle.Fill,
                 Font = new Font("Segoe UI", 10),
                 BackColor = Color.FromArgb(255, 253, 248),
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.FixedSingle,
+                Margin = new Padding(3, 4, 6, 4)
             };
-            parent.Controls.Add(txt);
             return txt;
         }
 
@@ -306,8 +243,8 @@ namespace QuanLyThuVien.Desktop.UserControls
             Button btn = new Button
             {
                 Text = text,
-                Size = new Size(195, 36),
-                Margin = new Padding(0, 0, 12, 0),
+                Size = new Size(170, 36),
+                Margin = new Padding(0, 0, 6, 0),
                 Font = new Font("Georgia", 9.5f, FontStyle.Bold),
                 BackColor = bg,
                 ForeColor = Color.White,

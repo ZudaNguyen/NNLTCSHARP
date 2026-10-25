@@ -101,11 +101,30 @@ public sealed class MuonTraRepository(LibraryDbContext db) : IMuonTraRepository
             else line.Sach.SoLuongCon += request.SoLuongXuLy;
             var lateDays = Math.Max(0, (request.NgayTra.Date - line.PhieuMuon.HanTra.Date).Days);
             var rate = await db.CauHinhTienPhat.AsNoTracking().Where(x => x.Id == 1).Select(x => (decimal?)x.MucPhatMoiNgay).FirstOrDefaultAsync(ct);
-            db.ChiTietTraSach.Add(new ChiTietTraSach { MaChiTiet = maChiTiet, SoLuongXuLy = request.SoLuongXuLy,
+            var fineAmount = rate.HasValue ? lateDays * request.SoLuongXuLy * rate.Value : (decimal?)null;
+            if (request.SoTienThu > 0 && !fineAmount.HasValue)
+                throw new BorrowingRuleException("Chưa cấu hình mức phạt nên không thể thu tiền phạt.");
+            if (request.SoTienThu > fineAmount.GetValueOrDefault())
+                throw new BorrowingConflictException("Số tiền thu vượt quá tiền phạt của lần trả này.");
+
+            var returnRecord = new ChiTietTraSach { MaChiTiet = maChiTiet, SoLuongXuLy = request.SoLuongXuLy,
                 NgayTra = request.NgayTra.Date, TinhTrangSach = request.TinhTrangSach, SoNgayTre = lateDays,
-                MucPhatMoiNgayApDung = rate, SoTienPhatPhaiThu = rate.HasValue ? lateDays * request.SoLuongXuLy * rate.Value : null,
-                IdempotencyKey = request.IdempotencyKey });
+                MucPhatMoiNgayApDung = rate, SoTienPhatPhaiThu = fineAmount,
+                IdempotencyKey = request.IdempotencyKey };
+            db.ChiTietTraSach.Add(returnRecord);
             await db.SaveChangesAsync(ct);
+            if (request.SoTienThu > 0)
+            {
+                db.ThuTienPhat.Add(new ThuTienPhat
+                {
+                    MaLanTra = returnRecord.MaLanTra,
+                    SoTien = request.SoTienThu,
+                    NgayThu = DateTime.Now,
+                    NguoiThu = request.NguoiThu?.Trim(),
+                    IdempotencyKey = request.IdempotencyKey
+                });
+                await db.SaveChangesAsync(ct);
+            }
         }
         await tx.CommitAsync(ct);
         return await GetByIdAsync(maPhieu, ct);

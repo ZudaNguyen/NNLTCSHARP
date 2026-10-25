@@ -48,16 +48,28 @@ namespace QuanLyThuVien.Desktop.UserControls
             this.BackColor = PaperCream;
             this.Padding = new Padding(18);
 
-            // Dùng TableLayoutPanel chia đôi màn hình 50% - 50%
-            TableLayoutPanel tlpMain = new TableLayoutPanel
+            var tabs = new TabControl
             {
                 Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 1,
-                BackColor = PaperCream
+                BackColor = PaperCream,
+                Font = new Font("Georgia", 10, FontStyle.Bold),
+                Padding = new Point(14, 6)
             };
-            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46F));
-            tlpMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54F));
+            var tabTheLoai = new TabPage("  Quản lý Thể loại  ") { BackColor = PaperCream, Padding = new Padding(8) };
+            var tabTacGia = new TabPage("  Quản lý Tác giả  ") { BackColor = PaperCream, Padding = new Padding(8) };
+            tabs.TabPages.AddRange([tabTheLoai, tabTacGia]);
+            tabs.DrawMode = TabDrawMode.OwnerDrawFixed;
+            tabs.ItemSize = new Size(180, 38);
+            tabs.SizeMode = TabSizeMode.Fixed;
+            tabs.DrawItem += (_, e) =>
+            {
+                var selected = e.Index == tabs.SelectedIndex;
+                using var background = new SolidBrush(selected ? Burgundy : Color.FromArgb(224, 213, 191));
+                e.Graphics.FillRectangle(background, e.Bounds);
+                TextRenderer.DrawText(e.Graphics, tabs.TabPages[e.Index].Text.Trim(), tabs.Font,
+                    e.Bounds, selected ? Color.White : WoodDark,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+            };
 
             // =========================================================
             // PHÂN KHU TRÁI: QUẢN LÝ THỂ LOẠI SÁCH (BẢNG TheLoai)
@@ -67,11 +79,15 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Dock = DockStyle.Fill,
                 BackColor = CardBg,
                 BorderStyle = BorderStyle.FixedSingle,
-                Margin = new Padding(0, 0, 10, 0),
+                Margin = Padding.Empty,
                 Padding = new Padding(12)
             };
 
-            Panel pnlTLTop = new Panel { Dock = DockStyle.Top, Height = 282 };
+            var pnlTLTop = new TableLayoutPanel { Dock = DockStyle.Top, Height = 242, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty, Padding = Padding.Empty };
+            pnlTLTop.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pnlTLTop.RowStyles.Add(new RowStyle(SizeType.Absolute, 166));
+            pnlTLTop.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            var pnlTLFields = new Panel { Dock = DockStyle.Fill, AutoScroll = true, AutoScrollMinSize = new Size(710, 0) };
             Label lblTLTitle = new Label
             {
                 Text = "🔖 Danh Mục Thể Loại (Bảng TheLoai)",
@@ -80,30 +96,31 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Location = new Point(5, 5),
                 AutoSize = true
             };
-            pnlTLTop.Controls.Add(lblTLTitle);
+            pnlTLFields.Controls.Add(lblTLTitle);
 
-            AddLabel(pnlTLTop, "Mã TL:", 5, 38);
-            txtMaTheLoai = AddTextBox(pnlTLTop, 85, 35, 90);
+            AddLabel(pnlTLFields, "Mã TL:", 5, 40);
+            txtMaTheLoai = AddTextBox(pnlTLFields, 62, 37, 82);
             txtMaTheLoai.ReadOnly = true;
             txtMaTheLoai.BackColor = Color.FromArgb(235, 230, 220);
             txtMaTheLoai.PlaceholderText = "Tự động";
 
-            AddLabel(pnlTLTop, "Tên TL (*):", 5, 74);
-            txtTenTheLoai = AddTextBox(pnlTLTop, 85, 71, 280);
+            AddLabel(pnlTLFields, "Tên thể loại:", 158, 40);
+            txtTenTheLoai = AddTextBox(pnlTLFields, 245, 37, 280);
 
-            AddLabel(pnlTLTop, "Mô tả:", 5, 110);
+            AddLabel(pnlTLFields, "Mô tả:", 5, 85);
             txtMoTaTL = new TextBox
             {
-                Location = new Point(85, 107),
-                Size = new Size(280, 48),
+                Location = new Point(85, 80),
+                Size = new Size(620, 44),
                 Multiline = true,
                 Font = new Font("Segoe UI", 9.5f),
                 BackColor = Color.FromArgb(255, 253, 248),
                 BorderStyle = BorderStyle.FixedSingle
             };
-            pnlTLTop.Controls.Add(txtMoTaTL);
+            txtMoTaTL.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            pnlTLFields.Controls.Add(txtMoTaTL);
 
-            FlowLayoutPanel flpTLBtns = new FlowLayoutPanel { Location = new Point(5, 165), Size = new Size(420, 40) };
+            FlowLayoutPanel flpTLBtns = new FlowLayoutPanel { Location = new Point(5, 128), Size = new Size(420, 36), WrapContents = false };
             Button btnThemTL = CreateMiniButton("➕ Thêm", ForestGreen);
             Button btnSuaTL = CreateMiniButton("✏️ Sửa", Color.FromArgb(180, 120, 20));
             btnAnTheLoai = CreateMiniButton("🗃️ Ẩn (Xóa)", Burgundy);
@@ -115,14 +132,21 @@ namespace QuanLyThuVien.Desktop.UserControls
             btnMoiTL.Click += (_, _) => ClearTheLoai();
 
             flpTLBtns.Controls.AddRange(new Control[] { btnThemTL, btnSuaTL, btnAnTheLoai, btnMoiTL });
-            pnlTLTop.Controls.Add(flpTLBtns);
-            AddLabel(pnlTLTop, "Tìm:", 5, 216);
-            txtTimTheLoai = AddTextBox(pnlTLTop, 85, 213, 280);
+            pnlTLFields.Controls.Add(flpTLBtns);
+            txtTimTheLoai = new TextBox { Width = 250, Font = new Font("Segoe UI", 9.5f), BackColor = Color.FromArgb(255, 253, 248), BorderStyle = BorderStyle.FixedSingle, PlaceholderText = "Tên thể loại hoặc mô tả" };
             txtTimTheLoai.PlaceholderText = "Tên thể loại hoặc mô tả";
             txtTimTheLoai.TextChanged += (_, _) => QueueSearch(true);
-            AddLabel(pnlTLTop, "Trạng thái:", 5, 249);
-            cboTrangThaiTheLoai = CreateStatusFilter(pnlTLTop, 85, 245, 220);
+            cboTrangThaiTheLoai = CreateStatusFilter("Tất cả");
             cboTrangThaiTheLoai.SelectedIndexChanged += (_, _) => QueueSearch(true);
+            var tlFilter = CreateCatalogFilterBar(txtTimTheLoai, cboTrangThaiTheLoai);
+            pnlTLTop.Controls.Add(pnlTLFields, 0, 0);
+            pnlTLTop.Controls.Add(tlFilter, 0, 1);
+            pnlTLFields.SizeChanged += (_, _) =>
+            {
+                var width = Math.Max(220, pnlTLFields.ClientSize.Width - 265);
+                txtTenTheLoai.Width = width;
+                txtMoTaTL.Width = Math.Max(250, pnlTLFields.ClientSize.Width - txtMoTaTL.Left - 15);
+            };
 
             dgvTheLoai = CreateStyledGrid();
             dgvTheLoai.Columns.Add("MaTL", "Mã TL");
@@ -159,7 +183,11 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Padding = new Padding(12)
             };
 
-            Panel pnlTGTop = new Panel { Dock = DockStyle.Top, Height = 282 };
+            var pnlTGTop = new TableLayoutPanel { Dock = DockStyle.Top, Height = 242, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty, Padding = Padding.Empty };
+            pnlTGTop.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pnlTGTop.RowStyles.Add(new RowStyle(SizeType.Absolute, 166));
+            pnlTGTop.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            var pnlTGFields = new Panel { Dock = DockStyle.Fill, AutoScroll = true, AutoScrollMinSize = new Size(710, 0) };
             Label lblTGTitle = new Label
             {
                 Text = "✒️ Hồ Sơ Tác Giả (Bảng TacGia)",
@@ -168,33 +196,39 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Location = new Point(5, 5),
                 AutoSize = true
             };
-            pnlTGTop.Controls.Add(lblTGTitle);
+            pnlTGFields.Controls.Add(lblTGTitle);
 
-            AddLabel(pnlTGTop, "Mã TG:", 5, 38);
-            txtMaTacGia = AddTextBox(pnlTGTop, 90, 35, 80);
+            AddLabel(pnlTGFields, "Mã TG:", 5, 40);
+            txtMaTacGia = AddTextBox(pnlTGFields, 62, 37, 82);
             txtMaTacGia.ReadOnly = true;
             txtMaTacGia.BackColor = Color.FromArgb(235, 230, 220);
             txtMaTacGia.PlaceholderText = "Tự động";
 
-            AddLabel(pnlTGTop, "Quốc tịch:", 185, 38);
-            txtQuocTich = AddTextBox(pnlTGTop, 260, 35, 160);
+            AddLabel(pnlTGFields, "Tên tác giả:", 158, 40);
+            txtTenTacGia = AddTextBox(pnlTGFields, 245, 37, 270);
 
-            AddLabel(pnlTGTop, "Tên TG (*):", 5, 74);
-            txtTenTacGia = AddTextBox(pnlTGTop, 90, 71, 330);
+            var lblQuocTich = new Label
+            {
+                Text = "Quốc tịch:", Location = new Point(520, 40),
+                Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = WoodDark, AutoSize = true
+            };
+            pnlTGFields.Controls.Add(lblQuocTich);
+            txtQuocTich = AddTextBox(pnlTGFields, 605, 37, 140);
 
-            AddLabel(pnlTGTop, "Giới thiệu:", 5, 110);
+            AddLabel(pnlTGFields, "Giới thiệu:", 5, 85);
             txtGioiThieuTG = new TextBox
             {
-                Location = new Point(90, 107),
-                Size = new Size(330, 48),
+                Location = new Point(90, 80),
+                Size = new Size(620, 44),
                 Multiline = true,
                 Font = new Font("Segoe UI", 9.5f),
                 BackColor = Color.FromArgb(255, 253, 248),
                 BorderStyle = BorderStyle.FixedSingle
             };
-            pnlTGTop.Controls.Add(txtGioiThieuTG);
+            txtGioiThieuTG.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            pnlTGFields.Controls.Add(txtGioiThieuTG);
 
-            FlowLayoutPanel flpTGBtns = new FlowLayoutPanel { Location = new Point(5, 165), Size = new Size(450, 40) };
+            FlowLayoutPanel flpTGBtns = new FlowLayoutPanel { Location = new Point(5, 128), Size = new Size(420, 36), WrapContents = false };
             Button btnThemTG = CreateMiniButton("➕ Thêm", ForestGreen);
             Button btnSuaTG = CreateMiniButton("✏️ Sửa", Color.FromArgb(180, 120, 20));
             btnAnTacGia = CreateMiniButton("🗃️ Ẩn (Xóa)", Burgundy);
@@ -206,14 +240,23 @@ namespace QuanLyThuVien.Desktop.UserControls
             btnMoiTG.Click += (_, _) => ClearTacGia();
 
             flpTGBtns.Controls.AddRange(new Control[] { btnThemTG, btnSuaTG, btnAnTacGia, btnMoiTG });
-            pnlTGTop.Controls.Add(flpTGBtns);
-            AddLabel(pnlTGTop, "Tìm:", 5, 216);
-            txtTimTacGia = AddTextBox(pnlTGTop, 90, 213, 330);
-            txtTimTacGia.PlaceholderText = "Tên tác giả, quốc tịch hoặc giới thiệu";
+            pnlTGFields.Controls.Add(flpTGBtns);
+            txtTimTacGia = new TextBox { Width = 250, Font = new Font("Segoe UI", 9.5f), BackColor = Color.FromArgb(255, 253, 248), BorderStyle = BorderStyle.FixedSingle, PlaceholderText = "Tên tác giả, quốc tịch hoặc giới thiệu" };
             txtTimTacGia.TextChanged += (_, _) => QueueSearch(false);
-            AddLabel(pnlTGTop, "Trạng thái:", 5, 249);
-            cboTrangThaiTacGia = CreateStatusFilter(pnlTGTop, 90, 245, 260);
+            cboTrangThaiTacGia = CreateStatusFilter("Tất cả");
             cboTrangThaiTacGia.SelectedIndexChanged += (_, _) => QueueSearch(false);
+            var tgFilter = CreateCatalogFilterBar(txtTimTacGia, cboTrangThaiTacGia);
+            pnlTGTop.Controls.Add(pnlTGFields, 0, 0);
+            pnlTGTop.Controls.Add(tgFilter, 0, 1);
+            pnlTGFields.SizeChanged += (_, _) =>
+            {
+                var countryLabelLeft = Math.Max(520, pnlTGFields.ClientSize.Width - 230);
+                lblQuocTich.Left = countryLabelLeft;
+                txtTenTacGia.Width = Math.Max(180, countryLabelLeft - txtTenTacGia.Left - 15);
+                txtQuocTich.Left = countryLabelLeft + 78;
+                txtQuocTich.Width = Math.Max(100, pnlTGFields.ClientSize.Width - txtQuocTich.Left - 10);
+                txtGioiThieuTG.Width = Math.Max(250, pnlTGFields.ClientSize.Width - txtGioiThieuTG.Left - 15);
+            };
 
             dgvTacGia = CreateStyledGrid();
             dgvTacGia.Columns.Add("MaTG", "Mã TG");
@@ -242,9 +285,11 @@ namespace QuanLyThuVien.Desktop.UserControls
             pnlTacGia.Controls.Add(pnlTGTop);
 
             // Ghép 2 phân khu vào TableLayoutPanel
-            tlpMain.Controls.Add(pnlTheLoai, 0, 0);
-            tlpMain.Controls.Add(pnlTacGia, 1, 0);
-            this.Controls.Add(tlpMain);
+            pnlTheLoai.Dock = DockStyle.Fill;
+            pnlTacGia.Dock = DockStyle.Fill;
+            tabTheLoai.Controls.Add(pnlTheLoai);
+            tabTacGia.Controls.Add(pnlTacGia);
+            this.Controls.Add(tabs);
         }
 
         private DataGridView CreateStyledGrid()
@@ -270,26 +315,48 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
             dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9, FontStyle.Bold);
-
-            dgv.DefaultCellStyle.BackColor = CardBg;
-            dgv.DefaultCellStyle.ForeColor = WoodDark;
-            dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 195, 160);
-            dgv.DefaultCellStyle.SelectionForeColor = WoodDark;
+            DataGridViewStyleHelper.ApplyLibraryStyle(dgv);
             return dgv;
         }
 
-        private static ComboBox CreateStatusFilter(Control parent, int x, int y, int width)
+        private static ComboBox CreateStatusFilter(string defaultValue)
         {
             var combo = new ComboBox
             {
-                Location = new Point(x, y),
-                Width = width,
+                Width = 180,
                 Font = new Font("Segoe UI", 9.5f),
-                DropDownStyle = ComboBoxStyle.DropDownList
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Margin = new Padding(3, 4, 8, 3)
             };
-            combo.Items.AddRange(["Đang hoạt động", "Đã ẩn", "Tất cả"]);
-            parent.Controls.Add(combo);
+            combo.Items.AddRange(["Tất cả", "Đang hoạt động", "Đã ẩn"]);
+            combo.SelectedItem = defaultValue;
             return combo;
+        }
+
+        private static FlowLayoutPanel CreateCatalogFilterBar(TextBox search, ComboBox status)
+        {
+            var bar = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false,
+                FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(3, 5, 3, 2),
+                Margin = Padding.Empty, BackColor = Color.FromArgb(247, 243, 233)
+            };
+            var searchLabel = new Label
+            {
+                Text = "Tìm kiếm:", Width = 82, Height = 30, TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = Color.FromArgb(44, 30, 22),
+                Margin = new Padding(3, 3, 2, 2)
+            };
+            var statusLabel = new Label
+            {
+                Text = "Trạng thái:", Width = 82, Height = 30, TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = Color.FromArgb(44, 30, 22),
+                Margin = new Padding(10, 3, 2, 2)
+            };
+            search.Width = 250;
+            search.Margin = new Padding(3, 4, 8, 2);
+            bar.Controls.AddRange([searchLabel, search, statusLabel, status]);
+            return bar;
         }
 
         private static void SetRestoreButton(Button button, bool isDeleted)
@@ -331,7 +398,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Text = text,
                 Size = new Size(92, 32),
                 Margin = new Padding(0, 0, 8, 0),
-                Font = new Font("Georgia", 8.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 BackColor = bg,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -374,8 +441,8 @@ namespace QuanLyThuVien.Desktop.UserControls
 
         private async Task RefreshTheLoaiAsync(CancellationToken token)
         {
-            var onlyDeleted = cboTrangThaiTheLoai.SelectedIndex == 1;
-            var includeDeleted = cboTrangThaiTheLoai.SelectedIndex == 2;
+            var onlyDeleted = cboTrangThaiTheLoai.SelectedIndex == 2;
+            var includeDeleted = cboTrangThaiTheLoai.SelectedIndex != 1;
             var items = await _api.GetTheLoaiAsync(txtTimTheLoai.Text, includeDeleted, onlyDeleted, token);
             ClearTheLoai();
             dgvTheLoai.Rows.Clear();
@@ -388,8 +455,8 @@ namespace QuanLyThuVien.Desktop.UserControls
 
         private async Task RefreshTacGiaAsync(CancellationToken token)
         {
-            var onlyDeleted = cboTrangThaiTacGia.SelectedIndex == 1;
-            var includeDeleted = cboTrangThaiTacGia.SelectedIndex == 2;
+            var onlyDeleted = cboTrangThaiTacGia.SelectedIndex == 2;
+            var includeDeleted = cboTrangThaiTacGia.SelectedIndex != 1;
             var items = await _api.GetTacGiaAsync(txtTimTacGia.Text, includeDeleted, onlyDeleted, token);
             ClearTacGia();
             dgvTacGia.Rows.Clear();

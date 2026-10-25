@@ -47,6 +47,11 @@ public sealed class MuonTraController(IMuonTraService service) : ControllerBase
         return Ok(await service.SearchAsync(search, trangThai, loaiNgay, tuNgay, denNgay, chiQuaHan, ct));
     }
 
+    [HttpGet("docgia/{readerId:int}")]
+    [Authorize(Roles = "ADMIN,THU_THU")]
+    public async Task<IActionResult> ReaderHistory(int readerId, CancellationToken ct) =>
+        Ok(await service.GetForReaderAsync(readerId, ct));
+
     [HttpGet("sach-con-hang")]
     [Authorize(Roles = "ADMIN,THU_THU")]
     public async Task<IActionResult> Books(CancellationToken ct) => Ok(await service.GetSachConHangAsync(ct));

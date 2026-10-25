@@ -12,6 +12,19 @@ internal sealed class MuonTraApiClient
 
     public Task<List<MuonTraDto>> SearchAsync(string? search, string? status, CancellationToken ct) =>
         GetAsync<List<MuonTraDto>>("api/muontra" + Query(search, status), ct);
+    public Task<List<MuonTraDto>> SearchHistoryAsync(string? search, string? status, DateTime? from, DateTime? to, CancellationToken ct)
+    {
+        var values = new List<string>();
+        if (!string.IsNullOrWhiteSpace(search)) values.Add("search=" + Uri.EscapeDataString(search.Trim()));
+        if (!string.IsNullOrWhiteSpace(status)) values.Add("trangThai=" + Uri.EscapeDataString(status));
+        if (from.HasValue || to.HasValue) values.Add("loaiNgay=ngayMuon");
+        if (from.HasValue) values.Add("tuNgay=" + Uri.EscapeDataString(from.Value.ToString("yyyy-MM-dd")));
+        if (to.HasValue) values.Add("denNgay=" + Uri.EscapeDataString(to.Value.ToString("yyyy-MM-dd")));
+        var query = values.Count == 0 ? string.Empty : "?" + string.Join("&", values);
+        return GetAsync<List<MuonTraDto>>("api/muontra" + query, ct);
+    }
+    public Task<List<MuonTraDto>> GetReaderLoansAsync(int readerId, CancellationToken ct) =>
+        GetAsync<List<MuonTraDto>>($"api/muontra/docgia/{readerId}", ct);
     public Task<List<MuonTraDto>> GetMyLoansAsync(CancellationToken ct) =>
         GetAsync<List<MuonTraDto>>("api/muontra/me", ct);
     public Task<MuonTraChiTietDto> GetMyLoanAsync(int id, CancellationToken ct) =>

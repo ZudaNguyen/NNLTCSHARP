@@ -100,12 +100,20 @@ public sealed class TraChiTietDto : IValidatableObject
     [Required, RegularExpression("^(Nguyên vẹn|Rách hoặc bẩn nhẹ|Hỏng nặng|Mất)$")]
     public string TinhTrangSach { get; init; } = string.Empty;
 
+    // Optional collection made in the same transaction as the return record.
+    public decimal SoTienThu { get; init; }
+
+    [StringLength(100)]
+    public string? NguoiThu { get; init; }
+
     public Guid IdempotencyKey { get; init; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (IdempotencyKey == Guid.Empty)
             yield return new ValidationResult("IdempotencyKey không được rỗng.", [nameof(IdempotencyKey)]);
+        if (SoTienThu < 0 || SoTienThu > 9999999999999999.99m)
+            yield return new ValidationResult("Số tiền thu phải không âm và nằm trong giới hạn.", [nameof(SoTienThu)]);
     }
 }
 

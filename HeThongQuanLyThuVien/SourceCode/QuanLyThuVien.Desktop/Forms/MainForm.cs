@@ -56,14 +56,14 @@ namespace QuanLyThuVien.Desktop.Forms
             pnlSidebar = new Panel
             {
                 Dock = DockStyle.Left,
-                Width = 250,
+                Width = 230,
                 BackColor = WoodDark
             };
 
             Label lblBrand = new Label
             {
                 Text = "🏛️ THƯ VIỆN CỔ",
-                Font = new Font("Georgia", 14, FontStyle.Bold),
+                Font = new Font("Georgia", 13.5f, FontStyle.Bold),
                 ForeColor = GoldText,
                 Dock = DockStyle.Top,
                 Height = 70,
@@ -152,11 +152,13 @@ namespace QuanLyThuVien.Desktop.Forms
             lblHeaderTitle = new Label
             {
                 Text = "📜 Tổng quan Sổ sách Thư viện",
-                Font = new Font("Georgia", 15, FontStyle.Bold),
+                Font = new Font("Georgia", 14, FontStyle.Bold),
                 ForeColor = WoodDark,
-                Dock = DockStyle.Left,
-                AutoSize = true,
-                Padding = new Padding(0, 20, 0, 0)
+                Dock = DockStyle.Fill,
+                AutoSize = false,
+                AutoEllipsis = true,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(0, 0, 12, 0)
             };
 
             string chucDanh = _role switch
@@ -167,16 +169,32 @@ namespace QuanLyThuVien.Desktop.Forms
             };
             Label lblUserInfo = new Label
             {
-                Text = $"🪶 Người trực: {_username}  |  Cấp bậc: {chucDanh}",
-                Font = new Font("Georgia", 10, FontStyle.Italic | FontStyle.Bold),
+                Text = $"Người trực: {_username}\r\nVai trò: {chucDanh}",
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 ForeColor = Burgundy,
-                Dock = DockStyle.Right,
-                AutoSize = true,
-                Padding = new Padding(0, 25, 0, 0)
+                Dock = DockStyle.Fill,
+                AutoSize = false,
+                AutoEllipsis = false,
+                TextAlign = ContentAlignment.MiddleRight,
+                Padding = new Padding(4, 3, 0, 3)
             };
 
-            pnlHeader.Controls.Add(lblHeaderTitle);
-            pnlHeader.Controls.Add(lblUserInfo);
+            var headerLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                BackColor = PaperHeader,
+                Margin = Padding.Empty,
+                Padding = Padding.Empty
+            };
+            headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
+            headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
+            headerLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            headerLayout.Controls.Add(lblHeaderTitle, 0, 0);
+            headerLayout.Controls.Add(lblUserInfo, 1, 0);
+
+            pnlHeader.Controls.Add(headerLayout);
             pnlHeader.Controls.Add(pnlHeaderBorder);
 
             // 3. CONTENT (Trang giấy làm việc chính)

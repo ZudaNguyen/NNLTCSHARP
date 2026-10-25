@@ -155,10 +155,7 @@ public sealed class ReaderSelfServiceControl : UserControl
         grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
         grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
         grid.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9, FontStyle.Bold);
-        grid.DefaultCellStyle.BackColor = _card;
-        grid.DefaultCellStyle.ForeColor = _wood;
-        grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 195, 160);
-        grid.DefaultCellStyle.SelectionForeColor = _wood;
+        QuanLyThuVien.Desktop.Services.DataGridViewStyleHelper.ApplyLibraryStyle(grid);
     }
 
     private async Task LoadProfileAndLoansAsync()

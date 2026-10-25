@@ -35,7 +35,19 @@ internal static class ApiSession
             if (!string.IsNullOrWhiteSpace(token))
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var response = await base.SendAsync(request, cancellationToken);
+            HttpResponseMessage response;
+            try
+            {
+                response = await base.SendAsync(request, cancellationToken);
+            }
+            catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new HttpRequestException(
+                    "Kết nối API bị gián đoạn hoặc API không phản hồi trong thời gian chờ. " +
+                    "Hãy kiểm tra API đang chạy tại localhost:5058 và SQL Server Docker đang hoạt động.",
+                    exception);
+            }
+
             if (response.StatusCode == HttpStatusCode.Unauthorized && !string.IsNullOrWhiteSpace(token)
                 && ReferenceEquals(Interlocked.CompareExchange(ref _accessToken, null, token), token))
                 SessionExpired?.Invoke();

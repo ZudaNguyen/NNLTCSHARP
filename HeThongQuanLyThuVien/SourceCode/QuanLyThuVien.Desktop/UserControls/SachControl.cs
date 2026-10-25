@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -42,6 +42,7 @@ namespace QuanLyThuVien.Desktop.UserControls
         private readonly SachApiClient apiClient = new();
         private CancellationTokenSource? searchCancellation;
         private bool loadingLookups;
+        private bool suppressFilterReload;
 
         public SachControl()
         {
@@ -64,7 +65,9 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Dock = DockStyle.Top,
                 Height = 290,
                 BackColor = CardBg,
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.FixedSingle,
+                AutoScroll = true,
+                AutoScrollMinSize = new Size(820, 0)
             };
 
             Label lblFormTitle = new Label
@@ -84,13 +87,13 @@ namespace QuanLyThuVien.Desktop.UserControls
             txtMaSach.BackColor = Color.FromArgb(235, 230, 220);
             txtMaSach.PlaceholderText = "Tự động";
 
-            AddLabel(pnlForm, "ISBN (*):", 205, 42);
+            AddLabel(pnlForm, "ISBN:", 205, 42);
             txtISBN = AddTextBox(pnlForm, 270, 39, 130);
 
-            AddLabel(pnlForm, "Tên sách (*):", 15, 80);
+            AddLabel(pnlForm, "Tên sách:", 15, 80);
             txtTenSach = AddTextBox(pnlForm, 105, 77, 295);
 
-            AddLabel(pnlForm, "Thể loại (*):", 15, 118);
+            AddLabel(pnlForm, "Thể loại:", 15, 118);
             cboTheLoai = new ComboBox
             {
                 Location = new Point(105, 115),
@@ -116,7 +119,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             };
             pnlForm.Controls.Add(numNamXB);
 
-            AddLabel(pnlForm, "Tổng SL (*):", 15, 194);
+            AddLabel(pnlForm, "Tổng SL:", 15, 194);
             numSoLuong = new NumericUpDown
             {
                 Location = new Point(105, 191),
@@ -328,11 +331,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvSach.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgvSach.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
             dgvSach.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
-
-            dgvSach.DefaultCellStyle.BackColor = CardBg;
-            dgvSach.DefaultCellStyle.ForeColor = WoodDark;
-            dgvSach.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 195, 160);
-            dgvSach.DefaultCellStyle.SelectionForeColor = WoodDark;
+            QuanLyThuVien.Desktop.Services.DataGridViewStyleHelper.ApplyLibraryStyle(dgvSach);
 
             dgvSach.Columns.Add("MaSach", "Mã Sách");
             dgvSach.Columns["MaSach"].FillWeight = 45;
@@ -356,10 +355,22 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             pnlGrid.Controls.Add(dgvSach);
 
-            // Add theo thứ tự ngược cho Dock
-            this.Controls.Add(pnlGrid);
-            this.Controls.Add(pnlFilter);
-            this.Controls.Add(pnlForm);
+            var pageLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
+                BackColor = PaperCream, Margin = Padding.Empty, Padding = Padding.Empty
+            };
+            pageLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 290));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            pnlForm.Dock = DockStyle.Fill;
+            pnlFilter.Dock = DockStyle.Fill;
+            pnlGrid.Dock = DockStyle.Fill;
+            pageLayout.Controls.Add(pnlForm, 0, 0);
+            pageLayout.Controls.Add(pnlFilter, 0, 1);
+            pageLayout.Controls.Add(pnlGrid, 0, 2);
+            this.Controls.Add(pageLayout);
         }
 
         // ==========================================
@@ -455,7 +466,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
         private async void FilterChanged(object? sender, EventArgs e)
         {
-            if (!loadingLookups)
+            if (!loadingLookups && !suppressFilterReload)
                 await LoadBooksAsync();
         }
 
@@ -618,7 +629,9 @@ namespace QuanLyThuVien.Desktop.UserControls
                 {
                     await apiClient.RestoreAsync(id, CancellationToken.None);
                     ClearForm();
-                    cboTrangThaiSach.SelectedIndex = 0;
+                    suppressFilterReload = true;
+                    try { cboTrangThaiSach.SelectedIndex = 0; }
+                    finally { suppressFilterReload = false; }
                     await LoadBooksAsync();
                     MessageBox.Show("Đã khôi phục sách về trạng thái hoạt động.", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }

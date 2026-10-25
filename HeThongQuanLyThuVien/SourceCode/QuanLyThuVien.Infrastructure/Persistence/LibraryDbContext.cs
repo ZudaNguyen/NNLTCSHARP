@@ -97,7 +97,8 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
 
         modelBuilder.Entity<NhanVien>(entity =>
         {
-            entity.ToTable("NhanVien");
+            entity.ToTable("NhanVien", table =>
+                table.HasCheckConstraint("CK_NhanVien_TrangThai", "[TrangThai] IN (N'Hoạt động', N'Ngừng hoạt động')"));
             entity.HasKey(employee => employee.MaNhanVien);
             entity.Property(employee => employee.MaNhanVien).ValueGeneratedOnAdd();
             entity.Property(employee => employee.HoTen).HasMaxLength(200).IsRequired();
@@ -110,7 +111,6 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
             entity.HasIndex(employee => employee.SoDienThoai).IsUnique().HasFilter("[SoDienThoai] IS NOT NULL");
             entity.HasIndex(employee => employee.HoTen);
             entity.HasIndex(employee => employee.TrangThai);
-            entity.HasCheckConstraint("CK_NhanVien_TrangThai", "[TrangThai] IN (N'Hoạt động', N'Ngừng hoạt động')");
         });
 
         modelBuilder.Entity<NhanVienTrangThaiLichSu>(entity =>
@@ -127,7 +127,12 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
 
         modelBuilder.Entity<TaiKhoan>(entity =>
         {
-            entity.ToTable("TaiKhoan");
+            entity.ToTable("TaiKhoan", table =>
+            {
+                table.HasCheckConstraint("CK_TaiKhoan_VaiTro", "[VaiTro] IN (N'ADMIN', N'THU_THU', N'DOC_GIA')");
+                table.HasCheckConstraint("CK_TaiKhoan_TrangThai", "[TrangThai] IN (N'Hoạt động', N'Bị khóa')");
+                table.HasCheckConstraint("CK_TaiKhoan_LienKet", "([VaiTro] = N'ADMIN' AND [MaDocGia] IS NULL) OR ([VaiTro] = N'THU_THU' AND [MaNhanVien] IS NOT NULL AND [MaDocGia] IS NULL) OR ([VaiTro] = N'DOC_GIA' AND [MaDocGia] IS NOT NULL AND [MaNhanVien] IS NULL)");
+            });
             entity.HasKey(account => account.MaTaiKhoan);
             entity.Property(account => account.MaTaiKhoan).ValueGeneratedOnAdd();
             entity.Property(account => account.TenDangNhap).HasMaxLength(64).IsRequired();
@@ -144,9 +149,6 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
             entity.HasIndex(account => new { account.VaiTro, account.TrangThai });
             entity.HasIndex(account => account.MaNhanVien).IsUnique().HasFilter("[MaNhanVien] IS NOT NULL");
             entity.HasIndex(account => account.MaDocGia).IsUnique().HasFilter("[MaDocGia] IS NOT NULL");
-            entity.HasCheckConstraint("CK_TaiKhoan_VaiTro", "[VaiTro] IN (N'ADMIN', N'THU_THU', N'DOC_GIA')");
-            entity.HasCheckConstraint("CK_TaiKhoan_TrangThai", "[TrangThai] IN (N'Hoạt động', N'Bị khóa')");
-            entity.HasCheckConstraint("CK_TaiKhoan_LienKet", "([VaiTro] = N'ADMIN' AND [MaDocGia] IS NULL) OR ([VaiTro] = N'THU_THU' AND [MaNhanVien] IS NOT NULL AND [MaDocGia] IS NULL) OR ([VaiTro] = N'DOC_GIA' AND [MaDocGia] IS NOT NULL AND [MaNhanVien] IS NULL)");
             entity.HasOne<NhanVien>().WithMany().HasForeignKey(account => account.MaNhanVien).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<DocGia>().WithMany().HasForeignKey(account => account.MaDocGia).OnDelete(DeleteBehavior.Restrict);
         });

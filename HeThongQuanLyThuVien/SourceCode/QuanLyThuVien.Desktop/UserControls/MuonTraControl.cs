@@ -24,26 +24,14 @@ namespace QuanLyThuVien.Desktop.UserControls
         private TextBox txtTimPhieu;
         private ComboBox cboLocTrangThai;
 
-        // 2 Bảng Master - Detail
+        // Danh sách phiếu
         private DataGridView dgvPhieuMuon;
-        private DataGridView dgvChiTiet;
-
-        // Controls Xác Nhận Trả Sách (Bảng ChiTiet_PhieuMuon)
-        private Label lblSachDangChon;
-        private Label lblTienPhat;
-        private DateTimePicker dtpNgayTra;
-        private NumericUpDown numTienPhat;
-        private NumericUpDown numSoLuongTra;
-        private ComboBox cboTinhTrangTra;
-        private Button btnXacNhanTra;
 
         private readonly MuonTraApiClient _api = new();
         private readonly string _nguoiLap;
         private readonly List<SachMuonOptionDto> _sachConHang = [];
-        private readonly List<MuonTraDto> _phieuMuon = [];
-        private readonly Dictionary<int, MuonTraChiTietDto> _chiTietPhieu = [];
         private decimal? _mucPhatMoiNgay;
-        private int? _selectedLineId;
+        private TabControl? _tabs;
 
         public MuonTraControl(string nguoiLap = "")
         {
@@ -58,16 +46,39 @@ namespace QuanLyThuVien.Desktop.UserControls
             this.Dock = DockStyle.Fill;
             this.BackColor = PaperCream;
             this.Padding = new Padding(18);
+            var tabs = new TabControl { Dock = DockStyle.Fill, Font = new Font("Georgia", 10, FontStyle.Bold), Padding = new Point(12, 5) };
+            var tabCreate = new TabPage("  Lập phiếu mượn  ") { BackColor = PaperCream, Padding = new Padding(8) };
+            var tabLoans = new TabPage("  Danh sách phiếu  ") { BackColor = PaperCream, Padding = new Padding(8) };
+            var tabDetail = new TabPage("  Lịch sử mượn  ") { BackColor = PaperCream, Padding = new Padding(8) };
+            _tabs = tabs;
+            tabs.TabPages.AddRange([tabCreate, tabLoans, tabDetail]);
+            tabs.DrawMode = TabDrawMode.OwnerDrawFixed;
+            tabs.ItemSize = new Size(220, 38);
+            tabs.SizeMode = TabSizeMode.Fixed;
+            tabs.DrawItem += (_, e) =>
+            {
+                var selected = e.Index == tabs.SelectedIndex;
+                using var background = new SolidBrush(selected ? Burgundy : Color.FromArgb(224, 213, 191));
+                e.Graphics.FillRectangle(background, e.Bounds);
+                TextRenderer.DrawText(e.Graphics, tabs.TabPages[e.Index].Text.Trim(), tabs.Font, e.Bounds,
+                    selected ? Color.White : WoodDark, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+            };
+            tabs.SelectedIndexChanged += async (_, _) =>
+            {
+                if (tabs.SelectedTab == tabDetail) await LoadHistoryAsync();
+            };
 
             // =========================================================
             // 1. KHU VỰC LẬP PHIẾU MƯỢN MỚI (TOP PANEL)
             // =========================================================
             Panel pnlCreateLoan = new Panel
             {
-                Dock = DockStyle.Top,
+                Dock = DockStyle.Fill,
                 Height = 185,
                 BackColor = CardBg,
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.FixedSingle,
+                AutoScroll = true,
+                AutoScrollMinSize = new Size(0, 175)
             };
 
             Label lblTitleCreate = new Label
@@ -81,7 +92,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             pnlCreateLoan.Controls.Add(lblTitleCreate);
 
             // Cột trái: Độc giả, Ngày mượn, Hạn trả
-            AddLabel(pnlCreateLoan, "Thẻ Độc giả (*):", 15, 42);
+            AddLabel(pnlCreateLoan, "Thẻ độc giả:", 15, 42);
             cboDocGia = new ComboBox
             {
                 Location = new Point(130, 39),
@@ -102,7 +113,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             };
             pnlCreateLoan.Controls.Add(dtpNgayMuon);
 
-            AddLabel(pnlCreateLoan, "Hạn trả (*):", 15, 118);
+            AddLabel(pnlCreateLoan, "Hạn trả:", 15, 118);
             dtpHanTra = new DateTimePicker
             {
                 Location = new Point(130, 115),
@@ -129,7 +140,12 @@ namespace QuanLyThuVien.Desktop.UserControls
             pnlCreateLoan.Controls.Add(btnLapPhieu);
 
             // Cột phải: Chọn danh sách sách muốn mượn
-            AddLabel(pnlCreateLoan, "Chọn ấn phẩm mượn (Chỉ hiển thị sách còn tồn kho > 0):", 425, 15);
+            var lblBookSelection = new Label
+            {
+                Text = "Chọn sách còn tồn trong kho:", Location = new Point(425, 13), Size = new Size(520, 22),
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = WoodDark, AutoEllipsis = true
+            };
+            pnlCreateLoan.Controls.Add(lblBookSelection);
             clbSachMuon = new CheckedListBox
             {
                 Location = new Point(425, 39),
@@ -137,7 +153,37 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Font = new Font("Segoe UI", 9.5f),
                 BackColor = Color.FromArgb(255, 253, 248),
                 BorderStyle = BorderStyle.FixedSingle,
-                CheckOnClick = true
+                CheckOnClick = true,
+                DrawMode = DrawMode.OwnerDrawFixed,
+                ItemHeight = 25
+            };
+            clbSachMuon.DrawItem += (_, e) =>
+            {
+                if (e.Index < 0) return;
+                var selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+                var background = selected ? Color.FromArgb(238, 230, 212) : Color.FromArgb(255, 253, 248);
+                using (var brush = new SolidBrush(background)) e.Graphics.FillRectangle(brush, e.Bounds);
+                var checkState = clbSachMuon.GetItemChecked(e.Index)
+                    ? System.Windows.Forms.VisualStyles.CheckBoxState.CheckedNormal
+                    : System.Windows.Forms.VisualStyles.CheckBoxState.UncheckedNormal;
+                CheckBoxRenderer.DrawCheckBox(e.Graphics, new Point(e.Bounds.Left + 4, e.Bounds.Top + 4), checkState);
+                var text = clbSachMuon.GetItemText(clbSachMuon.Items[e.Index]);
+                TextRenderer.DrawText(e.Graphics, text, clbSachMuon.Font,
+                    new Rectangle(e.Bounds.Left + 26, e.Bounds.Top + 1, Math.Max(10, e.Bounds.Width - 30), e.Bounds.Height - 2),
+                    Color.FromArgb(44, 30, 22), TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                if ((e.State & DrawItemState.Focus) == DrawItemState.Focus)
+                    ControlPaint.DrawFocusRectangle(e.Graphics, e.Bounds, Color.FromArgb(44, 30, 22), background);
+            };
+            clbSachMuon.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            pnlCreateLoan.SizeChanged += (_, _) =>
+            {
+                if (pnlCreateLoan.ClientSize.Width > 500)
+                {
+                    clbSachMuon.Width = Math.Max(250, pnlCreateLoan.ClientSize.Width - clbSachMuon.Left - 18);
+                    lblBookSelection.Width = Math.Max(250, pnlCreateLoan.ClientSize.Width - lblBookSelection.Left - 18);
+                }
+                if (pnlCreateLoan.ClientSize.Height > 80)
+                    clbSachMuon.Height = Math.Max(55, pnlCreateLoan.ClientSize.Height - clbSachMuon.Top - 12);
             };
             pnlCreateLoan.Controls.Add(clbSachMuon);
 
@@ -146,42 +192,58 @@ namespace QuanLyThuVien.Desktop.UserControls
             // =========================================================
             Panel pnlMaster = new Panel
             {
-                Dock = DockStyle.Top,
+                Dock = DockStyle.Fill,
                 Height = 220,
                 BackColor = PaperCream,
                 Padding = new Padding(0, 10, 0, 10)
             };
 
-            Panel pnlMasterBox = new Panel
+            var pnlMasterBox = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill,
-                BackColor = CardBg,
-                BorderStyle = BorderStyle.FixedSingle,
-                Padding = new Padding(10)
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
+                BackColor = CardBg, BorderStyle = BorderStyle.FixedSingle,
+                Padding = new Padding(10), Margin = Padding.Empty
             };
+            pnlMasterBox.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pnlMasterBox.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+            pnlMasterBox.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
+            pnlMasterBox.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
             // Thanh tìm kiếm phiếu mượn
-            Panel pnlMasterTop = new Panel { Dock = DockStyle.Top, Height = 36 };
+            var pnlMasterTop = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill, WrapContents = true,
+                FlowDirection = FlowDirection.LeftToRight, AutoScroll = false,
+                Padding = new Padding(0, 2, 0, 2), Margin = Padding.Empty
+            };
             Label lblMasterTitle = new Label
             {
-                Text = "📚 Danh sách Sổ Phiếu Mượn",
-                Font = new Font("Georgia", 10.5f, FontStyle.Bold),
+                Text = "📚 Sổ phiếu mượn",
+                Font = new Font("Georgia", 10f, FontStyle.Bold),
                 ForeColor = WoodDark,
-                Location = new Point(0, 6),
-                AutoSize = true
+                Size = new Size(155, 34), TextAlign = ContentAlignment.MiddleLeft,
+                Margin = new Padding(0, 2, 4, 2)
             };
 
-            Label lblTim = new Label { Text = "🔍 Tìm Mã phiếu / Độc giả:", Location = new Point(260, 8), AutoSize = true, Font = new Font("Segoe UI", 9, FontStyle.Bold) };
-            txtTimPhieu = new TextBox { Location = new Point(430, 5), Width = 170, Font = new Font("Segoe UI", 9) };
+            Label lblTim = new Label { Text = "Tìm phiếu/độc giả:", Size = new Size(115, 30), TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(2) };
+            txtTimPhieu = new TextBox { Width = 150, Font = new Font("Segoe UI", 9.5f), Margin = new Padding(2, 4, 6, 2) };
             txtTimPhieu.TextChanged += (s, e) => ApiFilterMasterGrid();
 
-            Label lblLoc = new Label { Text = "Trạng thái:", Location = new Point(615, 8), AutoSize = true, Font = new Font("Segoe UI", 9, FontStyle.Bold) };
-            cboLocTrangThai = new ComboBox { Location = new Point(685, 5), Width = 140, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 9) };
+            Label lblLoc = new Label { Text = "Trạng thái:", Size = new Size(75, 30), TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(2) };
+            cboLocTrangThai = new ComboBox { Width = 130, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 9.5f), Margin = new Padding(2, 4, 4, 2) };
             cboLocTrangThai.Items.AddRange(new object[] { "-- Tất cả --", "Đang mượn", "Quá hạn", "Đã hoàn tất" });
             cboLocTrangThai.SelectedIndex = 0;
             cboLocTrangThai.SelectedIndexChanged += (s, e) => ApiFilterMasterGrid();
 
-            pnlMasterTop.Controls.AddRange(new Control[] { lblMasterTitle, lblTim, txtTimPhieu, lblLoc, cboLocTrangThai });
+            var btnRefreshLoans = new Button { Text = "Làm mới", Size = new Size(88, 30), BackColor = Color.FromArgb(90, 75, 65), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3, 2, 3, 2), Font = new Font("Segoe UI", 9.5f, FontStyle.Bold) };
+            btnRefreshLoans.Click += async (_, _) => await LoadLoansAsync();
+            var btnViewDetail = new Button { Text = "Chi tiết / Nhận trả", Size = new Size(155, 30), BackColor = Burgundy, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(3, 2, 3, 2), Font = new Font("Segoe UI", 9.5f, FontStyle.Bold) };
+            btnViewDetail.Click += async (_, _) =>
+            {
+                if (dgvPhieuMuon.CurrentRow?.Tag is int loanId) await OpenNhanTraDialogAsync(loanId);
+                else MessageBox.Show("Chọn phiếu mượn cần xem.");
+            };
+            pnlMasterTop.Controls.AddRange([lblTim, txtTimPhieu, lblLoc, cboLocTrangThai, btnRefreshLoans, btnViewDetail]);
 
             dgvPhieuMuon = CreateStyledGrid();
             dgvPhieuMuon.Columns.Add("MaPhieu", "Mã Phiếu");
@@ -192,152 +254,24 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvPhieuMuon.Columns.Add("NgayMuon", "Ngày Mượn");
             dgvPhieuMuon.Columns.Add("HanTra", "Hạn Trả");
             dgvPhieuMuon.Columns.Add("TrangThai", "Trạng Thái Phiếu");
-            dgvPhieuMuon.SelectionChanged += ApiDgvPhieuMuon_SelectionChanged;
+            dgvPhieuMuon.CellDoubleClick += async (_, e) =>
+            {
+                if (e.RowIndex >= 0 && dgvPhieuMuon.Rows[e.RowIndex].Tag is int loanId)
+                    await OpenNhanTraDialogAsync(loanId);
+            };
 
-            pnlMasterBox.Controls.Add(dgvPhieuMuon);
-            pnlMasterBox.Controls.Add(pnlMasterTop);
+            pnlMasterBox.Controls.Add(lblMasterTitle, 0, 0);
+            pnlMasterBox.Controls.Add(pnlMasterTop, 0, 1);
+            pnlMasterBox.Controls.Add(dgvPhieuMuon, 0, 2);
             pnlMaster.Controls.Add(pnlMasterBox);
 
-            // =========================================================
-            // 3. CHI TIẾT PHIẾU & XÁC NHẬN TRẢ SÁCH - DETAIL (BOTTOM FILL)
-            // =========================================================
-            Panel pnlDetail = new Panel
-            {
-                Dock = DockStyle.Fill,
-                BackColor = CardBg,
-                BorderStyle = BorderStyle.FixedSingle,
-                Padding = new Padding(10)
-            };
-
-            // Khu vực thao tác Trả sách bên phải
-            Panel pnlReturnAction = new Panel
-            {
-                Dock = DockStyle.Right,
-                Width = 310,
-                BackColor = Color.FromArgb(245, 238, 225),
-                Padding = new Padding(12),
-                BorderStyle = BorderStyle.FixedSingle
-            };
-
-            Label lblReturnTitle = new Label
-            {
-                Text = "⚖️ Nghiệp vụ Nhận Trả & Tính Phạt",
-                Font = new Font("Georgia", 10, FontStyle.Bold),
-                ForeColor = Burgundy,
-                Location = new Point(10, 8),
-                AutoSize = true
-            };
-
-            lblSachDangChon = new Label
-            {
-                Text = "Ấn phẩm: (Chọn sách bên trái)",
-                Font = new Font("Segoe UI", 9, FontStyle.Italic | FontStyle.Bold),
-                ForeColor = WoodDark,
-                Location = new Point(10, 32),
-                Size = new Size(285, 22),
-                AutoEllipsis = true
-            };
-
-            AddLabel(pnlReturnAction, "Ngày trả:", 10, 62);
-            dtpNgayTra = new DateTimePicker
-            {
-                Location = new Point(105, 59),
-                Width = 185,
-                Font = new Font("Segoe UI", 9),
-                Format = DateTimePickerFormat.Short,
-                Value = DateTime.Now
-            };
-            dtpNgayTra.ValueChanged += (s, e) => ApiTinhTienPhatTuDong();
-
-            AddLabel(pnlReturnAction, "Số lượng trả:", 10, 95);
-            numSoLuongTra = new NumericUpDown { Location = new Point(105, 92), Width = 185, Minimum = 1, Maximum = 1000, Value = 1 };
-            pnlReturnAction.Controls.Add(numSoLuongTra);
-
-            AddLabel(pnlReturnAction, "Tình trạng:", 10, 128);
-            cboTinhTrangTra = new ComboBox
-            {
-                Location = new Point(105, 125),
-                Width = 185,
-                Font = new Font("Segoe UI", 9),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cboTinhTrangTra.Items.AddRange(new object[] { "Nguyên vẹn", "Rách hoặc bẩn nhẹ", "Hỏng nặng", "Mất" });
-            cboTinhTrangTra.SelectedIndex = 0;
-            cboTinhTrangTra.SelectedIndexChanged += (s, e) => ApiTinhTienPhatTuDong();
-
-            lblTienPhat = new Label { Text = "Tiền phạt (đ):", Location = new Point(10, 161), AutoSize = true, Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = WoodDark };
-            pnlReturnAction.Controls.Add(lblTienPhat);
-            numTienPhat = new NumericUpDown
-            {
-                Location = new Point(105, 158),
-                Width = 185,
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                ForeColor = Burgundy,
-                ThousandsSeparator = true
-            };
-
-            btnXacNhanTra = new Button
-            {
-                Text = "✔️ Xác Nhận Trả Sách & Cộng Kho",
-                Location = new Point(10, 191),
-                Size = new Size(280, 36),
-                Font = new Font("Georgia", 9.5f, FontStyle.Bold),
-                BackColor = Burgundy,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnXacNhanTra.FlatAppearance.BorderSize = 0;
-            btnXacNhanTra.Click += ApiBtnXacNhanTra_Click;
-
-            pnlReturnAction.Controls.AddRange(new Control[] {
-                lblReturnTitle, lblSachDangChon, dtpNgayTra, cboTinhTrangTra, numTienPhat, btnXacNhanTra
-            });
-            numTienPhat.ReadOnly = true;
-            numTienPhat.Maximum = decimal.MaxValue;
-            var btnCauHinhPhat = new Button { Text = "⚙ Cấu hình mức phạt/ngày", Location = new Point(10, 202), Size = new Size(280, 30), BackColor = Color.FromArgb(238, 230, 212), ForeColor = WoodDark, FlatStyle = FlatStyle.Flat };
-            btnCauHinhPhat.Click += ApiBtnCauHinhPhat_Click;
-            pnlReturnAction.Controls.Add(btnCauHinhPhat);
-            btnCauHinhPhat.Location = new Point(10, 233);
-            var btnThuTienPhat = new Button { Text = "Thu tiền phạt", Location = new Point(10, 267), Size = new Size(280, 30), BackColor = ForestGreen, ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
-            btnThuTienPhat.Click += ApiBtnThuTienPhat_Click;
-            pnlReturnAction.Controls.Add(btnThuTienPhat);
-            var btnLichSuThu = new Button { Text = "Xem lịch sử thanh toán", Location = new Point(10, 301), Size = new Size(280, 30), BackColor = CardBg, ForeColor = WoodDark, FlatStyle = FlatStyle.Flat };
-            btnLichSuThu.Click += ApiBtnLichSuThu_Click;
-            pnlReturnAction.Controls.Add(btnLichSuThu);
-            // Bảng Chi tiết sách mượn bên trái
-            Panel pnlDetailLeft = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 0, 10, 0) };
-            Label lblDetailTitle = new Label
-            {
-                Text = "📖 Chi tiết các ấn phẩm trong phiếu đang chọn (Bảng ChiTiet_PhieuMuon)",
-                Font = new Font("Georgia", 10.5f, FontStyle.Bold),
-                ForeColor = WoodDark,
-                Dock = DockStyle.Top,
-                Height = 28
-            };
-
-            dgvChiTiet = CreateStyledGrid();
-            dgvChiTiet.Columns.Add("MaSach", "Mã Sách");
-            dgvChiTiet.Columns["MaSach"].FillWeight = 50;
-            dgvChiTiet.Columns.Add("TenSach", "Tên Ấn Phẩm");
-            dgvChiTiet.Columns["TenSach"].FillWeight = 150;
-            dgvChiTiet.Columns.Add("SoLuong", "SL");
-            dgvChiTiet.Columns["SoLuong"].FillWeight = 35;
-            dgvChiTiet.Columns.Add("NgayTra", "Ngày Trả Thực Tế");
-            dgvChiTiet.Columns.Add("TienPhat", "Tiền Phạt (VNĐ)");
-            dgvChiTiet.Columns.Add("TinhTrang", "Tình Trạng Sách");
-            dgvChiTiet.CellClick += ApiDgvChiTiet_CellClick;
-
-            pnlDetailLeft.Controls.Add(dgvChiTiet);
-            pnlDetailLeft.Controls.Add(lblDetailTitle);
-
-            pnlDetail.Controls.Add(pnlDetailLeft);
-            pnlDetail.Controls.Add(pnlReturnAction);
-
-            // Add theo thứ tự ngược cho Dock
-            this.Controls.Add(pnlDetail);
-            this.Controls.Add(pnlMaster);
-            this.Controls.Add(pnlCreateLoan);
+            DataGridViewStyleHelper.ApplyLibraryStyle(dgvPhieuMuon);
+            pnlCreateLoan.Dock = DockStyle.Fill;
+            pnlMaster.Dock = DockStyle.Fill;
+            tabCreate.Controls.Add(pnlCreateLoan);
+            tabLoans.Controls.Add(pnlMaster);
+            tabDetail.Controls.Add(CreateHistoryView());
+            this.Controls.Add(tabs);
         }
 
         // =========================================================
@@ -367,10 +301,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
             dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9, FontStyle.Bold);
 
-            dgv.DefaultCellStyle.BackColor = CardBg;
-            dgv.DefaultCellStyle.ForeColor = WoodDark;
-            dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 195, 160);
-            dgv.DefaultCellStyle.SelectionForeColor = WoodDark;
+            DataGridViewStyleHelper.ApplyLibraryStyle(dgv);
             return dgv;
         }
 

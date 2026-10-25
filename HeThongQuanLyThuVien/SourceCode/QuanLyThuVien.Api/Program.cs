@@ -30,8 +30,13 @@ builder.Services.AddRateLimiter(options =>
             AutoReplenishment = true
         }));
 });
-builder.Services.AddAuthentication(LibraryAuthenticationDefaults.Scheme)
-    .AddScheme<AuthenticationSchemeOptions, OpaqueBearerAuthenticationHandler>(LibraryAuthenticationDefaults.Scheme, _ => { });
+var connectionString = builder.Configuration.GetConnectionString("LibraryDb");
+var authentication = builder.Services.AddAuthentication(LibraryAuthenticationDefaults.Scheme);
+if (!string.IsNullOrWhiteSpace(connectionString))
+{
+    authentication.AddScheme<AuthenticationSchemeOptions, OpaqueBearerAuthenticationHandler>(
+        LibraryAuthenticationDefaults.Scheme, _ => { });
+}
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
@@ -41,8 +46,6 @@ builder.Services.AddAuthorization(options =>
 
 // Database is optional so the API can still start and serve its ping endpoint
 // while the local SQL Server or connection string is unavailable.
-var connectionString = builder.Configuration
-    .GetConnectionString("LibraryDb");
 
 if (!string.IsNullOrWhiteSpace(connectionString))
 {
@@ -53,6 +56,7 @@ if (!string.IsNullOrWhiteSpace(connectionString))
     builder.Services.AddScoped<IDocGiaService, DocGiaService>();
     builder.Services.AddScoped<INhanVienService, NhanVienService>();
     builder.Services.AddScoped<IMuonTraService, MuonTraService>();
+    builder.Services.AddScoped<IThongKeService, ThongKeService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IAccountService, AccountService>();
     builder.Services.AddSingleton<IPasswordHasher<TaiKhoan>, PasswordHasher<TaiKhoan>>();

@@ -33,7 +33,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             var panel = new Panel { Dock = DockStyle.Fill, BackColor = card, BorderStyle = BorderStyle.FixedSingle, Padding = new Padding(10) };
             grid = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = card, BorderStyle = BorderStyle.None, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false, ReadOnly = true, AllowUserToAddRows = false, RowHeadersVisible = false, EnableHeadersVisualStyles = false, Font = new Font("Segoe UI", 9.5f), ColumnHeadersHeight = 38, RowTemplate = { Height = 32 }, GridColor = Color.FromArgb(225, 215, 195) };
             grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37); grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215); grid.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
-            grid.DefaultCellStyle.BackColor = card; grid.DefaultCellStyle.ForeColor = wood; grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 195, 160); grid.DefaultCellStyle.SelectionForeColor = wood;
+            QuanLyThuVien.Desktop.Services.DataGridViewStyleHelper.ApplyLibraryStyle(grid);
             grid.Columns.Add("Title", "Tên sách"); grid.Columns.Add("ISBN", "ISBN"); grid.Columns.Add("Genre", "Thể loại"); grid.Columns.Add("Authors", "Tác giả"); grid.Columns.Add("Year", "Năm XB"); grid.Columns.Add("Available", "Còn lại");
             panel.Controls.Add(grid); Controls.Add(panel); Controls.Add(filter);
         }

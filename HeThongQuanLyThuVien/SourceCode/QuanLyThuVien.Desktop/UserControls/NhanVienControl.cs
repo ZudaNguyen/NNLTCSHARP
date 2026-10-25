@@ -42,7 +42,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             BackColor = PaperCream;
             Padding = new Padding(20);
 
-            var pnlForm = new Panel { Dock = DockStyle.Top, Height = 220, BackColor = CardBg, BorderStyle = BorderStyle.FixedSingle };
+            var pnlForm = new Panel { Dock = DockStyle.Fill, BackColor = CardBg, BorderStyle = BorderStyle.FixedSingle };
             pnlForm.Controls.Add(new Label
             {
                 Text = "Hồ sơ Nhân viên Thư viện", Font = new Font("Georgia", 11.5f, FontStyle.Bold),
@@ -54,14 +54,14 @@ namespace QuanLyThuVien.Desktop.UserControls
             txtMaNhanVien.ReadOnly = true;
             txtMaNhanVien.BackColor = Color.FromArgb(235, 230, 220);
             txtMaNhanVien.PlaceholderText = "Tự động";
-            AddLabel(pnlForm, "Họ và tên (*):", 15, 85);
+            AddLabel(pnlForm, "Họ và tên:", 15, 85);
             txtHoTen = AddTextBox(pnlForm, 105, 82, 285);
             AddLabel(pnlForm, "Điện thoại:", 15, 125);
             txtSoDienThoai = AddTextBox(pnlForm, 105, 122, 130);
             AddLabel(pnlForm, "Email:", 245, 125);
             txtEmail = AddTextBox(pnlForm, 295, 122, 225);
 
-            AddLabel(pnlForm, "Chức vụ (*):", 530, 45);
+            AddLabel(pnlForm, "Chức vụ:", 530, 45);
             cboChucVu = new ComboBox
             {
                 Location = new Point(650, 42), Width = 180, Font = new Font("Segoe UI", 10),
@@ -78,7 +78,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             };
             pnlForm.Controls.Add(lblSecurity);
 
-            var flpButtons = new FlowLayoutPanel { Location = new Point(15, 165), Size = new Size(900, 42), WrapContents = false };
+            var flpButtons = new FlowLayoutPanel { Location = new Point(15, 165), Size = new Size(880, 78), WrapContents = true, AutoScroll = false, Anchor = AnchorStyles.Top | AnchorStyles.Left, Padding = new Padding(0, 0, 6, 0) };
             btnThem = CreateButton("➕ Thêm nhân viên", ForestGreen);
             btnSua = CreateButton("✏️ Cập nhật hồ sơ", Color.FromArgb(180, 120, 20));
             btnTrangThai = CreateButton("🔒 Ngừng hoạt động", Burgundy);
@@ -92,12 +92,12 @@ namespace QuanLyThuVien.Desktop.UserControls
             flpButtons.Controls.AddRange(new Control[] { btnThem, btnSua, btnTrangThai, btnLichSu, btnLamMoi });
             pnlForm.Controls.Add(flpButtons);
 
-            var pnlFilter = new Panel { Dock = DockStyle.Top, Height = 56, BackColor = PaperCream };
-            pnlFilter.Controls.Add(new Label { Text = "Tra cứu:", Font = new Font("Georgia", 10, FontStyle.Bold), ForeColor = WoodDark, Location = new Point(5, 17), AutoSize = true });
-            txtTimKiem = new TextBox { Location = new Point(85, 13), Width = 235, Font = new Font("Segoe UI", 10) };
+            var pnlFilter = new FlowLayoutPanel { Dock = DockStyle.Fill, Height = 56, BackColor = PaperCream, WrapContents = true, AutoScroll = false, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(2, 8, 2, 2) };
+            pnlFilter.Controls.Add(new Label { Text = "Tra cứu:", Font = new Font("Georgia", 10, FontStyle.Bold), ForeColor = WoodDark, Width = 75, Height = 30, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(3) });
+            txtTimKiem = new TextBox { Width = 235, Font = new Font("Segoe UI", 10), Margin = new Padding(3, 4, 8, 2) };
             txtTimKiem.TextChanged += (_, _) => ScheduleLoad();
-            cboLocChucVu = CreateFilterCombo(330, 12, 180, "Tất cả chức vụ");
-            cboLocTrangThai = CreateFilterCombo(520, 12, 180, "Hoạt động");
+            cboLocChucVu = CreateFilterCombo(0, 0, 180, "Tất cả chức vụ"); cboLocChucVu.Margin = new Padding(3, 4, 6, 2);
+            cboLocTrangThai = CreateFilterCombo(0, 0, 180, "Hoạt động"); cboLocTrangThai.Margin = new Padding(3, 4, 6, 2);
             cboLocTrangThai.Items.Insert(1, "Ngừng hoạt động");
             cboLocTrangThai.Items.Insert(2, "Tất cả trạng thái");
             cboLocChucVu.SelectedIndexChanged += FilterComboChanged;
@@ -116,8 +116,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvNhanVien.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgvNhanVien.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
             dgvNhanVien.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
-            dgvNhanVien.DefaultCellStyle.BackColor = CardBg; dgvNhanVien.DefaultCellStyle.ForeColor = WoodDark;
-            dgvNhanVien.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 195, 160); dgvNhanVien.DefaultCellStyle.SelectionForeColor = WoodDark;
+            QuanLyThuVien.Desktop.Services.DataGridViewStyleHelper.ApplyLibraryStyle(dgvNhanVien);
             dgvNhanVien.Columns.Add("MaNV", "Mã NV"); dgvNhanVien.Columns["MaNV"].FillWeight = 50;
             dgvNhanVien.Columns.Add("HoTen", "Họ và Tên"); dgvNhanVien.Columns["HoTen"].FillWeight = 140;
             dgvNhanVien.Columns.Add("SoDienThoai", "Số Điện Thoại"); dgvNhanVien.Columns["SoDienThoai"].FillWeight = 90;
@@ -127,7 +126,13 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvNhanVien.CellClick += DgvNhanVien_CellClick;
             dgvNhanVien.SelectionChanged += (_, _) => UpdateStatusButton();
             pnlGrid.Controls.Add(dgvNhanVien);
-            Controls.Add(pnlGrid); Controls.Add(pnlFilter); Controls.Add(pnlForm);
+            var pageLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = PaperCream, Margin = Padding.Empty, Padding = Padding.Empty };
+            pageLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 255));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            pageLayout.Controls.Add(pnlForm, 0, 0); pageLayout.Controls.Add(pnlFilter, 0, 1); pageLayout.Controls.Add(pnlGrid, 0, 2);
+            Controls.Add(pageLayout);
         }
 
         private ComboBox CreateFilterCombo(int x, int y, int width, string first)
