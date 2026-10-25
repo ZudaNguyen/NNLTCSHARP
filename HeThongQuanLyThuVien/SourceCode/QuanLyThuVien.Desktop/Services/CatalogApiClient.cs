@@ -12,7 +12,7 @@ internal sealed class CatalogApiClient
         PropertyNameCaseInsensitive = true
     };
 
-    private static readonly HttpClient Client = CreateClient();
+    private static readonly HttpClient Client = ApiSession.Client;
 
     public Task<IReadOnlyList<TheLoaiDto>> GetTheLoaiAsync(string? search, bool includeDeleted, bool onlyDeleted, CancellationToken token) =>
         GetListAsync<TheLoaiDto>("api/theloai", search, includeDeleted, onlyDeleted, token);
@@ -69,13 +69,6 @@ internal sealed class CatalogApiClient
     {
         using var response = await Client.SendAsync(new HttpRequestMessage(method, path), token);
         await EnsureSuccessAsync(response, token);
-    }
-
-    private static HttpClient CreateClient()
-    {
-        var configuredAddress = Environment.GetEnvironmentVariable("QUANLYTHUVIEN_API_URL");
-        var address = string.IsNullOrWhiteSpace(configuredAddress) ? "http://localhost:5058/" : configuredAddress.TrimEnd('/') + "/";
-        return new HttpClient { BaseAddress = new Uri(address, UriKind.Absolute), Timeout = TimeSpan.FromSeconds(20) };
     }
 
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken token)

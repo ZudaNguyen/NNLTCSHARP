@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Application.Interfaces;
@@ -7,8 +8,10 @@ namespace QuanLyThuVien.Api.Controllers;
 
 [ApiController]
 [Route("api/theloai")]
+[Authorize(Roles = "ADMIN,THU_THU")]
 public sealed class TheLoaiController(ITheLoaiService service) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<TheLoaiDto>>> GetAll(
         [FromQuery] string? search,
@@ -17,6 +20,7 @@ public sealed class TheLoaiController(ITheLoaiService service) : ControllerBase
         CancellationToken cancellationToken = default) =>
         Ok(await service.SearchAsync(search, includeDeleted, onlyDeleted, cancellationToken));
 
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TheLoaiDto>> GetById(
         int id, [FromQuery] bool includeDeleted = false, CancellationToken cancellationToken = default)

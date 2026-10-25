@@ -12,7 +12,7 @@ internal sealed class DocGiaApiClient
         PropertyNameCaseInsensitive = true
     };
 
-    private static readonly HttpClient Client = CreateClient();
+    private static readonly HttpClient Client = ApiSession.Client;
 
     public async Task<IReadOnlyList<DocGiaDto>> GetAllAsync(string? search, string? trangThai, CancellationToken token)
     {
@@ -23,6 +23,14 @@ internal sealed class DocGiaApiClient
         using var response = await Client.GetAsync(path, token);
         await EnsureSuccessAsync(response, token);
         return await response.Content.ReadFromJsonAsync<List<DocGiaDto>>(JsonOptions, token) ?? [];
+    }
+
+    public async Task<DocGiaDto> GetMeAsync(CancellationToken token)
+    {
+        using var response = await Client.GetAsync("api/docgia/me", token);
+        await EnsureSuccessAsync(response, token);
+        return await response.Content.ReadFromJsonAsync<DocGiaDto>(JsonOptions, token)
+            ?? throw new InvalidOperationException("API không trả về hồ sơ độc giả.");
     }
 
     public Task<DocGiaDto> CreateAsync(CreateDocGiaDto request, CancellationToken token) =>
@@ -41,15 +49,6 @@ internal sealed class DocGiaApiClient
         await EnsureSuccessAsync(response, token);
         return await response.Content.ReadFromJsonAsync<T>(JsonOptions, token)
             ?? throw new InvalidOperationException("API không trả về dữ liệu độc giả.");
-    }
-
-    private static HttpClient CreateClient()
-    {
-        var configuredAddress = Environment.GetEnvironmentVariable("QUANLYTHUVIEN_API_URL");
-        var address = string.IsNullOrWhiteSpace(configuredAddress)
-            ? "http://localhost:5058/"
-            : configuredAddress.TrimEnd('/') + "/";
-        return new HttpClient { BaseAddress = new Uri(address, UriKind.Absolute), Timeout = TimeSpan.FromSeconds(20) };
     }
 
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken token)

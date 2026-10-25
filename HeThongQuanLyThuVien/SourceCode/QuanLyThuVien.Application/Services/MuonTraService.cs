@@ -23,6 +23,18 @@ public sealed class MuonTraService(IMuonTraRepository repository) : IMuonTraServ
         return loan is null ? null : MapDetail(loan);
     }
 
+    public async Task<IReadOnlyList<MuonTraDto>> GetForReaderAsync(int readerId, CancellationToken cancellationToken)
+    {
+        var loans = await repository.GetForReaderAsync(readerId, cancellationToken);
+        return loans.Select(MapHeader).ToList();
+    }
+
+    public async Task<MuonTraChiTietDto?> GetByIdForReaderAsync(int readerId, int maPhieu, CancellationToken cancellationToken)
+    {
+        var loan = await repository.GetByIdForReaderAsync(readerId, maPhieu, cancellationToken);
+        return loan is null ? null : MapDetail(loan);
+    }
+
     public Task<IReadOnlyList<SachMuonOptionDto>> GetSachConHangAsync(CancellationToken cancellationToken) =>
         repository.GetSachConHangAsync(cancellationToken);
 
@@ -57,6 +69,9 @@ public sealed class MuonTraService(IMuonTraRepository repository) : IMuonTraServ
 
     public Task<TienPhatDto?> GetTienPhatAsync(int maPhieu, CancellationToken cancellationToken) =>
         repository.GetTienPhatAsync(maPhieu, cancellationToken);
+
+    public Task<TienPhatDto?> GetTienPhatForReaderAsync(int readerId, int maPhieu, CancellationToken cancellationToken) =>
+        repository.GetTienPhatForReaderAsync(readerId, maPhieu, cancellationToken);
 
     public Task<TienPhatDto?> UpdateTienPhatAsync(
         int maPhieu, CapNhatTienPhatDto request, CancellationToken cancellationToken) =>

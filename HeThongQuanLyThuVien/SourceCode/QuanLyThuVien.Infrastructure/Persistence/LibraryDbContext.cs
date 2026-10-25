@@ -13,6 +13,8 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
     public DbSet<DocGia> DocGia => Set<DocGia>();
     public DbSet<NhanVien> NhanVien => Set<NhanVien>();
     public DbSet<NhanVienTrangThaiLichSu> NhanVienTrangThaiLichSu => Set<NhanVienTrangThaiLichSu>();
+    public DbSet<TaiKhoan> TaiKhoan => Set<TaiKhoan>();
+    public DbSet<TaiKhoanSession> TaiKhoanSession => Set<TaiKhoanSession>();
     public DbSet<PhieuMuon> PhieuMuon => Set<PhieuMuon>();
     public DbSet<ChiTietPhieuMuon> ChiTietPhieuMuon => Set<ChiTietPhieuMuon>();
     public DbSet<ChiTietTraSach> ChiTietTraSach => Set<ChiTietTraSach>();
@@ -121,6 +123,46 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
             entity.Property(history => history.ThayDoiLuc).HasColumnType("datetime2").HasDefaultValueSql("SYSDATETIME()");
             entity.HasIndex(history => new { history.MaNhanVien, history.ThayDoiLuc });
             entity.HasOne<NhanVien>().WithMany().HasForeignKey(history => history.MaNhanVien).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<TaiKhoan>(entity =>
+        {
+            entity.ToTable("TaiKhoan");
+            entity.HasKey(account => account.MaTaiKhoan);
+            entity.Property(account => account.MaTaiKhoan).ValueGeneratedOnAdd();
+            entity.Property(account => account.TenDangNhap).HasMaxLength(64).IsRequired();
+            entity.Property(account => account.TenDangNhapChuanHoa).HasMaxLength(64).IsRequired();
+            entity.Property(account => account.MatKhauHash).HasMaxLength(512).IsRequired();
+            entity.Property(account => account.TenHienThi).HasMaxLength(200).IsRequired();
+            entity.Property(account => account.VaiTro).HasMaxLength(20).IsRequired();
+            entity.Property(account => account.TrangThai).HasMaxLength(20).HasDefaultValue("Hoạt động").IsRequired();
+            entity.Property(account => account.SoLanDangNhapThatBai).HasDefaultValue(0);
+            entity.Property(account => account.NgayTaoUtc).HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.Property(account => account.CapNhatLucUtc).HasColumnType("datetime2");
+            entity.Property(account => account.KhoaDenUtc).HasColumnType("datetime2");
+            entity.HasIndex(account => account.TenDangNhapChuanHoa).IsUnique();
+            entity.HasIndex(account => new { account.VaiTro, account.TrangThai });
+            entity.HasIndex(account => account.MaNhanVien).IsUnique().HasFilter("[MaNhanVien] IS NOT NULL");
+            entity.HasIndex(account => account.MaDocGia).IsUnique().HasFilter("[MaDocGia] IS NOT NULL");
+            entity.HasCheckConstraint("CK_TaiKhoan_VaiTro", "[VaiTro] IN (N'ADMIN', N'THU_THU', N'DOC_GIA')");
+            entity.HasCheckConstraint("CK_TaiKhoan_TrangThai", "[TrangThai] IN (N'Hoạt động', N'Bị khóa')");
+            entity.HasCheckConstraint("CK_TaiKhoan_LienKet", "([VaiTro] = N'ADMIN' AND [MaDocGia] IS NULL) OR ([VaiTro] = N'THU_THU' AND [MaNhanVien] IS NOT NULL AND [MaDocGia] IS NULL) OR ([VaiTro] = N'DOC_GIA' AND [MaDocGia] IS NOT NULL AND [MaNhanVien] IS NULL)");
+            entity.HasOne<NhanVien>().WithMany().HasForeignKey(account => account.MaNhanVien).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<DocGia>().WithMany().HasForeignKey(account => account.MaDocGia).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<TaiKhoanSession>(entity =>
+        {
+            entity.ToTable("TaiKhoan_Session");
+            entity.HasKey(session => session.Id);
+            entity.Property(session => session.Id).ValueGeneratedNever();
+            entity.Property(session => session.TokenHash).HasColumnType("binary(32)").IsRequired();
+            entity.Property(session => session.TaoLucUtc).HasColumnType("datetime2");
+            entity.Property(session => session.HetHanLucUtc).HasColumnType("datetime2");
+            entity.Property(session => session.ThuHoiLucUtc).HasColumnType("datetime2");
+            entity.HasIndex(session => session.TokenHash).IsUnique();
+            entity.HasIndex(session => new { session.MaTaiKhoan, session.HetHanLucUtc });
+            entity.HasOne<TaiKhoan>().WithMany().HasForeignKey(session => session.MaTaiKhoan).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<PhieuMuon>(entity =>

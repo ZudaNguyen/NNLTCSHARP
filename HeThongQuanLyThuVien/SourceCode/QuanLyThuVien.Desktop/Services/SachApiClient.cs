@@ -12,7 +12,7 @@ internal sealed class SachApiClient
         PropertyNameCaseInsensitive = true
     };
 
-    private static readonly HttpClient HttpClient = CreateHttpClient();
+    private static readonly HttpClient HttpClient = ApiSession.Client;
 
     public async Task<IReadOnlyList<SachDto>> GetBooksAsync(
         string? search,
@@ -73,16 +73,6 @@ internal sealed class SachApiClient
     {
         using var response = await HttpClient.PostAsync($"api/sach/{id}/restore", content: null, cancellationToken);
         await EnsureSuccessAsync(response, cancellationToken);
-    }
-
-    private static HttpClient CreateHttpClient()
-    {
-        var configuredAddress = Environment.GetEnvironmentVariable("QUANLYTHUVIEN_API_URL");
-        var address = string.IsNullOrWhiteSpace(configuredAddress)
-            ? "http://localhost:5058/"
-            : configuredAddress.TrimEnd('/') + "/";
-
-        return new HttpClient { BaseAddress = new Uri(address, UriKind.Absolute), Timeout = TimeSpan.FromSeconds(20) };
     }
 
     private static async Task EnsureSuccessAsync(

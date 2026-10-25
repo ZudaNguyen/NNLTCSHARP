@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Application.Interfaces;
@@ -7,8 +8,10 @@ namespace QuanLyThuVien.Api.Controllers;
 
 [ApiController]
 [Route("api/sach")]
+[Authorize(Roles = "ADMIN,THU_THU")]
 public sealed class SachController(ISachService sachService) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<SachDto>>> GetAll(
         [FromQuery] string? search,
@@ -22,10 +25,12 @@ public sealed class SachController(ISachService sachService) : ControllerBase
         return Ok(books);
     }
 
+    [AllowAnonymous]
     [HttpGet("lookups")]
     public async Task<ActionResult<SachLookupsDto>> GetLookups(CancellationToken cancellationToken) =>
         Ok(await sachService.GetLookupsAsync(cancellationToken));
 
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<SachDto>> GetById(int id, CancellationToken cancellationToken)
     {

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Application.Interfaces;
@@ -7,8 +8,10 @@ namespace QuanLyThuVien.Api.Controllers;
 
 [ApiController]
 [Route("api/tacgia")]
+[Authorize(Roles = "ADMIN,THU_THU")]
 public sealed class TacGiaController(ITacGiaService service) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<TacGiaDto>>> GetAll(
         [FromQuery] string? search,
@@ -17,6 +20,7 @@ public sealed class TacGiaController(ITacGiaService service) : ControllerBase
         CancellationToken cancellationToken = default) =>
         Ok(await service.SearchAsync(search, includeDeleted, onlyDeleted, cancellationToken));
 
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TacGiaDto>> GetById(
         int id, [FromQuery] bool includeDeleted = false, CancellationToken cancellationToken = default)

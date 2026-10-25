@@ -12,7 +12,7 @@ internal sealed class NhanVienApiClient
         PropertyNameCaseInsensitive = true
     };
 
-    private static readonly HttpClient Client = CreateClient();
+    private static readonly HttpClient Client = ApiSession.Client;
 
     public async Task<IReadOnlyList<NhanVienDto>> GetAllAsync(string? search, string? status, string? job, CancellationToken token)
     {
@@ -49,13 +49,6 @@ internal sealed class NhanVienApiClient
         await EnsureSuccessAsync(response, token);
         return await response.Content.ReadFromJsonAsync<T>(JsonOptions, token)
             ?? throw new InvalidOperationException("API không trả về dữ liệu nhân viên.");
-    }
-
-    private static HttpClient CreateClient()
-    {
-        var configuredAddress = Environment.GetEnvironmentVariable("QUANLYTHUVIEN_API_URL");
-        var address = string.IsNullOrWhiteSpace(configuredAddress) ? "http://localhost:5058/" : configuredAddress.TrimEnd('/') + "/";
-        return new HttpClient { BaseAddress = new Uri(address, UriKind.Absolute), Timeout = TimeSpan.FromSeconds(20) };
     }
 
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken token)

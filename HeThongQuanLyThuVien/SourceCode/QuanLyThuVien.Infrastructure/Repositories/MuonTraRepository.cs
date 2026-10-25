@@ -38,6 +38,13 @@ public sealed class MuonTraRepository(LibraryDbContext db) : IMuonTraRepository
         return await q.OrderByDescending(x => x.MaPhieu).Take(1000).ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<PhieuMuon>> GetForReaderAsync(int readerId, CancellationToken ct) =>
+        await LoanQuery().Where(x => x.MaDocGia == readerId)
+            .OrderByDescending(x => x.NgayMuon).ThenByDescending(x => x.MaPhieu).Take(1000).ToListAsync(ct);
+
+    public Task<PhieuMuon?> GetByIdForReaderAsync(int readerId, int maPhieu, CancellationToken ct) =>
+        LoanQuery().FirstOrDefaultAsync(x => x.MaDocGia == readerId && x.MaPhieu == maPhieu, ct);
+
     public Task<PhieuMuon?> GetByIdAsync(int id, CancellationToken ct) => LoanQuery().FirstOrDefaultAsync(x => x.MaPhieu == id, ct);
 
     public async Task<IReadOnlyList<SachMuonOptionDto>> GetSachConHangAsync(CancellationToken ct) => await db.Sach.AsNoTracking()
@@ -113,6 +120,13 @@ public sealed class MuonTraRepository(LibraryDbContext db) : IMuonTraRepository
         var unknown = items.Any(x => !x.SoTienPhatPhaiThu.HasValue && x.SoNgayTre > 0);
         return new TienPhatDto { MaPhieu = maPhieu, CacKhoanPhat = items.Select(ToReturnDto).ToList(), TongPhaiThu = unknown ? null : amounts,
             DaThu = items.SelectMany(x => x.CacKhoanThu).Sum(x => x.SoTien), ChuaCauHinhMucPhat = unknown };
+    }
+
+    public async Task<TienPhatDto?> GetTienPhatForReaderAsync(int readerId, int maPhieu, CancellationToken ct)
+    {
+        if (!await db.PhieuMuon.AsNoTracking().AnyAsync(x => x.MaPhieu == maPhieu && x.MaDocGia == readerId, ct))
+            return null;
+        return await GetTienPhatAsync(maPhieu, ct);
     }
 
     public async Task<TienPhatDto?> UpdateTienPhatAsync(int maPhieu, CapNhatTienPhatDto request, CancellationToken ct)

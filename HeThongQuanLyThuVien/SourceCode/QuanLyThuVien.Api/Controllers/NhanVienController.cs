@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyThuVien.Application.DTOs;
@@ -8,6 +9,7 @@ namespace QuanLyThuVien.Api.Controllers;
 
 [ApiController]
 [Route("api/nhanvien")]
+[Authorize(Roles = "ADMIN")]
 public sealed class NhanVienController(INhanVienService service) : ControllerBase
 {
     [HttpGet]

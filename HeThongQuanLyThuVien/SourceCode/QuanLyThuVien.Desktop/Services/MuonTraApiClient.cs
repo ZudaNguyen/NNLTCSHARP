@@ -8,14 +8,16 @@ namespace QuanLyThuVien.Desktop.Services;
 internal sealed class MuonTraApiClient
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
-    private static readonly HttpClient Client = new()
-    {
-        BaseAddress = new Uri((Environment.GetEnvironmentVariable("QUANLYTHUVIEN_API_URL") ?? "http://localhost:5058/").TrimEnd('/') + "/"),
-        Timeout = TimeSpan.FromSeconds(20)
-    };
+    private static readonly HttpClient Client = ApiSession.Client;
 
     public Task<List<MuonTraDto>> SearchAsync(string? search, string? status, CancellationToken ct) =>
         GetAsync<List<MuonTraDto>>("api/muontra" + Query(search, status), ct);
+    public Task<List<MuonTraDto>> GetMyLoansAsync(CancellationToken ct) =>
+        GetAsync<List<MuonTraDto>>("api/muontra/me", ct);
+    public Task<MuonTraChiTietDto> GetMyLoanAsync(int id, CancellationToken ct) =>
+        GetAsync<MuonTraChiTietDto>($"api/muontra/me/{id}", ct);
+    public Task<TienPhatDto> GetMyFinesAsync(int loanId, CancellationToken ct) =>
+        GetAsync<TienPhatDto>($"api/muontra/me/{loanId}/tien-phat", ct);
     public Task<MuonTraChiTietDto> GetAsync(int id, CancellationToken ct) => GetAsync<MuonTraChiTietDto>($"api/muontra/{id}", ct);
     public Task<List<SachMuonOptionDto>> GetBooksAsync(CancellationToken ct) => GetAsync<List<SachMuonOptionDto>>("api/muontra/sach-con-hang", ct);
     public Task<List<DocGiaDto>> GetReadersAsync(CancellationToken ct) => GetAsync<List<DocGiaDto>>("api/docgia?trangThai=Hoạt động", ct);
