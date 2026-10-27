@@ -7,38 +7,32 @@ using System.Threading;
 using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.UserControls
 {
     public partial class SachControl : UserControl
     {
-        // Bảng màu Thư viện cổ điển
-        private readonly Color PaperCream = Color.FromArgb(247, 243, 233);
-        private readonly Color CardBg = Color.FromArgb(255, 252, 245);
-        private readonly Color WoodDark = Color.FromArgb(44, 30, 22);
-        private readonly Color Burgundy = Color.FromArgb(122, 40, 34);
-        private readonly Color GoldBorder = Color.FromArgb(205, 190, 165);
-
         // Các Control nhập liệu (Bám sát bảng Sach & Sach_TacGia)
-        private TextBox txtMaSach;
-        private TextBox txtTenSach;
-        private TextBox txtISBN;
-        private ComboBox cboTheLoai;
-        private CheckedListBox clbTacGia;
-        private NumericUpDown numNamXB;
-        private TextBox txtNhaXB;
-        private NumericUpDown numSoLuong;
-        private NumericUpDown numSoLuongCon;
-        private TextBox txtMoTa;
-        private PictureBox picBiaSach;
+        private TextBox txtMaSach = null!;
+        private TextBox txtTenSach = null!;
+        private TextBox txtISBN = null!;
+        private ComboBox cboTheLoai = null!;
+        private CheckedListBox clbTacGia = null!;
+        private NumericUpDown numNamXB = null!;
+        private TextBox txtNhaXB = null!;
+        private NumericUpDown numSoLuong = null!;
+        private NumericUpDown numSoLuongCon = null!;
+        private TextBox txtMoTa = null!;
+        private PictureBox picBiaSach = null!;
         private string currentImagePath = "";
 
         // Các Control Tìm kiếm & Danh sách
-        private TextBox txtTimKiem;
-        private ComboBox cboLocTheLoai;
-        private ComboBox cboTrangThaiSach;
-        private DataGridView dgvSach;
-        private Button? btnXoaSach;
+        private TextBox txtTimKiem = null!;
+        private ComboBox cboLocTheLoai = null!;
+        private ComboBox cboTrangThaiSach = null!;
+        private DataGridView dgvSach = null!;
+        private AppButton? btnXoaSach;
         private readonly SachApiClient apiClient = new();
         private CancellationTokenSource? searchCancellation;
         private bool loadingLookups;
@@ -53,371 +47,124 @@ namespace QuanLyThuVien.Desktop.UserControls
 
         private void SetupSachUI()
         {
-            this.Dock = DockStyle.Fill;
-            this.BackColor = PaperCream;
-            this.Padding = new Padding(20);
-
-            // ==========================================
-            // 1. KHU VỰC NHẬP LIỆU CHI TIẾT SÁCH (TOP PANEL)
-            // ==========================================
-            Panel pnlForm = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 290,
-                BackColor = CardBg,
-                BorderStyle = BorderStyle.FixedSingle,
-                AutoScroll = true,
-                AutoScrollMinSize = new Size(820, 0)
-            };
-
-            Label lblFormTitle = new Label
-            {
-                Text = "✒️ Thông tin Ấn phẩm & Biên mục Sách",
-                Font = new Font("Georgia", 11.5f, FontStyle.Bold),
-                ForeColor = Burgundy,
-                Location = new Point(15, 10),
-                AutoSize = true
-            };
-            pnlForm.Controls.Add(lblFormTitle);
-
-            // --- CỘT 1: Mã sách, Tên sách, ISBN, Thể loại ---
-            AddLabel(pnlForm, "Mã sách:", 15, 42);
-            txtMaSach = AddTextBox(pnlForm, 105, 39, 90);
-            txtMaSach.ReadOnly = true;
-            txtMaSach.BackColor = Color.FromArgb(235, 230, 220);
-            txtMaSach.PlaceholderText = "Tự động";
-
-            AddLabel(pnlForm, "ISBN:", 205, 42);
-            txtISBN = AddTextBox(pnlForm, 270, 39, 130);
-
-            AddLabel(pnlForm, "Tên sách:", 15, 80);
-            txtTenSach = AddTextBox(pnlForm, 105, 77, 295);
-
-            AddLabel(pnlForm, "Thể loại:", 15, 118);
-            cboTheLoai = new ComboBox
-            {
-                Location = new Point(105, 115),
-                Width = 295,
-                Font = new Font("Segoe UI", 10),
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                BackColor = Color.White
-            };
-            pnlForm.Controls.Add(cboTheLoai);
-
-            AddLabel(pnlForm, "Nhà XB:", 15, 156);
-            txtNhaXB = AddTextBox(pnlForm, 105, 153, 165);
-
-            AddLabel(pnlForm, "Năm XB:", 280, 156);
-            numNamXB = new NumericUpDown
-            {
-                Location = new Point(340, 153),
-                Width = 60,
-                Font = new Font("Segoe UI", 10),
-                Minimum = 1900,
-                Maximum = DateTime.Now.Year + 1,
-                Value = 2026
-            };
-            pnlForm.Controls.Add(numNamXB);
-
-            AddLabel(pnlForm, "Tổng SL:", 15, 194);
-            numSoLuong = new NumericUpDown
-            {
-                Location = new Point(105, 191),
-                Width = 85,
-                Font = new Font("Segoe UI", 10),
-                Minimum = 0,
-                Maximum = 10000,
-                Value = 10
-            };
+            // ----- Biểu mẫu thông tin sách -----
+            txtMaSach = Ui.ReadOnlyBox();
+            txtISBN = Ui.TextBox();
+            txtTenSach = Ui.TextBox();
+            cboTheLoai = Ui.ComboBox();
+            txtNhaXB = Ui.TextBox();
+            numNamXB = Ui.Number(1900, DateTime.Now.Year + 1, 2026);
+            numSoLuong = Ui.Number(0, 10000, 10);
+            numSoLuongCon = Ui.Number(0, 10000, 10);
+            numSoLuongCon.Enabled = false; // Chỉ thay đổi qua nghiệp vụ Mượn/Trả
             // Khi đổi tổng số lượng lúc thêm mới, tự cập nhật số lượng còn
             numSoLuong.ValueChanged += (s, e) =>
             {
                 if (string.IsNullOrEmpty(txtMaSach.Text))
                     numSoLuongCon.Value = numSoLuong.Value;
             };
-            pnlForm.Controls.Add(numSoLuong);
-
-            AddLabel(pnlForm, "SL Còn:", 210, 194);
-            numSoLuongCon = new NumericUpDown
-            {
-                Location = new Point(275, 191),
-                Width = 125,
-                Font = new Font("Segoe UI", 10),
-                Minimum = 0,
-                Maximum = 10000,
-                Value = 10,
-                Enabled = false // Khóa cứng theo quy tắc nghiệp vụ, chỉ thay đổi qua Mượn/Trả
-            };
-            pnlForm.Controls.Add(numSoLuongCon);
-
-            // --- CỘT 2: Chọn nhiều Tác giả (Bảng Sach_TacGia) & Mô tả ---
-            AddLabel(pnlForm, "Tác giả (Chọn 1 hoặc nhiều):", 425, 42);
             clbTacGia = new CheckedListBox
             {
-                Location = new Point(425, 65),
-                Size = new Size(230, 95),
-                Font = new Font("Segoe UI", 9.5f),
-                BackColor = Color.FromArgb(255, 253, 248),
-                BorderStyle = BorderStyle.FixedSingle,
-                CheckOnClick = true
+                Font = UiTheme.Font(9.5f), BackColor = UiTheme.Surface, ForeColor = UiTheme.Text,
+                BorderStyle = BorderStyle.FixedSingle, CheckOnClick = true, IntegralHeight = false, Height = 104
             };
-            pnlForm.Controls.Add(clbTacGia);
+            txtMoTa = Ui.MultilineBox(104);
 
-            AddLabel(pnlForm, "Mô tả chi tiết:", 425, 168);
-            txtMoTa = new TextBox
-            {
-                Location = new Point(425, 191),
-                Size = new Size(230, 42),
-                Font = new Font("Segoe UI", 9.5f),
-                Multiline = true,
-                ScrollBars = ScrollBars.Vertical,
-                BackColor = Color.FromArgb(255, 253, 248),
-                BorderStyle = BorderStyle.FixedSingle
-            };
-            pnlForm.Controls.Add(txtMoTa);
+            var fields = new FormGrid(6);
+            fields.Add("Mã sách", txtMaSach);
+            fields.Add("ISBN", txtISBN, 2);
+            fields.Add("Tên sách", txtTenSach, 3);
+            fields.Add("Thể loại", cboTheLoai, 2);
+            fields.Add("Nhà xuất bản", txtNhaXB, 2);
+            fields.Add("Năm XB", numNamXB);
+            fields.Add("Tổng số lượng", numSoLuong);
+            fields.Add("Tác giả (chọn một hoặc nhiều)", clbTacGia, 3);
+            fields.Add("Mô tả", txtMoTa, 2);
+            fields.Add("Còn lại", numSoLuongCon);
 
-            // --- CỘT 3: Ảnh bìa sách (HinhAnh) ---
-            AddLabel(pnlForm, "Ảnh bìa:", 680, 42);
+            // Ảnh bìa nằm bên phải biểu mẫu
             picBiaSach = new PictureBox
             {
-                Location = new Point(680, 65),
-                Size = new Size(115, 130),
-                BackColor = Color.FromArgb(238, 230, 212),
-                BorderStyle = BorderStyle.FixedSingle,
-                SizeMode = PictureBoxSizeMode.Zoom
+                Size = new Size(132, 176), BackColor = UiTheme.SurfaceMuted, BorderStyle = BorderStyle.FixedSingle,
+                SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 0, 0, 10)
             };
-            pnlForm.Controls.Add(picBiaSach);
-
-            Button btnChonAnh = new Button
-            {
-                Text = "🖼️ Chọn bìa...",
-                Location = new Point(680, 200),
-                Size = new Size(115, 32),
-                Font = new Font("Segoe UI", 9),
-                BackColor = Color.FromArgb(238, 230, 212),
-                ForeColor = WoodDark,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnChonAnh.FlatAppearance.BorderColor = GoldBorder;
+            var btnChonAnh = Ui.Button("Chọn ảnh bìa");
+            btnChonAnh.MinimumSize = new Size(132, 34);
+            btnChonAnh.Margin = Padding.Empty;
             btnChonAnh.Click += BtnChonAnh_Click;
-            pnlForm.Controls.Add(btnChonAnh);
-
-            // --- THANH NÚT HÀNH ĐỘNG (CRUD BUTTONS) ---
-            FlowLayoutPanel flpButtons = new FlowLayoutPanel
+            var cover = new FlowLayoutPanel
             {
-                Location = new Point(15, 240),
-                Size = new Size(780, 40),
-                WrapContents = false
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.TopDown,
+                WrapContents = false, BackColor = UiTheme.Surface, Margin = new Padding(20, 0, 0, 0), Padding = Padding.Empty
             };
+            cover.Controls.Add(Ui.FieldLabel("Ảnh bìa"));
+            cover.Controls.Add(picBiaSach);
+            cover.Controls.Add(btnChonAnh);
 
-            Button btnThem = CreateActionButton("➕ Ghi Sổ Mới (Thêm)", Color.FromArgb(45, 106, 79));
-            Button btnSua = CreateActionButton("✏️ Tu Chỉnh (Sửa)", Color.FromArgb(180, 120, 20));
-            btnXoaSach = CreateActionButton("🗃️ Lưu Kho Ẩn (Xóa mềm)", Burgundy);
-            Button btnLamMoi = CreateActionButton("🔄 Làm Mới Form", Color.FromArgb(90, 75, 65));
+            var body = new TableLayoutPanel
+            {
+                ColumnCount = 2, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, BackColor = UiTheme.Surface,
+                Margin = Padding.Empty, Padding = Padding.Empty
+            };
+            body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            body.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            fields.Dock = DockStyle.Fill;
+            cover.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            body.Controls.Add(fields, 0, 0);
+            body.Controls.Add(cover, 1, 0);
 
+            var btnThem = Ui.Button("Thêm sách", ButtonKind.Primary);
+            var btnSua = Ui.Button("Cập nhật");
+            btnXoaSach = Ui.Button("Ẩn sách", ButtonKind.Danger);
+            var btnLamMoi = Ui.Button("Làm mới");
             btnThem.Click += BtnThem_Click;
             btnSua.Click += BtnSua_Click;
             btnXoaSach.Click += BtnXoa_Click;
             btnLamMoi.Click += (s, e) => ClearForm();
 
-            flpButtons.Controls.Add(btnThem);
-            flpButtons.Controls.Add(btnSua);
-            flpButtons.Controls.Add(btnXoaSach);
-            flpButtons.Controls.Add(btnLamMoi);
-            pnlForm.Controls.Add(flpButtons);
+            var formCard = new CardPanel("Thông tin sách");
+            formCard.AddRow(body);
+            formCard.AddRow(Ui.ButtonBar(btnThem, btnSua, btnXoaSach, btnLamMoi));
 
-            // ==========================================
-            // 2. THANH TÌM KIẾM & BỘ LỌC (MIDDLE PANEL)
-            // ==========================================
-            Panel pnlFilter = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 82,
-                BackColor = PaperCream,
-                Padding = new Padding(0, 10, 0, 5)
-            };
-
-            Label lblTim = new Label
-            {
-                Text = "🔍 Tra cứu (Tên / ISBN / Tác giả):",
-                Font = new Font("Georgia", 10, FontStyle.Bold),
-                ForeColor = WoodDark,
-                Location = new Point(5, 18),
-                AutoSize = true
-            };
-
-            txtTimKiem = new TextBox
-            {
-                Location = new Point(245, 15),
-                Width = 220,
-                Font = new Font("Segoe UI", 10),
-                BackColor = Color.White
-            };
+            // ----- Tìm kiếm & danh sách -----
+            txtTimKiem = Ui.TextBox("Tên sách, ISBN hoặc tác giả", 300);
             txtTimKiem.TextChanged += FilterChanged;
-
-            Label lblLocTL = new Label
-            {
-                Text = "Thể loại:",
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = WoodDark,
-                Location = new Point(480, 18),
-                AutoSize = true
-            };
-
-            cboLocTheLoai = new ComboBox
-            {
-                Location = new Point(545, 15),
-                Width = 170,
-                Font = new Font("Segoe UI", 10),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
+            cboLocTheLoai = Ui.ComboBox(width: 200);
             cboLocTheLoai.SelectedIndexChanged += FilterChanged;
-
-            Label lblTrangThaiSach = new Label
-            {
-                Text = "Trạng thái:",
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                ForeColor = WoodDark,
-                Location = new Point(5, 57),
-                AutoSize = true
-            };
-            cboTrangThaiSach = new ComboBox
-            {
-                Location = new Point(85, 52),
-                Width = 200,
-                Font = new Font("Segoe UI", 9.5f),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cboTrangThaiSach.Items.AddRange(["Đang hoạt động", "Đã ẩn", "Tất cả"]);
+            cboTrangThaiSach = Ui.ComboBox(new object[] { "Đang hoạt động", "Đã ẩn", "Tất cả" }, width: 170);
             cboTrangThaiSach.SelectedIndexChanged += FilterChanged;
 
-            pnlFilter.Controls.Add(cboTrangThaiSach);
-            pnlFilter.Controls.Add(lblTrangThaiSach);
-            pnlFilter.Controls.Add(cboLocTheLoai);
-            pnlFilter.Controls.Add(lblLocTL);
-            pnlFilter.Controls.Add(txtTimKiem);
-            pnlFilter.Controls.Add(lblTim);
+            var toolbar = new ToolbarRow();
+            toolbar.AddField("Tra cứu", txtTimKiem);
+            toolbar.AddField("Thể loại", cboLocTheLoai);
+            toolbar.AddField("Trạng thái", cboTrangThaiSach);
 
-            // ==========================================
-            // 3. BẢNG DANH SÁCH ẤN PHẨM (DATAGRIDVIEW)
-            // ==========================================
-            Panel pnlGrid = new Panel
-            {
-                Dock = DockStyle.Fill,
-                BackColor = CardBg,
-                BorderStyle = BorderStyle.FixedSingle,
-                Padding = new Padding(10)
-            };
-
-            dgvSach = new DataGridView
-            {
-                Dock = DockStyle.Fill,
-                BackgroundColor = CardBg,
-                BorderStyle = BorderStyle.None,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect = false,
-                ReadOnly = true,
-                AllowUserToAddRows = false,
-                RowHeadersVisible = false,
-                EnableHeadersVisualStyles = false,
-                Font = new Font("Segoe UI", 9.5f),
-                ColumnHeadersHeight = 38,
-                RowTemplate = { Height = 32 },
-                GridColor = Color.FromArgb(225, 215, 195)
-            };
-
-            dgvSach.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
-            dgvSach.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
-            dgvSach.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
-            QuanLyThuVien.Desktop.Services.DataGridViewStyleHelper.ApplyLibraryStyle(dgvSach);
-
-            dgvSach.Columns.Add("MaSach", "Mã Sách");
+            dgvSach = Ui.Grid();
+            dgvSach.Columns.Add("MaSach", "Mã sách");
             dgvSach.Columns["MaSach"].FillWeight = 45;
-            dgvSach.Columns.Add("ISBN", "Mã ISBN");
+            dgvSach.Columns.Add("ISBN", "ISBN");
             dgvSach.Columns["ISBN"].FillWeight = 75;
-            dgvSach.Columns.Add("TenSach", "Tên Ấn Phẩm");
+            dgvSach.Columns.Add("TenSach", "Tên sách");
             dgvSach.Columns["TenSach"].FillWeight = 150;
-            dgvSach.Columns.Add("TheLoai", "Thể Loại");
-            dgvSach.Columns.Add("TacGia", "Tác Giả");
+            dgvSach.Columns.Add("TheLoai", "Thể loại");
+            dgvSach.Columns.Add("TacGia", "Tác giả");
             dgvSach.Columns.Add("NamXB", "Năm XB");
             dgvSach.Columns["NamXB"].FillWeight = 50;
-            dgvSach.Columns.Add("NhaXB", "Nhà Xuất Bản");
+            dgvSach.Columns.Add("NhaXB", "Nhà xuất bản");
             dgvSach.Columns.Add("SoLuong", "Tổng SL");
             dgvSach.Columns["SoLuong"].FillWeight = 50;
-            dgvSach.Columns.Add("SoLuongCon", "SL Còn");
+            dgvSach.Columns.Add("SoLuongCon", "SL còn");
             dgvSach.Columns["SoLuongCon"].FillWeight = 50;
-            dgvSach.Columns.Add("TrangThai", "Trạng Thái");
+            dgvSach.Columns.Add("TrangThai", "Trạng thái");
             dgvSach.Columns["TrangThai"].FillWeight = 70;
-
             dgvSach.CellClick += DgvSach_CellClick;
 
-            pnlGrid.Controls.Add(dgvSach);
+            var listCard = new CardPanel("Danh sách sách", autoHeight: false);
+            listCard.AddRow(toolbar);
+            listCard.AddRow(dgvSach, fill: true);
 
-            var pageLayout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
-                BackColor = PaperCream, Margin = Padding.Empty, Padding = Padding.Empty
-            };
-            pageLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 290));
-            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
-            pageLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            pnlForm.Dock = DockStyle.Fill;
-            pnlFilter.Dock = DockStyle.Fill;
-            pnlGrid.Dock = DockStyle.Fill;
-            pageLayout.Controls.Add(pnlForm, 0, 0);
-            pageLayout.Controls.Add(pnlFilter, 0, 1);
-            pageLayout.Controls.Add(pnlGrid, 0, 2);
-            this.Controls.Add(pageLayout);
-        }
-
-        // ==========================================
-        // CÁC HÀM HỖ TRỢ TẠO UI & VALIDATION NGHIỆP VỤ
-        // ==========================================
-        private void AddLabel(Control parent, string text, int x, int y)
-        {
-            Label lbl = new Label
-            {
-                Text = text,
-                Location = new Point(x, y),
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                ForeColor = WoodDark,
-                AutoSize = true
-            };
-            parent.Controls.Add(lbl);
-        }
-
-        private TextBox AddTextBox(Control parent, int x, int y, int width)
-        {
-            TextBox txt = new TextBox
-            {
-                Location = new Point(x, y),
-                Width = width,
-                Font = new Font("Segoe UI", 10),
-                BackColor = Color.FromArgb(255, 253, 248),
-                BorderStyle = BorderStyle.FixedSingle
-            };
-            parent.Controls.Add(txt);
-            return txt;
-        }
-
-        private Button CreateActionButton(string text, Color bgColor)
-        {
-            Button btn = new Button
-            {
-                Text = text,
-                Size = new Size(180, 35),
-                Margin = new Padding(0, 0, 12, 0),
-                Font = new Font("Georgia", 9.5f, FontStyle.Bold),
-                BackColor = bgColor,
-                ForeColor = Color.FromArgb(255, 248, 231),
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btn.FlatAppearance.BorderSize = 0;
-            return btn;
+            Ui.SetupPage(this, Ui.ScrollStack(300, formCard, listCard));
         }
 
         private async Task LoadInitialDataAsync()
@@ -439,7 +186,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 cboLocTheLoai.Items.Add(new TheLoaiOptionDto
                 {
                     MaTheLoai = 0,
-                    TenTheLoai = "-- Tất cả thể loại --"
+                    TenTheLoai = "Tất cả thể loại"
                 });
                 foreach (var category in lookups.TheLoai)
                     cboLocTheLoai.Items.Add(category);
@@ -544,28 +291,28 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             if (string.IsNullOrWhiteSpace(txtTenSach.Text))
             {
-                MessageBox.Show("Tên ấn phẩm không được để trống!", "Kiểm tra dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Tên sách không được để trống!", "Kiểm tra dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtTenSach.Focus();
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(txtISBN.Text))
             {
-                MessageBox.Show("Vui lòng nhập mã ISBN (Dùng để tra cứu chuẩn quốc tế)!", "Kiểm tra dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Vui lòng nhập mã ISBN (dùng để tra cứu chuẩn quốc tế)!", "Kiểm tra dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtISBN.Focus();
                 return false;
             }
 
             if (authors.Count == 0)
             {
-                MessageBox.Show("Vui lòng tích chọn ít nhất 1 Tác giả cho ấn phẩm này!", "Kiểm tra dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Vui lòng chọn ít nhất một tác giả cho sách này!", "Kiểm tra dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
             }
 
             return true;
         }
 
-        private async void BtnThem_Click(object sender, EventArgs e)
+        private async void BtnThem_Click(object? sender, EventArgs e)
         {
             if (!ValidateInput(out _)) return;
 
@@ -582,11 +329,11 @@ namespace QuanLyThuVien.Desktop.UserControls
             }
         }
 
-        private async void BtnSua_Click(object sender, EventArgs e)
+        private async void BtnSua_Click(object? sender, EventArgs e)
         {
             if (!int.TryParse(txtMaSach.Text, out var id) || dgvSach.CurrentRow == null)
             {
-                MessageBox.Show("Vui lòng chọn một ấn phẩm dưới bảng trước khi tu chỉnh!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Vui lòng chọn một cuốn sách trong bảng trước khi cập nhật!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -610,11 +357,11 @@ namespace QuanLyThuVien.Desktop.UserControls
             }
         }
 
-        private async void BtnXoa_Click(object sender, EventArgs e)
+        private async void BtnXoa_Click(object? sender, EventArgs e)
         {
             if (!int.TryParse(txtMaSach.Text, out var id) || dgvSach.CurrentRow == null)
             {
-                MessageBox.Show("Vui lòng chọn ấn phẩm cần lưu kho ẩn!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Vui lòng chọn cuốn sách cần ẩn!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -643,8 +390,8 @@ namespace QuanLyThuVien.Desktop.UserControls
             }
 
             DialogResult confirm = MessageBox.Show(
-                $"Bạn có chắc muốn chuyển sách [{txtTenSach.Text}] sang trạng thái Lưu kho ẩn (Soft Delete)?\nDữ liệu phiếu mượn cũ vẫn sẽ được bảo toàn.",
-                "Xác nhận xóa mềm", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                $"Bạn có chắc muốn ẩn sách [{txtTenSach.Text}]?\nDữ liệu phiếu mượn cũ vẫn được bảo toàn và có thể khôi phục sau.",
+                "Xác nhận ẩn sách", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
             if (confirm == DialogResult.Yes)
             {
@@ -681,7 +428,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             };
         }
 
-        private void DgvSach_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void DgvSach_CellClick(object? sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
 
@@ -689,8 +436,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             if (row.Tag is not SachDto book) return;
 
             txtMaSach.Text = book.MaSach.ToString();
-            btnXoaSach!.Text = book.IsDeleted ? "↩ Khôi phục sách" : "🗃️ Lưu Kho Ẩn (Xóa mềm)";
-            btnXoaSach.BackColor = book.IsDeleted ? Color.FromArgb(45, 106, 79) : Burgundy;
+            SetHideButton(book.IsDeleted);
             txtISBN.Text = book.ISBN;
             txtTenSach.Text = book.TenSach;
             cboTheLoai.SelectedItem = cboTheLoai.Items
@@ -709,6 +455,13 @@ namespace QuanLyThuVien.Desktop.UserControls
                 if (clbTacGia.Items[i] is TacGiaOptionDto author)
                     clbTacGia.SetItemChecked(i, book.MaTacGia.Contains(author.MaTacGia));
             }
+        }
+
+        private void SetHideButton(bool isDeleted)
+        {
+            if (btnXoaSach is null) return;
+            btnXoaSach.Text = isDeleted ? "Khôi phục sách" : "Ẩn sách";
+            btnXoaSach.Kind = isDeleted ? ButtonKind.Success : ButtonKind.Danger;
         }
 
         private void DisplayCover(string imagePath)
@@ -734,7 +487,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             }
         }
 
-        private void BtnChonAnh_Click(object sender, EventArgs e)
+        private void BtnChonAnh_Click(object? sender, EventArgs e)
         {
             using (OpenFileDialog ofd = new OpenFileDialog())
             {
@@ -770,11 +523,7 @@ namespace QuanLyThuVien.Desktop.UserControls
         {
             txtMaSach.Clear();
             dgvSach.ClearSelection();
-            if (btnXoaSach is not null)
-            {
-                btnXoaSach.Text = "🗃️ Lưu Kho Ẩn (Xóa mềm)";
-                btnXoaSach.BackColor = Burgundy;
-            }
+            SetHideButton(false);
         }
     }
 }

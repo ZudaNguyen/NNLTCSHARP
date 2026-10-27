@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.Forms;
 
@@ -10,8 +11,8 @@ internal sealed class LichSuMuonDocGiaDialog : Form
     private readonly MuonTraApiClient _api = new();
     private readonly int _readerId;
     private readonly string _readerName;
-    private readonly DataGridView _loans = new();
-    private readonly DataGridView _books = new();
+    private readonly DataGridView _loans = Ui.Grid();
+    private readonly DataGridView _books = Ui.Grid();
     private readonly Label _summary = new();
     private bool _loading;
 
@@ -19,34 +20,12 @@ internal sealed class LichSuMuonDocGiaDialog : Form
     {
         _readerId = readerId;
         _readerName = readerName;
-        Text = $"Lịch sử mượn — {readerName}";
-        StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(850, 550);
-        Size = new Size(1040, 680);
-        BackColor = Color.FromArgb(247, 243, 233);
-        Font = new Font("Segoe UI", 9.5f);
+        Ui.SetupDialog(this, $"Lịch sử mượn - {readerName}", new Size(1020, 640), new Size(860, 560));
 
-        var header = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 54,
-            Padding = new Padding(14, 8, 8, 4),
-            Text = $"LỊCH SỬ MƯỢN CỦA ĐỘC GIẢ  ·  {_readerName}  ·  Mã {_readerId}",
-            Font = new Font("Georgia", 11, FontStyle.Bold),
-            ForeColor = Color.FromArgb(122, 40, 34)
-        };
-        Controls.Add(header);
+        var title = Ui.Heading($"Lịch sử mượn · {_readerName} · Mã {_readerId}");
+        title.Font = UiTheme.Title;
+        title.Margin = new Padding(0, 0, 0, 14);
 
-        var split = new SplitContainer
-        {
-            Orientation = Orientation.Horizontal,
-            Size = new Size(1000, 560),
-            BackColor = Color.FromArgb(247, 243, 233),
-            Padding = new Padding(8)
-        };
-        split.SplitterDistance = 245;
-        split.Dock = DockStyle.Fill;
-        ConfigureGrid(_loans);
         _loans.Columns.Add("SoPhieu", "Phiếu");
         _loans.Columns.Add("NgayMuon", "Ngày mượn");
         _loans.Columns.Add("HanTra", "Hạn trả");
@@ -57,22 +36,41 @@ internal sealed class LichSuMuonDocGiaDialog : Form
             if (!_loading && _loans.CurrentRow?.Tag is int loanId)
                 await LoadLoanDetailAsync(loanId);
         };
+        var loansCard = new CardPanel("Danh sách phiếu mượn", autoHeight: false);
+        loansCard.AddRow(_loans, fill: true);
 
-        ConfigureGrid(_books);
         _books.Columns.Add("Sach", "Sách");
         _books.Columns.Add("SoLuong", "Mượn / Đã trả / Còn");
         _books.Columns.Add("LichSuTra", "Ngày trả · Tình trạng");
         _books.Columns.Add("TienPhat", "Phải thu / Đã thu / Còn nợ (đ)");
-        split.Panel1.Controls.Add(_loans);
-        split.Panel2.Controls.Add(_books);
-        Controls.Add(split);
+        var booksCard = new CardPanel("Sách trong phiếu đang chọn", autoHeight: false);
+        booksCard.AddRow(_books, fill: true);
 
-        _summary.Dock = DockStyle.Bottom;
-        _summary.Height = 34;
-        _summary.Padding = new Padding(14, 6, 6, 4);
-        _summary.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-        _summary.ForeColor = Color.FromArgb(74, 53, 37);
-        Controls.Add(_summary);
+        _summary.AutoSize = true;
+        _summary.MaximumSize = new Size(980, 0);
+        _summary.Font = UiTheme.Font(9.5f, FontStyle.Bold);
+        _summary.ForeColor = UiTheme.TextSecondary;
+        _summary.Margin = new Padding(0, 12, 0, 0);
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, BackColor = UiTheme.PageBg,
+            Margin = Padding.Empty, Padding = Padding.Empty
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        loansCard.Dock = DockStyle.Fill;
+        loansCard.Margin = new Padding(0, 0, 0, 14);
+        booksCard.Dock = DockStyle.Fill;
+        layout.Controls.Add(title, 0, 0);
+        layout.Controls.Add(loansCard, 0, 1);
+        layout.Controls.Add(booksCard, 0, 2);
+        layout.Controls.Add(_summary, 0, 3);
+        Controls.Add(layout);
+        Ui.ApplyDpi(this);
 
         Load += async (_, _) => await LoadLoansAsync();
     }
@@ -89,7 +87,7 @@ internal sealed class LichSuMuonDocGiaDialog : Form
                 var row = _loans.Rows.Add(loan.SoPhieu, loan.NgayMuon.ToString("dd/MM/yyyy"),
                     loan.HanTra.ToString("dd/MM/yyyy"), loan.SoLuongConMuon, loan.TrangThai);
                 _loans.Rows[row].Tag = loan.MaPhieu;
-                if (loan.TrangThai == "Quá hạn") _loans.Rows[row].DefaultCellStyle.ForeColor = Color.FromArgb(160, 55, 35);
+                if (loan.TrangThai == "Quá hạn") _loans.Rows[row].DefaultCellStyle.ForeColor = UiTheme.Danger;
             }
             if (_loans.Rows.Count > 0)
             {
@@ -128,7 +126,7 @@ internal sealed class LichSuMuonDocGiaDialog : Form
                     $"{line.SoLuongMuon} / {line.SoLuongDaXuLy} / {line.SoLuongConMuon}", history,
                     $"{due:N0} / {paid:N0} / {Math.Max(0, due - paid):N0}");
                 if (line.SoLuongConMuon > 0 && loan.HanTra.Date < DateTime.Today)
-                    _books.Rows[row].DefaultCellStyle.ForeColor = Color.FromArgb(160, 55, 35);
+                    _books.Rows[row].DefaultCellStyle.ForeColor = UiTheme.Danger;
             }
             var totalDue = loan.ChiTiet.SelectMany(x => x.LichSuTra).Sum(x => x.SoTienPhatPhaiThu ?? 0m);
             var totalPaid = loan.ChiTiet.SelectMany(x => x.LichSuTra).Sum(x => x.DaThu);
@@ -142,21 +140,5 @@ internal sealed class LichSuMuonDocGiaDialog : Form
         {
             MessageBox.Show(ex.Message, "Không tải được chi tiết phiếu", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-    }
-
-    private static void ConfigureGrid(DataGridView grid)
-    {
-        grid.Dock = DockStyle.Fill;
-        grid.ReadOnly = true;
-        grid.AllowUserToAddRows = false;
-        grid.RowHeadersVisible = false;
-        grid.MultiSelect = false;
-        grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-        grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        grid.BackgroundColor = Color.FromArgb(255, 252, 245);
-        grid.EnableHeadersVisualStyles = false;
-        grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
-        grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
-        DataGridViewStyleHelper.ApplyLibraryStyle(grid);
     }
 }

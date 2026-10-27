@@ -3,31 +3,22 @@ using System.Drawing;
 using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 using QuanLyThuVien.Desktop.UserControls;
 
 namespace QuanLyThuVien.Desktop.Forms
 {
     public partial class MainForm : Form
     {
-        private string _role;
-        private string _username;
+        private readonly string _role;
+        private readonly string _username;
         private readonly Action _returnToLogin;
         private readonly AuthApiClient _authApi = new();
         private bool _handlingSessionExpiry;
 
-        private Panel pnlSidebar;
-        private Panel pnlHeader;
-        private Panel pnlContent;
-        private Label lblHeaderTitle;
-        private Button currentActiveButton;
-
-        // Bảng màu Thư viện cổ điển
-        private readonly Color WoodDark = Color.FromArgb(44, 30, 22);       // Nâu gỗ đậm
-        private readonly Color WoodDarker = Color.FromArgb(30, 20, 14);     // Nâu đen
-        private readonly Color Burgundy = Color.FromArgb(122, 40, 34);      // Đỏ đô bìa sách
-        private readonly Color PaperCream = Color.FromArgb(247, 243, 233);  // Màu giấy cũ
-        private readonly Color PaperHeader = Color.FromArgb(238, 230, 212); // Màu giấy đậm hơn cho Header
-        private readonly Color GoldText = Color.FromArgb(218, 176, 63);     // Vàng đồng
+        private Panel pnlContent = null!;
+        private Label lblHeaderTitle = null!;
+        private NavButton? currentActiveButton;
 
         public MainForm(AuthUserDto user, Action returnToLogin)
         {
@@ -39,208 +30,172 @@ namespace QuanLyThuVien.Desktop.Forms
             SetupMainLayout();
             ApiSession.SessionExpired += HandleSessionExpired;
             FormClosed += (_, _) => ApiSession.SessionExpired -= HandleSessionExpired;
+
             if (_role == AccountRoles.Reader)
-                LoadUserControl(new ReaderCatalogControl(), "📚 Tra cứu Sách");
+                LoadUserControl(new ReaderCatalogControl(), "Tra cứu sách");
             else
-                LoadUserControl(new DashboardControl(), "📜 Tổng quan Sổ sách Thư viện");
+                LoadUserControl(new DashboardControl(), "Tổng quan");
         }
+
+        private string RoleDisplayName => _role switch
+        {
+            AccountRoles.Admin => "Quản trị viên",
+            AccountRoles.Reader => "Độc giả",
+            _ => "Thủ thư"
+        };
 
         private void SetupMainLayout()
         {
-            this.Text = $"📖 Hệ thống Quản lý Thư viện - Thủ thư trực: {_username} ({_role})";
-            this.Size = new Size(1280, 760);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.MinimumSize = new Size(1024, 620);
-
-            // 1. SIDEBAR (Tủ gỗ danh mục bên trái)
-            pnlSidebar = new Panel
-            {
-                Dock = DockStyle.Left,
-                Width = 230,
-                BackColor = WoodDark
-            };
-
-            Label lblBrand = new Label
-            {
-                Text = "🏛️ THƯ VIỆN CỔ",
-                Font = new Font("Georgia", 13.5f, FontStyle.Bold),
-                ForeColor = GoldText,
-                Dock = DockStyle.Top,
-                Height = 70,
-                TextAlign = ContentAlignment.MiddleCenter,
-                BackColor = WoodDarker
-            };
-
-            // Các nút menu mang biểu tượng sách, bút lông, thẻ đọc
-            Button btnLogout = CreateMenuButton("🚪 Đăng xuất");
-            btnLogout.Dock = DockStyle.Bottom;
-            btnLogout.BackColor = Color.FromArgb(90, 25, 20);
-            btnLogout.Click += async (s, e) => await LogoutAsync();
-
-            Button btnChangePassword = CreateMenuButton("🔑 Đổi mật khẩu");
-            btnChangePassword.Click += async (s, e) => await ChangePasswordAsync();
-
-            Button btnBaoCao = CreateMenuButton("📊 Thống kê & Báo cáo");
-            Button btnNhanVien = CreateMenuButton("👥 Quản lý Nhân viên");
-            Button btnTaiKhoan = CreateMenuButton("🔐 Quản lý Tài khoản");
-            Button btnPhieuMuon = CreateMenuButton("📝 Sổ Mượn / Trả sách");
-            Button btnDocGia = CreateMenuButton("🪪 Thẻ Độc giả");
-            Button btnTacGiaTheLoai = CreateMenuButton("✒️ Tác giả & Thể loại");
-            Button btnSach = CreateMenuButton("📚 Kho Sách & Ấn phẩm");
-            Button btnDashboard = CreateMenuButton("📜 Tổng quan Thư viện");
-            Button btnReaderAccount = CreateMenuButton("👤 Hồ sơ & Mượn phạt");
+            AutoScaleMode = AutoScaleMode.None;
+            Text = $"Hệ thống quản lý thư viện - {_username} ({RoleDisplayName})";
+            ClientSize = new Size(1120, 690);
+            MinimumSize = new Size(960, 600);
+            StartPosition = FormStartPosition.CenterScreen;
+            BackColor = UiTheme.PageBg;
+            Font = UiTheme.Body;
 
             var isAdmin = _role == AccountRoles.Admin;
             var isReader = _role == AccountRoles.Reader;
-            btnNhanVien.Visible = isAdmin;
-            btnTaiKhoan.Visible = isAdmin;
-            btnDashboard.Visible = !isReader;
-            btnTacGiaTheLoai.Visible = !isReader;
-            btnDocGia.Visible = !isReader;
-            btnPhieuMuon.Visible = !isReader;
-            btnBaoCao.Visible = !isReader;
-            btnReaderAccount.Visible = isReader;
 
-            // Gắn sự kiện click
-            btnDashboard.Click += (s, e) => { SetActiveButton(btnDashboard); LoadUserControl(new DashboardControl(), "📜 Tổng quan Sổ sách Thư viện"); };
-            btnSach.Click += (s, e) =>
+            // ----- Thanh bên -----
+            var sidebar = new Panel { Dock = DockStyle.Left, Width = 248, BackColor = UiTheme.Sidebar };
+
+            var nav = new TableLayoutPanel
             {
-                SetActiveButton(btnSach);
-                if (isReader) LoadUserControl(new ReaderCatalogControl(), "📚 Tra cứu Sách");
-                else LoadUserControl(new SachControl(), "📚 Kho Sách & Ấn phẩm");
+                Dock = DockStyle.Fill, ColumnCount = 1, BackColor = UiTheme.Sidebar,
+                Margin = Padding.Empty, Padding = new Padding(0, 8, 0, 0)
             };
-            btnReaderAccount.Click += (s, e) => { SetActiveButton(btnReaderAccount); LoadUserControl(new ReaderSelfServiceControl(), "👤 Hồ sơ & Lịch sử Mượn trả"); };
-            btnTacGiaTheLoai.Click += (s, e) => { SetActiveButton(btnTacGiaTheLoai); LoadUserControl(new TacGiaTheLoaiControl(), "✒️ Danh mục Tác giả & Thể loại"); };
-            btnDocGia.Click += (s, e) => { SetActiveButton(btnDocGia); LoadUserControl(new DocGiaControl(), "🪪 Hồ sơ Thẻ Độc giả"); };
-            btnPhieuMuon.Click += (s, e) => { SetActiveButton(btnPhieuMuon); LoadUserControl(new MuonTraControl(_username), "📝 Sổ theo dõi Mượn / Trả sách"); };
-            btnNhanVien.Click += (s, e) => { SetActiveButton(btnNhanVien); LoadUserControl(new NhanVienControl(), "🔑 Hồ sơ Nhân viên & Phân quyền"); };
-            btnTaiKhoan.Click += (s, e) => { SetActiveButton(btnTaiKhoan); LoadUserControl(new TaiKhoanControl(), "🔐 Quản lý Tài khoản"); };
-            btnBaoCao.Click += (s, e) => { SetActiveButton(btnBaoCao); LoadUserControl(new BaoCaoControl(), "📊 Báo cáo & Thống kê Thư viện"); };
+            nav.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-            pnlSidebar.Controls.Add(btnBaoCao);
-            pnlSidebar.Controls.Add(btnTaiKhoan);
-            pnlSidebar.Controls.Add(btnNhanVien);
-            pnlSidebar.Controls.Add(btnPhieuMuon);
-            pnlSidebar.Controls.Add(btnDocGia);
-            pnlSidebar.Controls.Add(btnTacGiaTheLoai);
-            pnlSidebar.Controls.Add(btnSach);
-            pnlSidebar.Controls.Add(btnDashboard);
-            pnlSidebar.Controls.Add(btnReaderAccount);
-            pnlSidebar.Controls.Add(lblBrand);
-            pnlSidebar.Controls.Add(btnChangePassword);
-            pnlSidebar.Controls.Add(btnLogout);
-
-            SetActiveButton(isReader ? btnSach : btnDashboard);
-
-            // 2. HEADER (Thanh tiêu đề màu giấy ngả vàng)
-            pnlHeader = new Panel
+            if (isReader)
             {
-                Dock = DockStyle.Top,
-                Height = 70,
-                BackColor = PaperHeader,
-                Padding = new Padding(25, 0, 25, 0)
-            };
-
-            // Đường kẻ viền mảnh dưới Header
-            Panel pnlHeaderBorder = new Panel
+                AddNav(nav, "Tra cứu sách", () => new ReaderCatalogControl(), "Tra cứu sách", firstActive: true);
+                AddNav(nav, "Hồ sơ của tôi", () => new ReaderSelfServiceControl(), "Hồ sơ & lịch sử mượn trả");
+            }
+            else
             {
-                Dock = DockStyle.Bottom,
-                Height = 2,
-                BackColor = Color.FromArgb(205, 190, 165)
-            };
-
-            lblHeaderTitle = new Label
-            {
-                Text = "📜 Tổng quan Sổ sách Thư viện",
-                Font = new Font("Georgia", 14, FontStyle.Bold),
-                ForeColor = WoodDark,
-                Dock = DockStyle.Fill,
-                AutoSize = false,
-                AutoEllipsis = true,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(0, 0, 12, 0)
-            };
-
-            string chucDanh = _role switch
-            {
-                AccountRoles.Admin => "Quản trị viên",
-                AccountRoles.Reader => "Độc giả",
-                _ => "Thủ thư"
-            };
-            Label lblUserInfo = new Label
-            {
-                Text = $"Người trực: {_username}\r\nVai trò: {chucDanh}",
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                ForeColor = Burgundy,
-                Dock = DockStyle.Fill,
-                AutoSize = false,
-                AutoEllipsis = false,
-                TextAlign = ContentAlignment.MiddleRight,
-                Padding = new Padding(4, 3, 0, 3)
-            };
-
-            var headerLayout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 1,
-                BackColor = PaperHeader,
-                Margin = Padding.Empty,
-                Padding = Padding.Empty
-            };
-            headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
-            headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
-            headerLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            headerLayout.Controls.Add(lblHeaderTitle, 0, 0);
-            headerLayout.Controls.Add(lblUserInfo, 1, 0);
-
-            pnlHeader.Controls.Add(headerLayout);
-            pnlHeader.Controls.Add(pnlHeaderBorder);
-
-            // 3. CONTENT (Trang giấy làm việc chính)
-            pnlContent = new Panel
-            {
-                Dock = DockStyle.Fill,
-                BackColor = PaperCream
-            };
-
-            this.Controls.Add(pnlContent);
-            this.Controls.Add(pnlHeader);
-            this.Controls.Add(pnlSidebar);
-        }
-
-        private Button CreateMenuButton(string text)
-        {
-            Button btn = new Button
-            {
-                Text = "  " + text,
-                Dock = DockStyle.Top,
-                Height = 52,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 10.5f, FontStyle.Regular),
-                ForeColor = Color.FromArgb(230, 220, 205),
-                BackColor = WoodDark,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(12, 0, 0, 0),
-                Cursor = Cursors.Hand
-            };
-            btn.FlatAppearance.BorderSize = 0;
-            return btn;
-        }
-
-        private void SetActiveButton(Button activeBtn)
-        {
-            if (currentActiveButton != null)
-            {
-                currentActiveButton.BackColor = WoodDark;
-                currentActiveButton.ForeColor = Color.FromArgb(230, 220, 205);
-                currentActiveButton.Font = new Font("Segoe UI", 10.5f, FontStyle.Regular);
+                AddNav(nav, "Tổng quan", () => new DashboardControl(), "Tổng quan", firstActive: true);
+                AddCaption(nav, "DANH MỤC");
+                AddNav(nav, "Kho sách", () => new SachControl(), "Kho sách");
+                AddNav(nav, "Tác giả & Thể loại", () => new TacGiaTheLoaiControl(), "Tác giả & Thể loại");
+                AddNav(nav, "Độc giả", () => new DocGiaControl(), "Độc giả");
+                AddCaption(nav, "NGHIỆP VỤ");
+                AddNav(nav, "Mượn / Trả sách", () => new MuonTraControl(_username), "Mượn / Trả sách");
+                AddNav(nav, "Báo cáo & Thống kê", () => new BaoCaoControl(), "Báo cáo & Thống kê");
+                if (isAdmin)
+                {
+                    AddCaption(nav, "QUẢN TRỊ");
+                    AddNav(nav, "Nhân viên", () => new NhanVienControl(), "Nhân viên");
+                    AddNav(nav, "Tài khoản", () => new TaiKhoanControl(), "Tài khoản & Phân quyền");
+                }
             }
 
-            currentActiveButton = activeBtn;
-            currentActiveButton.BackColor = Burgundy; // Đổi sang màu đỏ bìa sách khi chọn
-            currentActiveButton.ForeColor = GoldText;
-            currentActiveButton.Font = new Font("Segoe UI", 10.5f, FontStyle.Bold);
+            // Hàng đệm cuối để các mục không bị kéo giãn lấp đầy chỗ trống.
+            nav.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            nav.RowCount = nav.RowStyles.Count;
+
+            var brand = new Panel { Dock = DockStyle.Top, Height = 84, BackColor = UiTheme.Sidebar, Padding = new Padding(24, 0, 12, 0) };
+            var brandLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = UiTheme.Sidebar,
+                Margin = Padding.Empty, Padding = Padding.Empty
+            };
+            brandLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+            brandLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+            brandLayout.Controls.Add(new Label
+            {
+                Text = "THƯ VIỆN", Dock = DockStyle.Fill, Font = UiTheme.Font(15, FontStyle.Bold),
+                ForeColor = Color.White, TextAlign = ContentAlignment.BottomLeft, Margin = Padding.Empty
+            }, 0, 0);
+            brandLayout.Controls.Add(new Label
+            {
+                Text = "Hệ thống quản lý", Dock = DockStyle.Fill, Font = UiTheme.Font(9.5f),
+                ForeColor = UiTheme.SidebarText, TextAlign = ContentAlignment.TopLeft, Margin = Padding.Empty,
+                Padding = new Padding(0, 2, 0, 0)
+            }, 0, 1);
+            brand.Controls.Add(brandLayout);
+
+            var btnLogout = new NavButton("Đăng xuất") { Dock = DockStyle.Bottom, TextColor = Color.FromArgb(252, 165, 165) };
+            btnLogout.Click += async (_, _) => await LogoutAsync();
+            var btnChangePassword = new NavButton("Đổi mật khẩu") { Dock = DockStyle.Bottom };
+            btnChangePassword.Click += async (_, _) => await ChangePasswordAsync();
+            var footerLine = new Panel { Dock = DockStyle.Bottom, Height = 1, BackColor = UiTheme.SidebarHover };
+
+            sidebar.Controls.Add(nav);
+            sidebar.Controls.Add(footerLine);
+            sidebar.Controls.Add(btnChangePassword);
+            sidebar.Controls.Add(btnLogout);
+            // Control thêm sau cùng được dock trước: brand lên đỉnh, "Đăng xuất" xuống đáy, "Đổi mật khẩu" ngay trên nó.
+            sidebar.Controls.Add(brand);
+
+            // ----- Thanh tiêu đề -----
+            var header = new Panel { Dock = DockStyle.Top, Height = 64, BackColor = UiTheme.Surface, Padding = new Padding(28, 0, 28, 0) };
+            var headerLine = new Panel { Dock = DockStyle.Bottom, Height = 1, BackColor = UiTheme.Border };
+            lblHeaderTitle = new Label
+            {
+                Dock = DockStyle.Fill, UseMnemonic = false, Font = UiTheme.Title, ForeColor = UiTheme.Text,
+                TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true
+            };
+            var userInfo = new TableLayoutPanel
+            {
+                Dock = DockStyle.Right, Width = 280, ColumnCount = 1, RowCount = 2, BackColor = UiTheme.Surface,
+                Margin = Padding.Empty, Padding = Padding.Empty
+            };
+            userInfo.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+            userInfo.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+            userInfo.Controls.Add(new Label
+            {
+                Text = _username, Dock = DockStyle.Fill, Font = UiTheme.BodyBold, ForeColor = UiTheme.Text,
+                TextAlign = ContentAlignment.BottomRight, AutoEllipsis = true, Margin = Padding.Empty
+            }, 0, 0);
+            userInfo.Controls.Add(new Label
+            {
+                Text = RoleDisplayName, Dock = DockStyle.Fill, Font = UiTheme.Font(9.5f), ForeColor = UiTheme.TextMuted,
+                TextAlign = ContentAlignment.TopRight, Margin = Padding.Empty, Padding = new Padding(0, 1, 0, 0)
+            }, 0, 1);
+            header.Controls.Add(lblHeaderTitle);
+            header.Controls.Add(userInfo);
+            header.Controls.Add(headerLine);
+
+            pnlContent = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.PageBg };
+
+            Controls.Add(pnlContent);
+            Controls.Add(header);
+            Controls.Add(sidebar);
+            Ui.ApplyDpi(this);
+        }
+
+        private void AddCaption(TableLayoutPanel nav, string text)
+        {
+            var caption = new Label
+            {
+                Text = text, AutoSize = true, Font = UiTheme.Font(9, FontStyle.Bold), ForeColor = UiTheme.SidebarCaption,
+                Anchor = AnchorStyles.Left, Margin = new Padding(24, 18, 0, 6)
+            };
+            AddNavRow(nav, caption);
+        }
+
+        private NavButton AddNav(TableLayoutPanel nav, string text, Func<UserControl> factory, string title, bool firstActive = false)
+        {
+            var button = new NavButton(text) { Dock = DockStyle.Fill };
+            button.Click += (_, _) => { SetActiveButton(button); LoadUserControl(factory(), title); };
+            AddNavRow(nav, button);
+            if (firstActive) SetActiveButton(button);
+            return button;
+        }
+
+        private static void AddNavRow(TableLayoutPanel nav, Control control)
+        {
+            nav.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            nav.RowCount = nav.RowStyles.Count;
+            nav.Controls.Add(control, 0, nav.RowCount - 1);
+        }
+
+        private void SetActiveButton(NavButton activeButton)
+        {
+            if (currentActiveButton != null) currentActiveButton.Active = false;
+            currentActiveButton = activeButton;
+            currentActiveButton.Active = true;
         }
 
         public void LoadUserControl(UserControl uc, string title)
@@ -249,21 +204,6 @@ namespace QuanLyThuVien.Desktop.Forms
             pnlContent.Controls.Clear();
             uc.Dock = DockStyle.Fill;
             pnlContent.Controls.Add(uc);
-        }
-
-        private void ShowPlaceholder(string screenName)
-        {
-            lblHeaderTitle.Text = screenName;
-            pnlContent.Controls.Clear();
-            Label lbl = new Label
-            {
-                Text = $"✒️ Trang sổ [{screenName}] đang được biên.soạn...",
-                Font = new Font("Georgia", 13, FontStyle.Italic),
-                ForeColor = Color.FromArgb(120, 95, 80),
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            pnlContent.Controls.Add(lbl);
         }
 
         private async Task LogoutAsync()
@@ -283,19 +223,32 @@ namespace QuanLyThuVien.Desktop.Forms
             using var dialog = new Form
             {
                 Text = "Đổi mật khẩu",
-                Size = new Size(430, 285),
+                ClientSize = new Size(440, 330),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
                 MinimizeBox = false,
-                BackColor = PaperCream
+                ShowInTaskbar = false,
+                BackColor = UiTheme.Surface,
+                Font = UiTheme.Body,
+                Padding = new Padding(28, 24, 28, 16)
             };
-            var current = PasswordField(dialog, "Mật khẩu hiện tại:", 30);
-            var next = PasswordField(dialog, "Mật khẩu mới:", 85);
-            var confirm = PasswordField(dialog, "Nhập lại mật khẩu:", 140);
-            var save = new Button { Text = "Cập nhật", Location = new Point(115, 200), Size = new Size(90, 34), DialogResult = DialogResult.OK, BackColor = Burgundy, ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
-            var cancel = new Button { Text = "Hủy", Location = new Point(220, 200), Size = new Size(90, 34), DialogResult = DialogResult.Cancel };
-            dialog.Controls.Add(save); dialog.Controls.Add(cancel); dialog.AcceptButton = save; dialog.CancelButton = cancel;
+            var current = PasswordBox();
+            var next = PasswordBox();
+            var confirm = PasswordBox();
+            var form = new FormGrid(1);
+            form.Add("Mật khẩu hiện tại", current);
+            form.Add("Mật khẩu mới", next);
+            form.Add("Nhập lại mật khẩu mới", confirm);
+            var save = Ui.Button("Cập nhật", ButtonKind.Primary);
+            save.DialogResult = DialogResult.OK;
+            var cancel = Ui.Button("Hủy");
+            cancel.DialogResult = DialogResult.Cancel;
+            form.AddFull(Ui.ButtonBar(save, cancel));
+            dialog.Controls.Add(form);
+            dialog.AcceptButton = save;
+            dialog.CancelButton = cancel;
+            Ui.ApplyDpi(dialog);
             if (dialog.ShowDialog(this) != DialogResult.OK) return;
             if (next.Text != confirm.Text)
             {
@@ -312,6 +265,13 @@ namespace QuanLyThuVien.Desktop.Forms
             catch (Exception ex) { MessageBox.Show(ex.Message, "Đổi mật khẩu", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
 
+        private static TextBox PasswordBox()
+        {
+            var box = Ui.TextBox();
+            box.UseSystemPasswordChar = true;
+            return box;
+        }
+
         private void HandleSessionExpired()
         {
             if (IsDisposed || _handlingSessionExpiry) return;
@@ -324,14 +284,6 @@ namespace QuanLyThuVien.Desktop.Forms
             MessageBox.Show("Phiên đăng nhập đã hết hạn hoặc bị thu hồi. Vui lòng đăng nhập lại.", "Phiên hết hạn", MessageBoxButtons.OK, MessageBoxIcon.Information);
             _returnToLogin();
             Close();
-        }
-
-        private TextBox PasswordField(Control parent, string label, int y)
-        {
-            parent.Controls.Add(new Label { Text = label, Location = new Point(20, y + 3), AutoSize = true, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = WoodDark });
-            var textBox = new TextBox { Location = new Point(190, y), Width = 210, Font = new Font("Segoe UI", 10), PasswordChar = '●' };
-            parent.Controls.Add(textBox);
-            return textBox;
         }
     }
 }

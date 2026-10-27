@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.Forms;
 
@@ -9,54 +10,31 @@ internal sealed class MuonTraHistoryDetailDialog : Form
 {
     public MuonTraHistoryDetailDialog(MuonTraChiTietDto loan)
     {
-        Text = $"Chi tiết lịch sử — {loan.SoPhieu}";
-        StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(820, 540);
-        Size = new Size(1060, 690);
-        BackColor = Color.FromArgb(247, 243, 233);
-        Font = new Font("Segoe UI", 9.5f);
-
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4,
-            Padding = new Padding(12), BackColor = BackColor
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
-
-        var title = new Label
-        {
-            Dock = DockStyle.Fill, Text = $"CHI TIẾT PHIẾU {loan.SoPhieu}",
-            Font = new Font("Georgia", 12, FontStyle.Bold), ForeColor = Color.FromArgb(122, 40, 34),
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        layout.Controls.Add(title, 0, 0);
+        Ui.SetupDialog(this, $"Chi tiết lịch sử - {loan.SoPhieu}", new Size(1040, 640), new Size(860, 540));
 
         var lateDays = loan.SoLuongConMuon > 0 && loan.HanTra.Date < DateTime.Today
             ? (DateTime.Today - loan.HanTra.Date).Days : 0;
+        var title = Ui.Heading($"Phiếu {loan.SoPhieu}");
+        title.Font = UiTheme.Title;
+        title.Margin = new Padding(0, 0, 0, 4);
         var summary = new Label
         {
-            Dock = DockStyle.Fill,
+            AutoSize = true, MaximumSize = new Size(980, 0), Font = UiTheme.Font(9.5f), ForeColor = UiTheme.TextSecondary,
+            Margin = Padding.Empty,
             Text = $"Độc giả: {loan.TenDocGia} (mã {loan.MaDocGia})\r\nNgày mượn: {loan.NgayMuon:dd/MM/yyyy}    Hạn trả: {loan.HanTra:dd/MM/yyyy}    Trạng thái: {loan.TrangThai}" +
-                (lateDays > 0 ? $"\r\nCòn quá hạn {lateDays} ngày." : string.Empty),
-            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = Color.FromArgb(44, 30, 22),
-            TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(4), AutoEllipsis = true
+                (lateDays > 0 ? $"\r\nCòn quá hạn {lateDays} ngày." : string.Empty)
         };
-        layout.Controls.Add(summary, 0, 1);
-
-        var grid = new DataGridView
+        var header = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill, ReadOnly = true, AllowUserToAddRows = false,
-            RowHeadersVisible = false, MultiSelect = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-            BackgroundColor = Color.FromArgb(255, 252, 245), BorderStyle = BorderStyle.FixedSingle,
-            EnableHeadersVisualStyles = false, Font = new Font("Segoe UI", 9.5f),
-            ColumnHeadersHeight = 44, RowTemplate = { Height = 34 }
+            ColumnCount = 1, RowCount = 2, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = UiTheme.PageBg, Margin = Padding.Empty, Padding = Padding.Empty
         };
+        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        header.Controls.Add(title, 0, 0);
+        header.Controls.Add(summary, 0, 1);
+
+        var grid = Ui.Grid();
         grid.Columns.Add("MaSach", "Mã sách");
         grid.Columns.Add("TenSach", "Tên sách");
         grid.Columns.Add("SoLuong", "Mượn / Đã trả / Còn");
@@ -84,26 +62,23 @@ internal sealed class MuonTraHistoryDetailDialog : Form
                 $"{line.SoLuongMuon} / {line.SoLuongDaXuLy} / {line.SoLuongConMuon}",
                 returned, state, $"{totalFine:N0} / {paid:N0} / {Math.Max(0, totalFine - paid):N0}");
             grid.Rows[row].Tag = line.MaChiTiet;
-            if (state == "Quá hạn") grid.Rows[row].DefaultCellStyle.ForeColor = Color.FromArgb(160, 55, 35);
+            if (state == "Quá hạn") grid.Rows[row].DefaultCellStyle.ForeColor = UiTheme.Danger;
         }
-        DataGridViewStyleHelper.ApplyLibraryStyle(grid);
-        layout.Controls.Add(grid, 0, 2);
+        var gridCard = new CardPanel("Sách trong phiếu", autoHeight: false);
+        gridCard.AddRow(grid, fill: true);
 
+        var close = Ui.Button("Đóng");
+        close.DialogResult = DialogResult.Cancel;
+        close.Margin = Padding.Empty;
         var actions = new FlowLayoutPanel
         {
-            Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft,
-            WrapContents = false, Padding = new Padding(0, 5, 0, 0)
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.RightToLeft,
+            WrapContents = false, BackColor = UiTheme.PageBg, Margin = Padding.Empty, Padding = Padding.Empty
         };
-        var close = new Button
-        {
-            Text = "Đóng", Width = 100, Height = 32, DialogResult = DialogResult.Cancel,
-            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), BackColor = Color.FromArgb(90, 75, 65),
-            ForeColor = Color.White, FlatStyle = FlatStyle.Flat
-        };
-        close.FlatAppearance.BorderSize = 0;
         actions.Controls.Add(close);
-        layout.Controls.Add(actions, 0, 3);
-        Controls.Add(layout);
+
+        Controls.Add(Ui.Stack(1, header, gridCard, actions));
         CancelButton = close;
+        Ui.ApplyDpi(this);
     }
 }

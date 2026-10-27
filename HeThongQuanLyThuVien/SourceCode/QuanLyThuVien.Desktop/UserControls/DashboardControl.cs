@@ -3,6 +3,7 @@ using System.Net;
 using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.UserControls;
 
@@ -27,84 +28,52 @@ public partial class DashboardControl : UserControl
 
     private void SetupLibraryDashboardUI()
     {
-        var paperCream = Color.FromArgb(247, 243, 233);
-        var cardBg = Color.FromArgb(255, 252, 245);
-        var woodDark = Color.FromArgb(44, 30, 22);
-        Dock = DockStyle.Fill;
-        BackColor = paperCream;
-        Padding = new Padding(20);
-
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = paperCream,
-            Margin = Padding.Empty, Padding = Padding.Empty
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 132));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
+        // ----- Các thẻ số liệu -----
         var cards = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 1, BackColor = paperCream,
-            Margin = Padding.Empty, Padding = Padding.Empty
+            ColumnCount = 5, RowCount = 1, BackColor = UiTheme.PageBg, AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty, Padding = Padding.Empty
         };
         for (var i = 0; i < 5; i++) cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
-        cards.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        cards.Controls.Add(CreateLibraryCard("ĐẦU SÁCH", "Đang hoạt động", Color.FromArgb(102, 51, 20)), 0, 0);
-        cards.Controls.Add(CreateLibraryCard("TỔNG BẢN", "Bản còn trong kho", Color.FromArgb(180, 120, 20)), 1, 0);
-        cards.Controls.Add(CreateLibraryCard("ĐANG MƯỢN", "Số bản chưa trả", Color.FromArgb(45, 106, 79)), 2, 0);
-        cards.Controls.Add(CreateLibraryCard("PHIẾU QUÁ HẠN", "Đang cần xử lý", Color.FromArgb(158, 42, 43)), 3, 0);
-        cards.Controls.Add(CreateLibraryCard("ĐỘC GIẢ HOẠT ĐỘNG", "Thẻ còn hiệu lực", Color.FromArgb(91, 83, 133)), 4, 0);
+        cards.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        AddCard(cards, 0, "Đầu sách", "Đang hoạt động", UiTheme.Primary);
+        AddCard(cards, 1, "Tổng số bản", "Bản còn trong kho", UiTheme.Primary);
+        AddCard(cards, 2, "Đang mượn", "Số bản chưa trả", UiTheme.Warning);
+        AddCard(cards, 3, "Phiếu quá hạn", "Cần xử lý", UiTheme.Danger);
+        AddCard(cards, 4, "Độc giả hoạt động", "Thẻ còn hiệu lực", UiTheme.Success);
 
-        var workspace = new Panel { Dock = DockStyle.Fill, BackColor = cardBg, Padding = new Padding(12), BorderStyle = BorderStyle.FixedSingle };
-        var header = new Panel { Dock = DockStyle.Top, Height = 42, BackColor = cardBg };
+        // ----- Khu theo dõi -----
+        _refresh = Ui.Button("Làm mới");
+        _refresh.Margin = Padding.Empty;
+        _refresh.Click += async (_, _) => await LoadDashboardAsync();
         var title = new Label
         {
-            Text = "Sổ theo dõi sách đang lưu hành, ưu tiên sắp đến hạn và quá hạn",
-            Font = new Font("Georgia", 11f, FontStyle.Bold), ForeColor = woodDark,
-            Dock = DockStyle.Fill, AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft
+            Text = "Theo dõi sách đang lưu hành", AutoSize = true, Font = UiTheme.Heading, ForeColor = UiTheme.Text,
+            Anchor = AnchorStyles.Left, Margin = Padding.Empty
         };
-        _refresh = new Button
+        var header = new TableLayoutPanel
         {
-            Text = "Làm mới", Dock = DockStyle.Right, Width = 105,
-            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), BackColor = Color.FromArgb(45, 106, 79),
-            ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
+            ColumnCount = 2, RowCount = 1, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = UiTheme.Surface, Margin = new Padding(0, 0, 0, 8), Padding = Padding.Empty
         };
-        _refresh.FlatAppearance.BorderSize = 0;
-        _refresh.Click += async (_, _) => await LoadDashboardAsync();
-        header.Controls.Add(title);
-        header.Controls.Add(_refresh);
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        header.Controls.Add(title, 0, 0);
+        header.Controls.Add(_refresh, 1, 0);
 
-        var tabs = new TabControl { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9.5f), Padding = new Point(12, 5) };
-        var activityPage = new TabPage("Đang mượn / Quá hạn") { BackColor = cardBg, Padding = new Padding(5) };
-        var topBooksPage = new TabPage("Top 5 sách mượn nhiều") { BackColor = cardBg, Padding = new Padding(5) };
-        _activityGrid = CreateLibraryGrid(cardBg);
-        _activityGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        _activityGrid = Ui.Grid();
         AddActivityColumns(_activityGrid);
         _activityStatus = CreateStatusLabel();
-        activityPage.Controls.Add(_activityGrid);
-        activityPage.Controls.Add(_activityStatus);
+        var activityPage = StackPage(_activityGrid, _activityStatus);
 
-        var topHeader = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = cardBg, Padding = new Padding(4, 0, 4, 0) };
-        var topTitle = new Label
-        {
-            Text = "TOP 5 SÁCH ĐƯỢC MƯỢN NHIỀU NHẤT",
-            Font = new Font("Georgia", 10.5f, FontStyle.Bold), ForeColor = woodDark,
-            Dock = DockStyle.Fill, AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft
-        };
-        _topBooksPeriod = new ComboBox
-        {
-            Dock = DockStyle.Right, Width = 155, DropDownStyle = ComboBoxStyle.DropDownList,
-            Font = new Font("Segoe UI", 9.5f), AccessibleName = "Khoảng thời gian Top 5"
-        };
-        _topBooksPeriod.Items.AddRange(["Tháng này", "Toàn thời gian"]);
-        _topBooksPeriod.SelectedIndex = 0;
+        _topBooksPeriod = Ui.ComboBox(new object[] { "Tháng này", "Toàn thời gian" }, width: 170);
+        _topBooksPeriod.AccessibleName = "Khoảng thời gian Top 5";
         _topBooksPeriod.SelectedIndexChanged += async (_, _) => await LoadTopBooksAsync();
-        topHeader.Controls.Add(topTitle);
-        topHeader.Controls.Add(_topBooksPeriod);
+        var periodBar = new ToolbarRow { Dock = DockStyle.Fill };
+        periodBar.AddField("Thống kê theo", _topBooksPeriod);
 
-        _topBooksGrid = CreateLibraryGrid(cardBg);
-        _topBooksGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        _topBooksGrid = Ui.Grid();
         _topBooksGrid.Columns.Add("Rank", "Hạng");
         _topBooksGrid.Columns.Add("MaSach", "Mã sách");
         _topBooksGrid.Columns.Add("TenSach", "Tên sách");
@@ -118,44 +87,49 @@ public partial class DashboardControl : UserControl
         _topBooksGrid.Columns[2].DefaultCellStyle.WrapMode = DataGridViewTriState.True;
         _topBooksGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
         _topBooksStatus = CreateStatusLabel();
-        topBooksPage.Controls.Add(_topBooksGrid);
-        topBooksPage.Controls.Add(_topBooksStatus);
-        topBooksPage.Controls.Add(topHeader);
+        var topBooksPage = StackPage(_topBooksGrid, _topBooksStatus, periodBar);
 
-        tabs.TabPages.Add(activityPage);
-        tabs.TabPages.Add(topBooksPage);
-        workspace.Controls.Add(tabs);
-        workspace.Controls.Add(header);
-        layout.Controls.Add(cards, 0, 0);
-        layout.Controls.Add(workspace, 0, 1);
-        Controls.Add(layout);
+        var tabs = new PageTabs(UiTheme.Surface);
+        tabs.AddPage("Đang mượn / Quá hạn", activityPage);
+        tabs.AddPage("Top 5 sách mượn nhiều", topBooksPage);
+
+        var workspace = new CardPanel(null, autoHeight: false);
+        workspace.AddRow(header);
+        workspace.AddRow(tabs, fill: true);
+
+        Ui.SetupPage(this, Ui.Stack(cards, workspace));
     }
 
-    private static DataGridView CreateLibraryGrid(Color cardBg)
+    /// <summary>Trang gồm (tùy chọn) thanh phía trên, bảng ở giữa và dòng trạng thái ở dưới.</summary>
+    private static Control StackPage(DataGridView grid, Label status, Control? top = null)
     {
-        var grid = new DataGridView
+        var page = new TableLayoutPanel
         {
-            Dock = DockStyle.Fill, BackgroundColor = cardBg, BorderStyle = BorderStyle.None,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            ReadOnly = true, AllowUserToAddRows = false, RowHeadersVisible = false,
-            EnableHeadersVisualStyles = false, Font = new Font("Segoe UI", 9.5f), ColumnHeadersHeight = 42,
-            RowTemplate = { Height = 34 }, GridColor = Color.FromArgb(225, 215, 195)
+            ColumnCount = 1, BackColor = UiTheme.Surface, Margin = Padding.Empty, Padding = Padding.Empty
         };
-        grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
-        grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
-        DataGridViewStyleHelper.ApplyLibraryStyle(grid);
-        return grid;
+        page.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        if (top != null)
+        {
+            page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            page.Controls.Add(top, 0, page.RowStyles.Count - 1);
+        }
+        page.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        page.Controls.Add(grid, 0, page.RowStyles.Count - 1);
+        page.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        page.Controls.Add(status, 0, page.RowStyles.Count - 1);
+        page.RowCount = page.RowStyles.Count;
+        return page;
     }
 
     private static void AddActivityColumns(DataGridView grid)
     {
-        grid.Columns.Add("MaPhieu", "Mã Phiếu");
-        grid.Columns.Add("DocGia", "Độc Giả");
-        grid.Columns.Add("TenSach", "Ấn Phẩm Đang Giữ");
-        grid.Columns.Add("SoLuong", "SL Còn Mượn");
-        grid.Columns.Add("NgayMuon", "Ngày Mượn");
-        grid.Columns.Add("HanTra", "Hạn Trả");
-        grid.Columns.Add("TrangThai", "Tình Trạng");
+        grid.Columns.Add("MaPhieu", "Mã phiếu");
+        grid.Columns.Add("DocGia", "Độc giả");
+        grid.Columns.Add("TenSach", "Sách đang giữ");
+        grid.Columns.Add("SoLuong", "SL còn mượn");
+        grid.Columns.Add("NgayMuon", "Ngày mượn");
+        grid.Columns.Add("HanTra", "Hạn trả");
+        grid.Columns.Add("TrangThai", "Tình trạng");
         grid.Columns[0].FillWeight = 62;
         grid.Columns[1].FillWeight = 105;
         grid.Columns[2].FillWeight = 160;
@@ -172,39 +146,45 @@ public partial class DashboardControl : UserControl
 
     private static Label CreateStatusLabel() => new()
     {
-        Dock = DockStyle.Bottom, Height = 30, TextAlign = ContentAlignment.MiddleLeft,
-        ForeColor = Color.FromArgb(122, 40, 34), Font = new Font("Segoe UI", 9.5f), AutoEllipsis = true
+        Dock = DockStyle.Fill, AutoSize = false, MinimumSize = new Size(0, 30), TextAlign = ContentAlignment.MiddleLeft,
+        ForeColor = UiTheme.TextMuted, Font = UiTheme.Font(9.5f), AutoEllipsis = true, Margin = new Padding(0, 6, 0, 0)
     };
 
-    private Panel CreateLibraryCard(string title, string subtitle, Color spineColor)
+    /// <summary>Thẻ số liệu: vạch màu bên trái, nhãn nhỏ, số lớn, ghi chú.</summary>
+    private void AddCard(TableLayoutPanel parent, int column, string title, string subtitle, Color accent)
     {
-        var card = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(255, 252, 245), Margin = new Padding(3, 2, 5, 7), BorderStyle = BorderStyle.FixedSingle };
-        var spine = new Panel { Dock = DockStyle.Left, Width = 6, BackColor = spineColor };
+        var card = new CardPanel(null, autoHeight: true)
+        {
+            Dock = DockStyle.Fill, Padding = new Padding(18, 14, 12, 12),
+            Margin = new Padding(0, 0, column < 4 ? 14 : 0, 0)
+        };
         var titleLabel = new Label
         {
-            Text = title, Font = new Font("Georgia", 9.5f, FontStyle.Bold), ForeColor = Color.FromArgb(90, 70, 55),
-            Location = new Point(14, 8), Size = new Size(150, 28), AutoEllipsis = true
+            Text = title.ToUpperInvariant(), AutoSize = true, Font = UiTheme.Font(9, FontStyle.Bold),
+            ForeColor = UiTheme.TextMuted, Margin = new Padding(0, 0, 0, 2)
         };
-        var value = new Label { Text = "—", Font = new Font("Georgia", 19, FontStyle.Bold), ForeColor = spineColor, Location = new Point(14, 39), AutoSize = true };
+        var value = new Label
+        {
+            Text = "—", AutoSize = true, Font = UiTheme.Font(18, FontStyle.Bold), ForeColor = accent,
+            Margin = new Padding(0, 0, 0, 2)
+        };
         var sub = new Label
         {
-            Text = subtitle, Font = new Font("Segoe UI", 9f), ForeColor = Color.FromArgb(90, 85, 78),
-            Location = new Point(14, 91), Size = new Size(150, 20), AutoEllipsis = true
+            Text = subtitle, AutoSize = true, Font = UiTheme.Font(9), ForeColor = UiTheme.TextMuted, Margin = Padding.Empty
         };
-        card.SizeChanged += (_, _) =>
-        {
-            var width = Math.Max(30, card.ClientSize.Width - 28);
-            titleLabel.Width = width;
-            sub.Width = width;
-            value.MaximumSize = new Size(width, 36);
-        };
+        card.AddRow(titleLabel);
+        card.AddRow(value);
+        card.AddRow(sub);
         _cardValues.Add(value);
         _cardSubtitles.Add(sub);
-        card.Controls.Add(sub);
-        card.Controls.Add(value);
-        card.Controls.Add(titleLabel);
-        card.Controls.Add(spine);
-        return card;
+
+        // Vạch màu bên trái, vẽ trên chính thẻ
+        card.Paint += (_, e) =>
+        {
+            using var brush = new SolidBrush(accent);
+            e.Graphics.FillRectangle(brush, 0, 0, Ui.Px(4), card.Height);
+        };
+        parent.Controls.Add(card, column, 0);
     }
 
     private async Task LoadDashboardAsync()

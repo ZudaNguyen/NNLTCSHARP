@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.Forms
 {
@@ -11,45 +12,114 @@ namespace QuanLyThuVien.Desktop.Forms
         private readonly AuthApiClient _authApi = new();
         private TextBox txtTaiKhoan = null!;
         private TextBox txtMatKhau = null!;
-        private Button btnLogin = null!;
+        private AppButton btnLogin = null!;
         private CheckBox chkShowPassword = null!;
+        private Label lblError = null!;
         private bool _returningToLogin;
 
         public LoginForm()
         {
             InitializeComponent();
-            SetupLibraryLoginUI();
+            SetupLoginUI();
         }
 
-        private void SetupLibraryLoginUI()
+        private void SetupLoginUI()
         {
-            Color paperBg = Color.FromArgb(247, 243, 233);
-            Color woodDark = Color.FromArgb(44, 30, 22);
-            Color burgundy = Color.FromArgb(122, 40, 34);
-            Color goldAccent = Color.FromArgb(197, 155, 39);
-
-            Text = "📖 Cổng Tri Thức - Đăng Nhập Hệ Thống";
-            Size = new Size(440, 410);
+            AutoScaleMode = AutoScaleMode.None;
+            Text = "Đăng nhập - Hệ thống quản lý thư viện";
+            ClientSize = new Size(780, 460);
             StartPosition = FormStartPosition.CenterScreen;
-            FormBorderStyle = FormBorderStyle.FixedSingle;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
-            BackColor = paperBg;
+            BackColor = UiTheme.Surface;
+            Font = UiTheme.Body;
 
-            var pnlTopBar = new Panel { Dock = DockStyle.Top, Height = 8, BackColor = goldAccent };
-            var lblTitle = new Label { Text = "📚 THƯ VIỆN TRI THỨC", Font = new Font("Georgia", 16, FontStyle.Bold), ForeColor = woodDark, AutoSize = false, TextAlign = ContentAlignment.BottomCenter, Dock = DockStyle.Top, Height = 60 };
-            var lblSubTitle = new Label { Text = "✒️ Đăng nhập bằng tài khoản thư viện", Font = new Font("Georgia", 9.5f, FontStyle.Italic), ForeColor = Color.FromArgb(110, 85, 70), AutoSize = false, TextAlign = ContentAlignment.TopCenter, Dock = DockStyle.Top, Height = 35 };
-            var lblTaiKhoan = new Label { Text = "🔖 Tên đăng nhập:", Location = new Point(50, 115), Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = woodDark, AutoSize = true };
-            txtTaiKhoan = new TextBox { Location = new Point(50, 140), Width = 325, Font = new Font("Segoe UI", 11), BackColor = Color.FromArgb(255, 253, 248), BorderStyle = BorderStyle.FixedSingle, MaxLength = 64 };
-            var lblMatKhau = new Label { Text = "🗝️ Mật khẩu:", Location = new Point(50, 185), Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = woodDark, AutoSize = true };
-            txtMatKhau = new TextBox { Location = new Point(50, 210), Width = 325, Font = new Font("Segoe UI", 11), BackColor = Color.FromArgb(255, 253, 248), BorderStyle = BorderStyle.FixedSingle, PasswordChar = '●', MaxLength = 128 };
-            chkShowPassword = new CheckBox { Text = "Hiện mật khẩu", Location = new Point(50, 240), AutoSize = true, Font = new Font("Segoe UI", 9), ForeColor = woodDark };
-            chkShowPassword.CheckedChanged += (_, _) => txtMatKhau.PasswordChar = chkShowPassword.Checked ? '\0' : '●';
-            btnLogin = new Button { Text = "📖 Đăng nhập", Location = new Point(50, 275), Width = 325, Height = 42, Font = new Font("Georgia", 11, FontStyle.Bold), BackColor = burgundy, ForeColor = Color.FromArgb(255, 248, 231), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
-            btnLogin.FlatAppearance.BorderColor = goldAccent; btnLogin.FlatAppearance.BorderSize = 1;
+            // ----- Cột trái: thương hiệu -----
+            var brand = new TableLayoutPanel
+            {
+                Dock = DockStyle.Left, Width = 300, ColumnCount = 1, RowCount = 5, BackColor = UiTheme.Sidebar,
+                Padding = new Padding(36, 0, 28, 28)
+            };
+            brand.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            brand.RowStyles.Add(new RowStyle(SizeType.Percent, 42));
+            brand.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            brand.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            brand.RowStyles.Add(new RowStyle(SizeType.Percent, 58));
+            brand.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            brand.Controls.Add(new Label
+            {
+                Text = "THƯ VIỆN", AutoSize = true, Font = UiTheme.Font(18, FontStyle.Bold),
+                ForeColor = Color.White, Anchor = AnchorStyles.Left | AnchorStyles.Bottom, Margin = new Padding(0, 0, 0, 6)
+            }, 0, 1);
+            brand.Controls.Add(new Label
+            {
+                Text = "Hệ thống quản lý thư viện", AutoSize = true, Font = UiTheme.Font(10),
+                ForeColor = UiTheme.SidebarText, Anchor = AnchorStyles.Left | AnchorStyles.Top
+            }, 0, 2);
+            brand.Controls.Add(new Label
+            {
+                Text = "Quản lý sách, độc giả, mượn trả và báo cáo trong một ứng dụng.", AutoSize = true,
+                MaximumSize = new Size(230, 0), Font = UiTheme.Font(9), ForeColor = UiTheme.SidebarCaption,
+                Anchor = AnchorStyles.Left | AnchorStyles.Bottom, Margin = new Padding(0, 0, 0, 24)
+            }, 0, 4);
+
+            // ----- Cột phải: biểu mẫu đăng nhập -----
+            txtTaiKhoan = Ui.TextBox();
+            txtTaiKhoan.MaxLength = 64;
+            txtTaiKhoan.TextChanged += (_, _) => HideError();
+            txtMatKhau = Ui.TextBox();
+            txtMatKhau.MaxLength = 128;
+            txtMatKhau.UseSystemPasswordChar = true;
+            txtMatKhau.TextChanged += (_, _) => HideError();
+            chkShowPassword = new CheckBox
+            {
+                Text = "Hiện mật khẩu", AutoSize = true, Font = UiTheme.Font(9.5f), ForeColor = UiTheme.TextSecondary,
+                Margin = new Padding(0, 0, 0, 10), Cursor = Cursors.Hand
+            };
+            chkShowPassword.CheckedChanged += (_, _) => txtMatKhau.UseSystemPasswordChar = !chkShowPassword.Checked;
+            lblError = new Label
+            {
+                AutoSize = true, MaximumSize = new Size(320, 0), Font = UiTheme.Font(9.5f), ForeColor = UiTheme.Danger,
+                Margin = new Padding(0, 0, 0, 10), Visible = false
+            };
+            btnLogin = Ui.Button("Đăng nhập", ButtonKind.Primary);
+            btnLogin.AutoSize = false;
+            btnLogin.Height = 42;
+            btnLogin.Margin = new Padding(0, 4, 0, 0);
             btnLogin.Click += async (_, _) => await LoginAsync();
             AcceptButton = btnLogin;
 
-            Controls.Add(btnLogin); Controls.Add(chkShowPassword); Controls.Add(txtMatKhau); Controls.Add(lblMatKhau); Controls.Add(txtTaiKhoan); Controls.Add(lblTaiKhoan); Controls.Add(lblSubTitle); Controls.Add(lblTitle); Controls.Add(pnlTopBar);
+            var heading = new Label { Text = "Đăng nhập", AutoSize = true, Font = UiTheme.Font(18, FontStyle.Bold), ForeColor = UiTheme.Text, Margin = new Padding(0, 0, 0, 4) };
+            var intro = new Label { Text = "Dùng tài khoản do thư viện cấp để tiếp tục.", AutoSize = true, Font = UiTheme.Font(10), ForeColor = UiTheme.TextMuted, Margin = new Padding(0, 0, 0, 22) };
+
+            var form = new FormGrid(1);
+            form.AddFull(heading);
+            form.AddFull(intro);
+            form.Add("Tên đăng nhập", txtTaiKhoan);
+            form.Add("Mật khẩu", txtMatKhau);
+            form.AddFull(chkShowPassword);
+            form.AddFull(lblError);
+            form.AddFull(btnLogin);
+            btnLogin.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+
+            var right = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Surface, Padding = new Padding(52, 44, 40, 24) };
+            right.Controls.Add(form);
+
+            Controls.Add(right);
+            Controls.Add(brand);
+            Ui.ApplyDpi(this);
+            Shown += (_, _) => txtTaiKhoan.Focus();
+        }
+
+        private void ShowError(string message)
+        {
+            lblError.Text = message;
+            lblError.Visible = true;
+        }
+
+        private void HideError()
+        {
+            if (lblError.Visible) lblError.Visible = false;
         }
 
         private async Task LoginAsync()
@@ -58,8 +128,8 @@ namespace QuanLyThuVien.Desktop.Forms
             var password = txtMatKhau.Text;
             if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("Nhập tên đăng nhập và mật khẩu.", "Thiếu thông tin", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                txtTaiKhoan.Focus();
+                ShowError("Nhập tên đăng nhập và mật khẩu.");
+                (string.IsNullOrWhiteSpace(userName) ? txtTaiKhoan : txtMatKhau).Focus();
                 return;
             }
 
@@ -69,6 +139,7 @@ namespace QuanLyThuVien.Desktop.Forms
             {
                 var session = await _authApi.LoginAsync(new LoginRequestDto { TenDangNhap = userName, MatKhau = password }, CancellationToken.None);
                 txtMatKhau.Clear();
+                HideError();
                 _returningToLogin = false;
                 var mainForm = new MainForm(session.User, ReturnToLogin);
                 mainForm.FormClosed += (_, _) => { if (!_returningToLogin) Close(); };
@@ -78,7 +149,7 @@ namespace QuanLyThuVien.Desktop.Forms
             catch (Exception ex)
             {
                 txtMatKhau.Clear();
-                MessageBox.Show(ex.Message, "Đăng nhập thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowError(ex.Message);
                 txtMatKhau.Focus();
             }
             finally { btnLogin.Enabled = true; Cursor = Cursors.Default; }
@@ -90,6 +161,7 @@ namespace QuanLyThuVien.Desktop.Forms
             Show();
             Activate();
             txtMatKhau.Clear();
+            HideError();
             txtTaiKhoan.Focus();
         }
     }

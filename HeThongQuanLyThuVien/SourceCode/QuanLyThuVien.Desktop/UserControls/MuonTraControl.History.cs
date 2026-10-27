@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Forms;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.UserControls;
 
@@ -21,77 +22,20 @@ public partial class MuonTraControl
 
     private Control CreateHistoryView()
     {
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4,
-            BackColor = PaperCream, Padding = new Padding(2),
-            Margin = Padding.Empty
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 136));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-
-        var title = new Label
-        {
-            Text = "LỊCH SỬ MƯỢN SÁCH", Dock = DockStyle.Fill,
-            Font = new Font("Georgia", 12, FontStyle.Bold), ForeColor = Burgundy,
-            TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(8, 0, 0, 0)
-        };
-        layout.Controls.Add(title, 0, 0);
-
-        var filters = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
-            BackColor = CardBg, Padding = new Padding(8),
-            BorderStyle = BorderStyle.FixedSingle
-        };
-        filters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        for (var row = 0; row < 3; row++) filters.RowStyles.Add(new RowStyle(SizeType.Percent, 33.333f));
-        var firstLine = CreateFilterLine();
-        _historyReader = new ComboBox
-        {
-            Width = 250, DropDownStyle = ComboBoxStyle.DropDown,
-            Font = new Font("Segoe UI", 9.5f), Margin = new Padding(4, 3, 12, 3)
-        };
+        _historyReader = Ui.ComboBox(style: ComboBoxStyle.DropDown, width: 300);
         _historyReader.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
         _historyReader.AutoCompleteSource = AutoCompleteSource.ListItems;
         _historyReader.DisplayMember = nameof(HistoryReaderOption.Label);
         _historyReader.ValueMember = nameof(HistoryReaderOption.Id);
-        firstLine.Controls.Add(CreateFilterLabel("Độc giả:", 62));
-        firstLine.Controls.Add(_historyReader);
-        _historyStatus = new ComboBox
-        {
-            Width = 150, DropDownStyle = ComboBoxStyle.DropDownList,
-            Font = new Font("Segoe UI", 9.5f), Margin = new Padding(4, 3, 4, 3)
-        };
-        _historyStatus.Items.AddRange(["Tất cả", "Đang mượn", "Đã trả", "Quá hạn"]);
-        _historyStatus.SelectedIndex = 0;
-        firstLine.Controls.Add(CreateFilterLabel("Trạng thái:", 82));
-        firstLine.Controls.Add(_historyStatus);
-        filters.Controls.Add(firstLine, 0, 0);
 
-        var secondLine = CreateFilterLine();
-        _historySearch = new TextBox
-        {
-            Width = 170, Font = new Font("Segoe UI", 9.5f),
-            Margin = new Padding(4, 5, 12, 3), PlaceholderText = "PM-000001"
-        };
-        secondLine.Controls.Add(CreateFilterLabel("Mã phiếu:", 75));
-        secondLine.Controls.Add(_historySearch);
+        _historyStatus = Ui.ComboBox(new object[] { "Tất cả", "Đang mượn", "Đã trả", "Quá hạn" }, width: 160);
+        _historySearch = Ui.TextBox("PM-000001", 150);
         _historyFrom = CreateDateFilter();
         _historyTo = CreateDateFilter();
-        secondLine.Controls.Add(CreateFilterLabel("Từ ngày:", 68));
-        secondLine.Controls.Add(_historyFrom);
-        secondLine.Controls.Add(CreateFilterLabel("Đến ngày:", 76));
-        secondLine.Controls.Add(_historyTo);
-        filters.Controls.Add(secondLine, 0, 1);
 
-        var actionLine = CreateFilterLine();
-        var searchButton = CreateHistoryButton("Tra cứu", Burgundy, 90);
+        var searchButton = Ui.Button("Tra cứu", ButtonKind.Primary);
         searchButton.Click += async (_, _) => await LoadHistoryAsync(forceQuery: true);
-        var refreshButton = CreateHistoryButton("Làm mới", Color.FromArgb(90, 75, 65), 95);
+        var refreshButton = Ui.Button("Làm mới");
         refreshButton.Click += async (_, _) =>
         {
             _historyReader.SelectedValue = 0;
@@ -101,24 +45,19 @@ public partial class MuonTraControl
             _historyTo.Checked = false;
             await LoadHistoryAsync(forceQuery: true);
         };
-        var detailButton = CreateHistoryButton("Xem chi tiết", Color.FromArgb(100, 67, 42), 120);
+        var detailButton = Ui.Button("Xem chi tiết");
         detailButton.Click += async (_, _) => await ViewHistoryDetailAsync();
-        actionLine.Controls.Add(searchButton);
-        actionLine.Controls.Add(refreshButton);
-        actionLine.Controls.Add(detailButton);
-        filters.Controls.Add(actionLine, 0, 2);
-        layout.Controls.Add(filters, 0, 1);
 
-        _historyGrid = new DataGridView
-        {
-            Dock = DockStyle.Fill, BackgroundColor = CardBg, BorderStyle = BorderStyle.FixedSingle,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false,
-            ReadOnly = true, AllowUserToAddRows = false, RowHeadersVisible = false,
-            EnableHeadersVisualStyles = false, Font = new Font("Segoe UI", 9.5f),
-            ColumnHeadersHeight = 42, RowTemplate = { Height = 32 },
-            GridColor = Color.FromArgb(225, 215, 195)
-        };
+        var toolbar = new ToolbarRow();
+        toolbar.AddField("Độc giả", _historyReader);
+        toolbar.AddField("Trạng thái", _historyStatus);
+        toolbar.AddField("Mã phiếu", _historySearch);
+        var dateBar = new ToolbarRow();
+        dateBar.AddField("Từ ngày", _historyFrom);
+        dateBar.AddField("Đến ngày", _historyTo);
+        dateBar.AddActions(searchButton, refreshButton, detailButton);
+
+        _historyGrid = Ui.Grid();
         _historyGrid.Columns.Add("SoPhieu", "Mã phiếu");
         _historyGrid.Columns.Add("DocGia", "Độc giả");
         _historyGrid.Columns.Add("NgayMuon", "Ngày mượn");
@@ -135,17 +74,19 @@ public partial class MuonTraControl
         {
             if (e.RowIndex >= 0) await ViewHistoryDetailAsync();
         };
-        DataGridViewStyleHelper.ApplyLibraryStyle(_historyGrid);
-        layout.Controls.Add(_historyGrid, 0, 2);
 
         _historyCount = new Label
         {
-            Dock = DockStyle.Fill, Text = "Tổng số: 0 phiếu",
-            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = WoodDark,
-            TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(8, 0, 0, 0)
+            Text = "Tổng số: 0 phiếu", AutoSize = true, Font = UiTheme.Font(9.5f, FontStyle.Bold),
+            ForeColor = UiTheme.TextSecondary, Margin = new Padding(0, 10, 0, 0)
         };
-        layout.Controls.Add(_historyCount, 0, 3);
-        return layout;
+
+        var card = new CardPanel("Lịch sử mượn sách", autoHeight: false);
+        card.AddRow(toolbar);
+        card.AddRow(dateBar);
+        card.AddRow(_historyGrid, fill: true);
+        card.AddRow(_historyCount);
+        return card;
     }
 
     private async Task LoadHistoryAsync(bool forceQuery = false)
@@ -250,37 +191,13 @@ public partial class MuonTraControl
         catch (Exception ex) { ShowApiError(ex); }
     }
 
-    private static FlowLayoutPanel CreateFilterLine() => new()
+    /// <summary>Ô ngày có hộp chọn: bỏ chọn nghĩa là không lọc theo ngày.</summary>
+    private static DateTimePicker CreateDateFilter()
     {
-        Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false,
-        FlowDirection = FlowDirection.LeftToRight, Margin = Padding.Empty,
-        Padding = new Padding(0, 2, 0, 0)
-    };
-
-    private static Label CreateFilterLabel(string text, int width) => new()
-    {
-        Text = text, Width = width, Height = 30, Margin = new Padding(3, 2, 2, 2),
-        TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-        ForeColor = Color.FromArgb(44, 30, 22)
-    };
-
-    private static DateTimePicker CreateDateFilter() => new()
-    {
-        Width = 135, Height = 30, Format = DateTimePickerFormat.Short,
-        ShowCheckBox = true, Font = new Font("Segoe UI", 9.5f),
-        Margin = new Padding(3, 3, 12, 2)
-    };
-
-    private static Button CreateHistoryButton(string text, Color color, int width)
-    {
-        var button = new Button
-        {
-            Text = text, Width = width, Height = 30, Margin = new Padding(4, 2, 4, 2),
-            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), BackColor = color,
-            ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand
-        };
-        button.FlatAppearance.BorderSize = 0;
-        return button;
+        var picker = Ui.DatePicker(DateTime.Today, 150);
+        picker.ShowCheckBox = true;
+        picker.Checked = false;
+        return picker;
     }
 
     private sealed record HistoryReaderOption(int Id, string Label);

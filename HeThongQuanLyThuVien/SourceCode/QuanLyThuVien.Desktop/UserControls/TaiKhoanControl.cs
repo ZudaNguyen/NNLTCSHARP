@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.UserControls
 {
@@ -11,16 +12,11 @@ namespace QuanLyThuVien.Desktop.UserControls
     {
         private readonly AccountApiClient _api = new();
         private readonly System.Windows.Forms.Timer _filterTimer = new() { Interval = 300 };
-        private readonly Color PaperCream = Color.FromArgb(247, 243, 233);
-        private readonly Color CardBg = Color.FromArgb(255, 252, 245);
-        private readonly Color WoodDark = Color.FromArgb(44, 30, 22);
-        private readonly Color Burgundy = Color.FromArgb(122, 40, 34);
-        private readonly Color ForestGreen = Color.FromArgb(45, 106, 79);
         private TextBox txtId = null!, txtUserName = null!, txtDisplayName = null!, txtPassword = null!, txtSearch = null!;
         private NumericUpDown numEmployeeId = null!, numReaderId = null!;
         private ComboBox cboRole = null!, cboRoleFilter = null!, cboStatusFilter = null!;
         private DataGridView grid = null!;
-        private Button btnCreate = null!, btnUpdate = null!, btnStatus = null!, btnReset = null!;
+        private AppButton btnCreate = null!, btnUpdate = null!, btnStatus = null!, btnReset = null!;
 
         public TaiKhoanControl()
         {
@@ -31,93 +27,80 @@ namespace QuanLyThuVien.Desktop.UserControls
 
         private void BuildUi()
         {
-            Dock = DockStyle.Fill; BackColor = PaperCream; Padding = new Padding(20);
-            var form = new Panel { Dock = DockStyle.Fill, BackColor = CardBg, BorderStyle = BorderStyle.FixedSingle, Padding = new Padding(10) };
-            var fields = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 7, BackColor = CardBg, Margin = Padding.Empty };
-            fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 145));
-            fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
-            fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 145));
-            fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
-            fields.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-            for (var row = 1; row <= 4; row++) fields.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-            fields.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-            fields.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            var title = new Label { Text = "Quản lý Tài khoản & Phân quyền", Dock = DockStyle.Fill, Font = new Font("Georgia", 11.5f, FontStyle.Bold), ForeColor = Burgundy, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(3) };
-            fields.Controls.Add(title, 0, 0); fields.SetColumnSpan(title, 4);
-            txtId = AddTextBox(form, 0, 0, 85); txtId.ReadOnly = true; txtId.PlaceholderText = "Tự động"; txtId.BackColor = Color.FromArgb(235, 230, 220);
-            txtUserName = AddTextBox(form, 0, 0, 190);
-            AddAccountField(fields, "Mã tài khoản:", txtId, 0, 1);
-            AddAccountField(fields, "Tên đăng nhập:", txtUserName, 2, 1);
-            txtDisplayName = AddTextBox(form, 0, 0, 230);
-            AddAccountField(fields, "Tên hiển thị:", txtDisplayName, 0, 2); fields.SetColumnSpan(txtDisplayName, 3);
-            cboRole = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10), Margin = new Padding(3, 4, 8, 4) };
-            cboRole.Items.AddRange(new object[] { AccountRoles.Admin, AccountRoles.Librarian, AccountRoles.Reader }); cboRole.SelectedItem = AccountRoles.Librarian;
-            AddAccountField(fields, "Vai trò:", cboRole, 0, 3);
-            numEmployeeId = AddNumber(form, 0, 0); numEmployeeId.Dock = DockStyle.Fill; numEmployeeId.Margin = new Padding(3, 4, 8, 4);
-            AddAccountField(fields, "Mã nhân viên:", numEmployeeId, 2, 3);
-            numReaderId = AddNumber(form, 0, 0); numReaderId.Dock = DockStyle.Fill; numReaderId.Margin = new Padding(3, 4, 8, 4);
-            AddAccountField(fields, "Mã độc giả:", numReaderId, 0, 4);
-            txtPassword = AddTextBox(form, 0, 0, 190); txtPassword.PasswordChar = '●';
-            AddAccountField(fields, "Mật khẩu mới:", txtPassword, 2, 4);
-            var note = new Label { Text = "Thủ thư/Độc giả cần liên kết hồ sơ đang hoạt động. Mật khẩu mới tối thiểu 12 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9.5f), ForeColor = Burgundy, TextAlign = ContentAlignment.MiddleLeft, AutoSize = false, AutoEllipsis = false, Margin = new Padding(3) };
-            fields.Controls.Add(note, 0, 5); fields.SetColumnSpan(note, 4);
+            // ----- Biểu mẫu tài khoản -----
+            txtId = Ui.ReadOnlyBox();
+            txtUserName = Ui.TextBox();
+            txtDisplayName = Ui.TextBox();
+            cboRole = Ui.ComboBox(new object[] { AccountRoles.Admin, AccountRoles.Librarian, AccountRoles.Reader }, 1);
+            numEmployeeId = Ui.Number(0, int.MaxValue, 0);
+            numReaderId = Ui.Number(0, int.MaxValue, 0);
+            txtPassword = Ui.TextBox();
+            txtPassword.UseSystemPasswordChar = true;
 
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoScroll = false, Margin = new Padding(0, 3, 0, 0), Padding = Padding.Empty };
-            btnCreate = CreateButton("➕ Tạo tài khoản", ForestGreen);
-            btnUpdate = CreateButton("✏️ Cập nhật vai trò", Color.FromArgb(180, 120, 20));
-            btnStatus = CreateButton("🔒 Khóa / Mở", Burgundy);
-            btnReset = CreateButton("🔑 Đặt lại mật khẩu", Color.FromArgb(74, 53, 37));
-            var clear = CreateButton("Làm mới", Color.FromArgb(90, 75, 65));
-            btnCreate.Click += async (_, _) => await CreateAsync(); btnUpdate.Click += async (_, _) => await UpdateAsync();
-            btnStatus.Click += async (_, _) => await ToggleStatusAsync(); btnReset.Click += async (_, _) => await ResetPasswordAsync();
+            var fields = new FormGrid(4);
+            fields.Add("Mã tài khoản", txtId);
+            fields.Add("Tên đăng nhập", txtUserName);
+            fields.Add("Tên hiển thị", txtDisplayName, 2);
+            fields.Add("Vai trò", cboRole);
+            fields.Add("Mã nhân viên", numEmployeeId);
+            fields.Add("Mã độc giả", numReaderId);
+            fields.Add("Mật khẩu mới", txtPassword);
+
+            var note = Ui.Hint("Thủ thư và độc giả cần liên kết với hồ sơ đang hoạt động. Mật khẩu mới tối thiểu 12 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.");
+
+            btnCreate = Ui.Button("Tạo tài khoản", ButtonKind.Primary);
+            btnUpdate = Ui.Button("Cập nhật vai trò");
+            btnStatus = Ui.Button("Khóa tài khoản", ButtonKind.Danger);
+            btnReset = Ui.Button("Đặt lại mật khẩu");
+            var clear = Ui.Button("Làm mới");
+            btnCreate.Click += async (_, _) => await CreateAsync();
+            btnUpdate.Click += async (_, _) => await UpdateAsync();
+            btnStatus.Click += async (_, _) => await ToggleStatusAsync();
+            btnReset.Click += async (_, _) => await ResetPasswordAsync();
             clear.Click += (_, _) => ClearForm();
-            buttons.Controls.AddRange(new Control[] { btnCreate, btnUpdate, btnStatus, btnReset, clear });
-            fields.Controls.Add(buttons, 0, 6); fields.SetColumnSpan(buttons, 4); form.Controls.Add(fields);
 
-            var filter = new FlowLayoutPanel { Dock = DockStyle.Fill, Height = 52, BackColor = PaperCream, WrapContents = true, AutoScroll = false, Padding = new Padding(2, 7, 2, 2) };
-            filter.Controls.Add(new Label { Text = "Tra cứu:", AutoSize = true, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = WoodDark, Margin = new Padding(3, 8, 2, 2) });
-            txtSearch = new TextBox { Width = 230, Font = new Font("Segoe UI", 10), Margin = new Padding(3, 4, 6, 2) }; txtSearch.TextChanged += (_, _) => ScheduleLoad();
-            cboRoleFilter = CreateFilter(0, 0, 175, "Tất cả vai trò", new object[] { AccountRoles.Admin, AccountRoles.Librarian, AccountRoles.Reader }); cboRoleFilter.Margin = new Padding(3, 4, 6, 2);
-            cboStatusFilter = CreateFilter(0, 0, 175, "Tất cả trạng thái", new object[] { "Hoạt động", "Bị khóa" }); cboStatusFilter.Margin = new Padding(3, 4, 6, 2);
-            cboRoleFilter.SelectedIndexChanged += (_, _) => ScheduleLoad(); cboStatusFilter.SelectedIndexChanged += (_, _) => ScheduleLoad();
-            filter.Controls.AddRange(new Control[] { txtSearch, cboRoleFilter, cboStatusFilter });
+            var formCard = new CardPanel("Tài khoản & phân quyền");
+            formCard.AddRow(fields);
+            formCard.AddRow(note);
+            formCard.AddRow(Ui.ButtonBar(btnCreate, btnUpdate, btnStatus, btnReset, clear));
 
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = CardBg, BorderStyle = BorderStyle.FixedSingle, Padding = new Padding(10) };
-            grid = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = CardBg, BorderStyle = BorderStyle.None, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false, ReadOnly = true, AllowUserToAddRows = false, RowHeadersVisible = false, EnableHeadersVisualStyles = false, Font = new Font("Segoe UI", 9.5f), ColumnHeadersHeight = 38, RowTemplate = { Height = 32 }, GridColor = Color.FromArgb(225, 215, 195) };
-            grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37); grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215); grid.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
-            QuanLyThuVien.Desktop.Services.DataGridViewStyleHelper.ApplyLibraryStyle(grid);
-            grid.Columns.Add("Id", "Mã TK"); grid.Columns.Add("Username", "Tên đăng nhập"); grid.Columns.Add("Display", "Tên hiển thị"); grid.Columns.Add("Role", "Vai trò"); grid.Columns.Add("Link", "Mã hồ sơ"); grid.Columns.Add("Status", "Trạng thái");
+            // ----- Danh sách -----
+            txtSearch = Ui.TextBox("Tên đăng nhập hoặc tên hiển thị", 280);
+            txtSearch.TextChanged += (_, _) => ScheduleLoad();
+            cboRoleFilter = CreateFilter("Tất cả vai trò", new object[] { AccountRoles.Admin, AccountRoles.Librarian, AccountRoles.Reader });
+            cboStatusFilter = CreateFilter("Tất cả trạng thái", new object[] { "Hoạt động", "Bị khóa" });
+            cboRoleFilter.SelectedIndexChanged += (_, _) => ScheduleLoad();
+            cboStatusFilter.SelectedIndexChanged += (_, _) => ScheduleLoad();
+
+            var toolbar = new ToolbarRow();
+            toolbar.AddField("Tra cứu", txtSearch);
+            toolbar.AddField("Vai trò", cboRoleFilter);
+            toolbar.AddField("Trạng thái", cboStatusFilter);
+
+            grid = Ui.Grid();
+            grid.Columns.Add("Id", "Mã TK");
+            grid.Columns.Add("Username", "Tên đăng nhập");
+            grid.Columns.Add("Display", "Tên hiển thị");
+            grid.Columns.Add("Role", "Vai trò");
+            grid.Columns.Add("Link", "Mã hồ sơ");
+            grid.Columns.Add("Status", "Trạng thái");
             grid.CellClick += (_, e) => { if (e.RowIndex >= 0) LoadSelectedRow(grid.Rows[e.RowIndex]); };
-            grid.SelectionChanged += (_, _) => UpdateStatusButton(); panel.Controls.Add(grid);
-            var pageLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = PaperCream, Margin = Padding.Empty, Padding = Padding.Empty };
-            pageLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 304));
-            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-            pageLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            pageLayout.Controls.Add(form, 0, 0); pageLayout.Controls.Add(filter, 0, 1); pageLayout.Controls.Add(panel, 0, 2);
-            Controls.Add(pageLayout);
+            grid.SelectionChanged += (_, _) => UpdateStatusButton();
+
+            var listCard = new CardPanel("Danh sách tài khoản", autoHeight: false);
+            listCard.AddRow(toolbar);
+            listCard.AddRow(grid, fill: true);
+
+            Ui.SetupPage(this, Ui.ScrollStack(300, formCard, listCard));
         }
 
-        private void AddAccountField(TableLayoutPanel layout, string text, Control input, int labelColumn, int row)
+        private static ComboBox CreateFilter(string all, object[] items)
         {
-            var label = new Label { Text = text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = WoodDark, AutoSize = false, AutoEllipsis = false, Margin = new Padding(3) };
-            input.Dock = DockStyle.Fill; input.Margin = new Padding(3, 4, 8, 4);
-            layout.Controls.Add(label, labelColumn, row); layout.Controls.Add(input, labelColumn + 1, row);
+            var combo = Ui.ComboBox(new object[] { all }, width: 190);
+            combo.Items.AddRange(items);
+            return combo;
         }
 
-        private NumericUpDown AddNumber(Control parent, int x, int y)
-        {
-            var number = new NumericUpDown { Location = new Point(x, y), Width = 95, Minimum = 0, Maximum = int.MaxValue, Font = new Font("Segoe UI", 10) };
-            parent.Controls.Add(number); return number;
-        }
-        private ComboBox CreateFilter(int x, int y, int width, string all, object[] items)
-        {
-            var combo = new ComboBox { Location = new Point(x, y), Width = width, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 9.5f) };
-            combo.Items.Add(all); combo.Items.AddRange(items); combo.SelectedIndex = 0; return combo;
-        }
-        private void AddLabel(Control parent, string text, int x, int y) => parent.Controls.Add(new Label { Text = text, Location = new Point(x, y), AutoSize = true, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), ForeColor = WoodDark });
-        private TextBox AddTextBox(Control parent, int x, int y, int width) { var t = new TextBox { Location = new Point(x, y), Width = width, Font = new Font("Segoe UI", 10), BackColor = Color.FromArgb(255, 253, 248), BorderStyle = BorderStyle.FixedSingle }; parent.Controls.Add(t); return t; }
-        private Button CreateButton(string text, Color color) { var b = new Button { Text = text, Size = new Size(165, 32), Margin = new Padding(0, 0, 8, 0), Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), BackColor = color, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand }; b.FlatAppearance.BorderSize = 0; return b; }
         private void ScheduleLoad() { _filterTimer.Stop(); _filterTimer.Start(); }
 
         private async Task LoadAccountsAsync()
@@ -194,7 +177,14 @@ namespace QuanLyThuVien.Desktop.UserControls
             txtPassword.Clear(); UpdateStatusButton();
         }
 
-        private void UpdateStatusButton() => btnStatus.Text = grid?.CurrentRow?.Cells["Status"].Value?.ToString() == "Hoạt động" ? "🔒 Khóa tài khoản" : "♻ Mở tài khoản";
+        private void UpdateStatusButton()
+        {
+            if (btnStatus == null) return;
+            var active = grid?.CurrentRow?.Cells["Status"].Value?.ToString() == "Hoạt động";
+            btnStatus.Text = active ? "Khóa tài khoản" : "Mở tài khoản";
+            btnStatus.Kind = active ? ButtonKind.Danger : ButtonKind.Success;
+        }
+
         private bool ValidateForm(bool creating)
         {
             if (string.IsNullOrWhiteSpace(txtDisplayName.Text) || cboRole.SelectedItem == null) { MessageBox.Show("Tên hiển thị và vai trò là bắt buộc.", "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning); return false; }
@@ -202,6 +192,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             if (creating && string.IsNullOrWhiteSpace(txtPassword.Text)) { MessageBox.Show("Mật khẩu là bắt buộc khi tạo tài khoản.", "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning); return false; }
             return true;
         }
+
         private static int? NumberOrNull(NumericUpDown n) => n.Value == 0 ? null : (int)n.Value;
         private void SetBusy(bool busy) { btnCreate.Enabled = btnUpdate.Enabled = btnStatus.Enabled = btnReset.Enabled = !busy; Cursor = busy ? Cursors.WaitCursor : Cursors.Default; }
         private void ClearForm() { txtId.Clear(); txtUserName.Clear(); txtDisplayName.Clear(); txtPassword.Clear(); cboRole.SelectedItem = AccountRoles.Librarian; numEmployeeId.Value = 0; numReaderId.Value = 0; grid.ClearSelection(); UpdateStatusButton(); }

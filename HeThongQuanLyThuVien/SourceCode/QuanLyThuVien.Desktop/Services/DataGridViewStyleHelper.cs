@@ -1,60 +1,61 @@
 using System.Drawing;
 using System.Windows.Forms;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.Services;
 
+/// <summary>Áp kiểu bảng dữ liệu thống nhất: tiêu đề xám nhạt, dòng kẻ ngang mảnh, dòng chọn xanh nhạt.</summary>
 internal static class DataGridViewStyleHelper
 {
-    private static readonly Color Burgundy = Color.FromArgb(122, 40, 34);
-    private static readonly Color HeaderBrown = Color.FromArgb(74, 53, 37);
-    private static readonly Color HeaderCream = Color.FromArgb(245, 235, 215);
-    private static readonly Color Cream = Color.FromArgb(255, 252, 245);
-    private static readonly Color AlternateCream = Color.FromArgb(247, 243, 233);
-
     public static void ApplyLibraryStyle(DataGridView grid)
     {
-        grid.Font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
+        grid.BackgroundColor = UiTheme.Surface;
+        grid.BorderStyle = BorderStyle.None;
+        grid.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+        grid.GridColor = UiTheme.TableGrid;
+        grid.Font = UiTheme.Font(9.5f);
+        grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         grid.MultiSelect = false;
+        grid.ReadOnly = true;
         grid.RowHeadersVisible = false;
         grid.AllowUserToAddRows = false;
-        grid.ReadOnly = true;
+        grid.AllowUserToDeleteRows = false;
+        grid.AllowUserToResizeRows = false;
         grid.EnableHeadersVisualStyles = false;
-        grid.ColumnHeadersDefaultCellStyle.BackColor = HeaderBrown;
-        grid.ColumnHeadersDefaultCellStyle.ForeColor = HeaderCream;
-        grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = HeaderBrown;
-        grid.ColumnHeadersDefaultCellStyle.SelectionForeColor = HeaderCream;
-        grid.RowHeadersDefaultCellStyle.BackColor = HeaderBrown;
-        grid.RowHeadersDefaultCellStyle.ForeColor = HeaderCream;
-        grid.RowHeadersDefaultCellStyle.SelectionBackColor = HeaderBrown;
-        grid.RowHeadersDefaultCellStyle.SelectionForeColor = HeaderCream;
-        grid.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
-        grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-        grid.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
-        grid.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-        grid.ColumnHeadersHeight = 42;
-        grid.RowTemplate.Height = Math.Max(grid.RowTemplate.Height, 32);
-        grid.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
-        grid.DefaultCellStyle.BackColor = Cream;
-        grid.DefaultCellStyle.ForeColor = Color.FromArgb(44, 30, 22);
-        grid.DefaultCellStyle.SelectionBackColor = Burgundy;
-        grid.DefaultCellStyle.SelectionForeColor = Color.White;
-        grid.RowsDefaultCellStyle.BackColor = Cream;
-        grid.RowsDefaultCellStyle.ForeColor = Color.FromArgb(44, 30, 22);
-        grid.RowsDefaultCellStyle.SelectionBackColor = Burgundy;
-        grid.RowsDefaultCellStyle.SelectionForeColor = Color.White;
-        grid.AlternatingRowsDefaultCellStyle.BackColor = AlternateCream;
-        grid.AlternatingRowsDefaultCellStyle.SelectionBackColor = Burgundy;
-        grid.AlternatingRowsDefaultCellStyle.SelectionForeColor = Color.White;
         grid.ShowCellToolTips = true;
+
+        grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+        grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+        var header = grid.ColumnHeadersDefaultCellStyle;
+        header.BackColor = UiTheme.TableHeaderBg;
+        header.ForeColor = UiTheme.TableHeaderText;
+        header.SelectionBackColor = UiTheme.TableHeaderBg;
+        header.SelectionForeColor = UiTheme.TableHeaderText;
+        header.Font = UiTheme.Font(9.5f, FontStyle.Bold);
+        header.Alignment = DataGridViewContentAlignment.MiddleLeft;
+        header.WrapMode = DataGridViewTriState.False;
+        header.Padding = new Padding(Ui.Px(8), Ui.Px(8), Ui.Px(8), Ui.Px(8));
+
+        grid.RowTemplate.Height = 34;
+        var body = grid.DefaultCellStyle;
+        body.BackColor = UiTheme.Surface;
+        body.ForeColor = UiTheme.Text;
+        body.SelectionBackColor = UiTheme.PrimarySoft;
+        body.SelectionForeColor = UiTheme.Text;
+        body.WrapMode = DataGridViewTriState.False;
+        body.Padding = new Padding(Ui.Px(8), 0, Ui.Px(8), 0);
+
+        var alternate = grid.AlternatingRowsDefaultCellStyle;
+        alternate.BackColor = UiTheme.TableAltRow;
+        alternate.ForeColor = UiTheme.Text;
+        alternate.SelectionBackColor = UiTheme.PrimarySoft;
+        alternate.SelectionForeColor = UiTheme.Text;
+
         grid.ColumnAdded -= ApplyColumnStyle;
         grid.ColumnAdded += ApplyColumnStyle;
         foreach (DataGridViewColumn column in grid.Columns)
             ApplyColumnStyle(grid, new DataGridViewColumnEventArgs(column));
-        grid.RowsAdded -= ApplyRowStyle;
-        grid.RowsAdded += ApplyRowStyle;
-        foreach (DataGridViewRow row in grid.Rows)
-            ApplyRowStyle(grid, new DataGridViewRowsAddedEventArgs(row.Index, 1));
         grid.CellToolTipTextNeeded -= SetCellToolTip;
         grid.CellToolTipTextNeeded += SetCellToolTip;
     }
@@ -62,28 +63,9 @@ internal static class DataGridViewStyleHelper
     private static void ApplyColumnStyle(object? sender, DataGridViewColumnEventArgs e)
     {
         var column = e.Column;
-        column.DefaultCellStyle.SelectionBackColor = Burgundy;
-        column.DefaultCellStyle.SelectionForeColor = Color.White;
-        var measured = TextRenderer.MeasureText(column.HeaderText, column.DataGridView?.ColumnHeadersDefaultCellStyle.Font ?? SystemFonts.MessageBoxFont).Width + 24;
-        column.MinimumWidth = Math.Max(column.MinimumWidth, Math.Min(220, Math.Max(72, measured)));
-        column.HeaderCell.Style.SelectionBackColor = HeaderBrown;
-        column.HeaderCell.Style.SelectionForeColor = HeaderCream;
-    }
-
-    private static void ApplyRowStyle(object? sender, DataGridViewRowsAddedEventArgs e)
-    {
-        if (sender is not DataGridView grid) return;
-        for (var i = e.RowIndex; i < Math.Min(grid.Rows.Count, e.RowIndex + e.RowCount); i++)
-        {
-            var row = grid.Rows[i];
-            row.DefaultCellStyle.SelectionBackColor = Burgundy;
-            row.DefaultCellStyle.SelectionForeColor = Color.White;
-            foreach (DataGridViewCell cell in row.Cells)
-            {
-                cell.Style.SelectionBackColor = Burgundy;
-                cell.Style.SelectionForeColor = Color.White;
-            }
-        }
+        var headerFont = column.DataGridView?.ColumnHeadersDefaultCellStyle.Font ?? UiTheme.Font(9.5f, FontStyle.Bold);
+        var measured = TextRenderer.MeasureText(column.HeaderText, headerFont).Width + Ui.Px(30);
+        column.MinimumWidth = Math.Max(column.MinimumWidth, Math.Min(Ui.Px(220), Math.Max(Ui.Px(64), measured)));
     }
 
     private static void SetCellToolTip(object? sender, DataGridViewCellToolTipTextNeededEventArgs e)

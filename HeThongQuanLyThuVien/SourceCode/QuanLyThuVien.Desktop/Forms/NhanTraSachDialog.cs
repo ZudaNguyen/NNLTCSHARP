@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.Forms;
 
@@ -11,15 +12,15 @@ internal sealed class NhanTraSachDialog : Form
     private readonly MuonTraChiTietDto _loan;
     private readonly decimal? _dailyFine;
     private readonly string _staffName;
-    private readonly DataGridView _books = new();
-    private readonly DateTimePicker _returnDate = new();
-    private readonly NumericUpDown _returnQuantity = new();
-    private readonly ComboBox _condition = new();
-    private readonly ComboBox _fineTarget = new();
-    private readonly NumericUpDown _payment = new();
+    private readonly DataGridView _books = Ui.Grid();
+    private readonly DateTimePicker _returnDate = Ui.DatePicker(DateTime.Today);
+    private readonly NumericUpDown _returnQuantity = Ui.Number(1, 1000, 1);
+    private readonly ComboBox _condition = Ui.ComboBox(new object[] { "Nguyên vẹn", "Rách hoặc bẩn nhẹ", "Hỏng nặng", "Mất" });
+    private readonly ComboBox _fineTarget = Ui.ComboBox();
+    private readonly NumericUpDown _payment = Ui.Number(0, decimal.MaxValue, 0);
     private readonly Label _selection = new();
     private readonly Label _finePreview = new();
-    private readonly Button _confirm = new();
+    private readonly AppButton _confirm = Ui.Button("Xác nhận trả sách & xử lý tiền phạt", ButtonKind.Primary);
     private int? _selectedLineId;
     private bool _submitting;
 
@@ -28,117 +29,83 @@ internal sealed class NhanTraSachDialog : Form
         _loan = loan;
         _dailyFine = dailyFine;
         _staffName = staffName;
-        Text = $"Chi tiết & nhận trả sách — {loan.SoPhieu}";
-        StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(980, 620);
-        Size = new Size(1100, 720);
-        AutoScaleMode = AutoScaleMode.Dpi;
-        BackColor = Color.FromArgb(247, 243, 233);
-        Font = new Font("Segoe UI", 9.5f);
+        Ui.SetupDialog(this, $"Nhận trả sách - {loan.SoPhieu}", new Size(1080, 700), new Size(940, 620));
 
-        var header = new Label
+        // ----- Tiêu đề phiếu -----
+        var header = new TableLayoutPanel
         {
-            Dock = DockStyle.Top,
-            Height = 58,
-            Padding = new Padding(14, 8, 8, 4),
-            Text = $"Phiếu {loan.SoPhieu}  ·  {loan.TenDocGia}  ·  Mượn {loan.NgayMuon:dd/MM/yyyy}  ·  Hạn trả {loan.HanTra:dd/MM/yyyy}",
-            Font = new Font("Georgia", 11, FontStyle.Bold),
-            ForeColor = Color.FromArgb(122, 40, 34)
+            ColumnCount = 1, RowCount = 2, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            BackColor = UiTheme.PageBg, Margin = Padding.Empty, Padding = Padding.Empty
         };
-        Controls.Add(header);
+        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        header.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var title = Ui.Heading($"Phiếu {loan.SoPhieu} · {loan.TenDocGia}");
+        title.Font = UiTheme.Title;
+        title.Margin = new Padding(0, 0, 0, 2);
+        var info = Ui.Hint($"Ngày mượn {loan.NgayMuon:dd/MM/yyyy}   ·   Hạn trả {loan.HanTra:dd/MM/yyyy}", 900);
+        info.Margin = Padding.Empty;
+        header.Controls.Add(title, 0, 0);
+        header.Controls.Add(info, 0, 1);
 
+        // ----- Danh sách sách trong phiếu -----
         ConfigureGrid();
-        _books.Dock = DockStyle.Fill;
-        _books.Margin = new Padding(12);
         _books.CellClick += (_, e) => { if (e.RowIndex >= 0) SelectLine(); };
         _books.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) SelectLine(); };
-        Controls.Add(_books);
+        var gridCard = new CardPanel("Sách trong phiếu", autoHeight: false);
+        gridCard.AddRow(_books, fill: true);
 
-        var editor = new TableLayoutPanel
-        {
-            Dock = DockStyle.Bottom, Height = 250, Padding = new Padding(12), BackColor = Color.FromArgb(255, 252, 245),
-            ColumnCount = 4, RowCount = 4, GrowStyle = TableLayoutPanelGrowStyle.FixedSize
-        };
-        for (var i = 0; i < 4; i++) editor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-        editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 72));
-        editor.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
-        editor.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        _selection.Dock = DockStyle.Fill;
-        _selection.AutoEllipsis = true;
-        _selection.Margin = new Padding(3, 0, 3, 2);
-        _selection.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-        editor.Controls.Add(_selection, 0, 0);
-        editor.SetColumnSpan(_selection, 4);
-        AddField(editor, "Ngày nhận", _returnDate, 0, 1);
-        AddField(editor, "Số lượng trả", _returnQuantity, 1, 1);
-        AddField(editor, "Tình trạng sách", _condition, 2, 1);
-        AddField(editor, "Khoản phạt cần thu", _fineTarget, 3, 1);
-        _returnDate.Format = DateTimePickerFormat.Short;
+        // ----- Nhận trả & xử lý phạt -----
+        _selection.AutoSize = true;
+        _selection.MaximumSize = new Size(980, 0);
+        _selection.Font = UiTheme.BodyBold;
+        _selection.ForeColor = UiTheme.Text;
+        _selection.Margin = new Padding(0, 0, 0, 12);
+
         _returnDate.MaxDate = DateTime.Today;
-        _returnDate.Value = DateTime.Today;
         _returnDate.ValueChanged += (_, _) => UpdateFinePreview();
-        _returnQuantity.Minimum = 1;
-        _returnQuantity.Maximum = 1000;
         _returnQuantity.ValueChanged += (_, _) => UpdateFinePreview();
-        _condition.DropDownStyle = ComboBoxStyle.DropDownList;
-        _condition.Items.AddRange(["Nguyên vẹn", "Rách hoặc bẩn nhẹ", "Hỏng nặng", "Mất"]);
-        _condition.SelectedIndex = 0;
-        _fineTarget.DropDownStyle = ComboBoxStyle.DropDownList;
         _fineTarget.SelectedIndexChanged += (_, _) => UpdateFinePreview();
         _fineTarget.Items.Add(new FineTargetOption(null, "Phạt từ lần trả này", null));
         foreach (var fine in _loan.ChiTiet.SelectMany(x => x.LichSuTra).Where(x => x.ConNo is > 0).OrderBy(x => x.NgayTra))
             _fineTarget.Items.Add(new FineTargetOption(fine.MaLanTra,
                 $"Thu nợ lần trả #{fine.MaLanTra} — còn {fine.ConNo:N0} đ", fine.ConNo));
         _fineTarget.SelectedIndex = _fineTarget.Items.Count > 1 && !_loan.ChiTiet.Any(x => x.SoLuongConMuon > 0) ? 1 : 0;
-        AddField(editor, "Số tiền thu (có thể thu một phần)", _payment, 0, 2);
-        var previewPanel = new Panel { Dock = DockStyle.Fill, Margin = new Padding(4, 3, 4, 3), Padding = new Padding(6, 3, 3, 3) };
+
         _payment.DecimalPlaces = 2;
-        _payment.Maximum = decimal.MaxValue;
         _payment.ThousandsSeparator = true;
         _payment.TextAlign = HorizontalAlignment.Right;
-        _finePreview.Dock = DockStyle.Fill;
-        _finePreview.ForeColor = Color.FromArgb(122, 40, 34);
-        _finePreview.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-        _finePreview.AutoEllipsis = true;
-        previewPanel.Controls.Add(_finePreview);
-        editor.Controls.Add(previewPanel, 1, 2);
-        editor.SetColumnSpan(previewPanel, 3);
+        _finePreview.AutoSize = true;
+        _finePreview.MaximumSize = new Size(720, 0);
+        _finePreview.ForeColor = UiTheme.Danger;
+        _finePreview.Font = UiTheme.BodyBold;
+        _finePreview.Margin = new Padding(0, 2, 0, 0);
 
-        _confirm.Text = "Xác nhận trả sách & xử lý tiền phạt";
-        _confirm.Dock = DockStyle.Fill;
-        _confirm.Margin = new Padding(3, 5, 6, 2);
-        _confirm.BackColor = Color.FromArgb(122, 40, 34);
-        _confirm.ForeColor = Color.White;
-        _confirm.FlatStyle = FlatStyle.Flat;
-        _confirm.FlatAppearance.BorderSize = 0;
-        _confirm.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        var fields = new FormGrid(4);
+        fields.Add("Ngày nhận", _returnDate);
+        fields.Add("Số lượng trả", _returnQuantity);
+        fields.Add("Tình trạng sách", _condition);
+        fields.Add("Khoản phạt cần thu", _fineTarget);
+        fields.Add("Số tiền thu (có thể thu một phần)", _payment);
+        fields.Add("Tiền phạt", _finePreview, 3);
+
         _confirm.Click += ConfirmAsync;
-        editor.Controls.Add(_confirm, 0, 3);
-        editor.SetColumnSpan(_confirm, 2);
+        var close = Ui.Button("Đóng");
+        close.DialogResult = DialogResult.Cancel;
+        var editorCard = new CardPanel("Nhận trả và xử lý phạt");
+        editorCard.AddRow(_selection);
+        editorCard.AddRow(fields);
+        editorCard.AddRow(Ui.ButtonBar(_confirm, close));
 
-        var close = new Button { Text = "Đóng", Dock = DockStyle.Fill, Margin = new Padding(6, 5, 3, 2), DialogResult = DialogResult.Cancel, Font = new Font("Segoe UI", 9.5f) };
-        editor.Controls.Add(close, 2, 3);
-        Controls.Add(editor);
+        Controls.Add(Ui.Stack(1, header, gridCard, editorCard));
         AcceptButton = _confirm;
         CancelButton = close;
+        Ui.ApplyDpi(this);
 
         LoadBookRows();
     }
 
     private void ConfigureGrid()
     {
-        _books.ReadOnly = true;
-        _books.AllowUserToAddRows = false;
-        _books.RowHeadersVisible = false;
-        _books.MultiSelect = false;
-        _books.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-        _books.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        _books.BackgroundColor = Color.FromArgb(255, 252, 245);
-        _books.EnableHeadersVisualStyles = false;
-        _books.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
-        _books.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
-        DataGridViewStyleHelper.ApplyLibraryStyle(_books);
         _books.Columns.Add("TenSach", "Sách");
         _books.Columns.Add("SoLuong", "Mượn / Đã trả / Còn");
         _books.Columns.Add("QuaHan", "Quá hạn");
@@ -159,8 +126,8 @@ internal sealed class NhanTraSachDialog : Form
             var row = _books.Rows.Add(line.TenSach, $"{line.SoLuongMuon} / {line.SoLuongDaXuLy} / {line.SoLuongConMuon}",
                 overdueDays == 0 ? "Không" : $"{overdueDays} ngày", history, $"{fine:N0} / {paid:N0} đ");
             _books.Rows[row].Tag = line.MaChiTiet;
-            if (line.SoLuongConMuon == 0) _books.Rows[row].DefaultCellStyle.ForeColor = Color.DimGray;
-            else if (overdueDays > 0) _books.Rows[row].DefaultCellStyle.ForeColor = Color.FromArgb(160, 55, 35);
+            if (line.SoLuongConMuon == 0) _books.Rows[row].DefaultCellStyle.ForeColor = UiTheme.TextMuted;
+            else if (overdueDays > 0) _books.Rows[row].DefaultCellStyle.ForeColor = UiTheme.Danger;
         }
 
         var firstOpen = _loan.ChiTiet.FirstOrDefault(x => x.SoLuongConMuon > 0);
@@ -236,7 +203,7 @@ internal sealed class NhanTraSachDialog : Form
         }
 
         var amount = days * (int)_returnQuantity.Value * rate;
-        _finePreview.Text = $"Tự tính: {days} ngày trễ × {(int)_returnQuantity.Value} cuốn × {rate:N0} đ/ngày = {amount:N0} đ.\r\nThu tiền có thể để 0 hoặc thu một phần.";
+        _finePreview.Text = $"Tự tính: {days} ngày trễ × {(int)_returnQuantity.Value} cuốn × {rate:N0} đ/ngày = {amount:N0} đ.\r\nSố tiền thu có thể để 0 hoặc thu một phần.";
         _payment.Maximum = amount;
         _payment.Value = amount;
     }
@@ -299,24 +266,6 @@ internal sealed class NhanTraSachDialog : Form
             _submitting = false;
             _confirm.Enabled = true;
         }
-    }
-
-    private static void AddField(TableLayoutPanel parent, string label, Control control, int column, int row)
-    {
-        var field = new Panel { Dock = DockStyle.Fill, Margin = new Padding(4, 2, 4, 2), Padding = new Padding(2) };
-        var title = new Label
-        {
-            Text = label, Dock = DockStyle.Top, Height = 24,
-            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), AutoEllipsis = true
-        };
-        control.Dock = DockStyle.Top;
-        control.Margin = Padding.Empty;
-        if (control is ComboBox combo) combo.Height = 30;
-        if (control is DateTimePicker picker) picker.Height = 30;
-        if (control is NumericUpDown number) number.Height = 30;
-        field.Controls.Add(control);
-        field.Controls.Add(title);
-        parent.Controls.Add(field, column, row);
     }
 
     private sealed record FineTargetOption(int? MaLanTra, string Label, decimal? ConNo)

@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using QuanLyThuVien.Desktop.Services;
+using QuanLyThuVien.Desktop.Theme;
 
 namespace QuanLyThuVien.Desktop.UserControls
 {
@@ -11,9 +12,6 @@ namespace QuanLyThuVien.Desktop.UserControls
         private readonly System.Windows.Forms.Timer _searchTimer = new() { Interval = 350 };
         private TextBox txtSearch = null!;
         private DataGridView grid = null!;
-        private readonly Color paper = Color.FromArgb(247, 243, 233);
-        private readonly Color card = Color.FromArgb(255, 252, 245);
-        private readonly Color wood = Color.FromArgb(44, 30, 22);
 
         public ReaderCatalogControl()
         {
@@ -24,18 +22,23 @@ namespace QuanLyThuVien.Desktop.UserControls
 
         private void BuildUi()
         {
-            Dock = DockStyle.Fill; BackColor = paper; Padding = new Padding(20);
-            var filter = new Panel { Dock = DockStyle.Top, Height = 56, BackColor = paper };
-            filter.Controls.Add(new Label { Text = "Tra cứu sách:", Location = new Point(5, 16), AutoSize = true, Font = new Font("Georgia", 10, FontStyle.Bold), ForeColor = wood });
-            txtSearch = new TextBox { Location = new Point(125, 12), Width = 360, Font = new Font("Segoe UI", 10) };
+            txtSearch = Ui.TextBox("Tên sách, ISBN hoặc tác giả", 360);
             txtSearch.TextChanged += (_, _) => { _searchTimer.Stop(); _searchTimer.Start(); };
-            filter.Controls.Add(txtSearch);
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = card, BorderStyle = BorderStyle.FixedSingle, Padding = new Padding(10) };
-            grid = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = card, BorderStyle = BorderStyle.None, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false, ReadOnly = true, AllowUserToAddRows = false, RowHeadersVisible = false, EnableHeadersVisualStyles = false, Font = new Font("Segoe UI", 9.5f), ColumnHeadersHeight = 38, RowTemplate = { Height = 32 }, GridColor = Color.FromArgb(225, 215, 195) };
-            grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37); grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215); grid.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
-            QuanLyThuVien.Desktop.Services.DataGridViewStyleHelper.ApplyLibraryStyle(grid);
-            grid.Columns.Add("Title", "Tên sách"); grid.Columns.Add("ISBN", "ISBN"); grid.Columns.Add("Genre", "Thể loại"); grid.Columns.Add("Authors", "Tác giả"); grid.Columns.Add("Year", "Năm XB"); grid.Columns.Add("Available", "Còn lại");
-            panel.Controls.Add(grid); Controls.Add(panel); Controls.Add(filter);
+            var toolbar = new ToolbarRow();
+            toolbar.AddField("Tra cứu sách", txtSearch);
+
+            grid = Ui.Grid();
+            grid.Columns.Add("Title", "Tên sách");
+            grid.Columns.Add("ISBN", "ISBN");
+            grid.Columns.Add("Genre", "Thể loại");
+            grid.Columns.Add("Authors", "Tác giả");
+            grid.Columns.Add("Year", "Năm XB");
+            grid.Columns.Add("Available", "Còn lại");
+
+            var card = new CardPanel("Danh mục sách", autoHeight: false);
+            card.AddRow(toolbar);
+            card.AddRow(grid, fill: true);
+            Ui.SetupPage(this, Ui.Stack(card));
         }
 
         private async Task LoadBooksAsync()
