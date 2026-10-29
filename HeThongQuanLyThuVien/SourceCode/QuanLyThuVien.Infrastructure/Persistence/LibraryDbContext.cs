@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QuanLyThuVien.Domain.Entities;
+using QuanLyThuVien.Domain.Enums;
 
 namespace QuanLyThuVien.Infrastructure.Persistence;
 
@@ -20,6 +21,7 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
     public DbSet<ChiTietTraSach> ChiTietTraSach => Set<ChiTietTraSach>();
     public DbSet<ThuTienPhat> ThuTienPhat => Set<ThuTienPhat>();
     public DbSet<CauHinhTienPhat> CauHinhTienPhat => Set<CauHinhTienPhat>();
+    public DbSet<YeuCauMuon> YeuCauMuon => Set<YeuCauMuon>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -209,6 +211,33 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
             entity.ToTable("CauHinhTienPhat"); entity.HasKey(x => x.Id);
             entity.Property(x => x.MucPhatMoiNgay).HasColumnType("decimal(18,2)");
             entity.Property(x => x.CapNhatLuc).HasColumnType("datetime2");
+        });
+        modelBuilder.Entity<YeuCauMuon>(entity =>
+        {
+            entity.ToTable("YeuCauMuon", table =>
+            {
+                table.HasCheckConstraint("CK_YeuCauMuon_SoLuong", "[SoLuong] > 0");
+                table.HasCheckConstraint("CK_YeuCauMuon_TrangThai",
+                    "[TrangThai] IN (N'Chờ duyệt', N'Đã duyệt', N'Từ chối', N'Đã hủy')");
+                table.HasCheckConstraint("CK_YeuCauMuon_MaPhieu",
+                    "[TrangThai] <> N'Đã duyệt' OR [MaPhieu] IS NOT NULL");
+            });
+            entity.HasKey(x => x.MaYeuCau);
+            entity.Property(x => x.MaYeuCau).ValueGeneratedOnAdd();
+            entity.Property(x => x.NgayTao).HasColumnType("datetime2").HasDefaultValueSql("SYSDATETIME()");
+            entity.Property(x => x.TrangThai).HasMaxLength(20).HasDefaultValue(YeuCauMuonTrangThai.ChoDuyet).IsRequired();
+            entity.Property(x => x.GhiChu).HasMaxLength(500);
+            entity.Property(x => x.LyDoTuChoi).HasMaxLength(500);
+            entity.Property(x => x.NguoiDuyet).HasMaxLength(100);
+            entity.Property(x => x.NgayDuyet).HasColumnType("datetime2");
+            entity.HasIndex(x => x.IdempotencyKey).IsUnique();
+            entity.HasIndex(x => new { x.MaDocGia, x.TrangThai });
+            entity.HasIndex(x => new { x.TrangThai, x.NgayTao });
+            entity.HasIndex(x => new { x.MaDocGia, x.MaSach }).IsUnique()
+                .HasFilter("[TrangThai] = N'Chờ duyệt'");
+            entity.HasOne(x => x.DocGia).WithMany().HasForeignKey(x => x.MaDocGia).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Sach).WithMany().HasForeignKey(x => x.MaSach).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.PhieuMuon).WithMany().HasForeignKey(x => x.MaPhieu).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
