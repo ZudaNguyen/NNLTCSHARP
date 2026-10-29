@@ -27,6 +27,7 @@ Chưa gom thành hằng số; khi sửa phải giữ đúng nguyên văn vì có
 | `TaiKhoan.TrangThai` | `Hoạt động`, `Bị khóa` |
 | `DocGia.TrangThai` | `Hoạt động`, `Khóa thẻ` |
 | `NhanVien.TrangThai` | `Hoạt động`, `Ngừng hoạt động` |
+| `YeuCauMuon.TrangThai` | `Chờ duyệt`, `Đã duyệt`, `Từ chối`, `Đã hủy` |
 
 ## 3. Trách nhiệm từng project
 
@@ -35,10 +36,10 @@ Chưa gom thành hằng số; khi sửa phải giữ đúng nguyên văn vì có
 | `Domain` | Entity, enum (`AccountRoles`), exception nghiệp vụ | Xong |
 | `Application` | DTO, interface, service nghiệp vụ, validate | Xong cho các module quản trị |
 | `Infrastructure` | EF Core `LibraryDbContext`, repository, SQL schema | Xong cho các module quản trị |
-| `Api` | REST API dùng chung cho Desktop và Web | Xong 56 endpoint |
+| `Api` | REST API dùng chung cho Desktop và Web | Xong 64 endpoint |
 | `Desktop` | WinForms cho Admin + Thủ thư, có cả màn hình độc giả | Xong phần quản trị |
-| `Web` | ASP.NET Core MVC cho độc giả | **Khung rỗng — phần đang làm** |
-| `Tests` | xUnit, hiện chưa có test case | Trống |
+| `Web` | ASP.NET Core MVC cho độc giả | Xong: tra cứu, mượn/đặt sách, lịch sử, hồ sơ |
+| `Tests` | xUnit cho nghiệp vụ `YeuCauMuonService` | 10 test |
 
 ## 4. Ma trận API
 
@@ -100,7 +101,28 @@ Token là opaque bearer, gửi qua header `Authorization: Bearer <accessToken>`.
 | GET | `/api/muontra/cau-hinh/tien-phat` | Staff | Đọc cấu hình phạt |
 | PUT | `/api/muontra/cau-hinh/tien-phat` | Admin | Sửa cấu hình phạt |
 
-### 4.5 Quản trị — chỉ Desktop
+### 4.5 Yêu cầu mượn — `api/yeucau`
+
+| Method | Route | Quyền | Ghi chú |
+|---|---|---|---|
+| POST | `/api/yeucau` | Reader | Gửi yêu cầu mượn; body `TaoYeuCauMuonDto` |
+| GET | `/api/yeucau/me` | Reader | Danh sách yêu cầu của mình; query `trangThai` |
+| GET | `/api/yeucau/me/{id}` | Reader | Chi tiết một yêu cầu (kiểm tra sở hữu) |
+| POST | `/api/yeucau/me/{id}/huy` | Reader | Hủy khi còn `Chờ duyệt` |
+| GET | `/api/yeucau` | Staff | Tìm kiếm; query `search`, `trangThai` |
+| GET | `/api/yeucau/{id}` | Staff | |
+| POST | `/api/yeucau/{id}/duyet` | Staff | Duyệt → tạo phiếu mượn 14 ngày |
+| POST | `/api/yeucau/{id}/tu-choi` | Staff | Body `TuChoiYeuCauMuonDto` (`lyDo` tùy chọn) |
+
+Quy tắc nghiệp vụ:
+
+- Mỗi độc giả chỉ có **một** yêu cầu `Chờ duyệt` cho mỗi đầu sách (filtered unique index `UX_YeuCauMuon_DangCho`).
+- Không gửi được nếu độc giả đang mượn chính cuốn đó (còn sách chưa trả).
+- Vẫn cho đặt khi sách đã hết bản; thủ thư duyệt sẽ báo lỗi tồn kho nếu không còn bản.
+- Duyệt lại yêu cầu `Đã duyệt` là idempotent: trả về phiếu cũ, không sinh phiếu thứ hai (dùng `IdempotencyKey` của yêu cầu).
+- Từ chối mặc định lý do `Thủ thư từ chối yêu cầu.` nếu để trống.
+
+### 4.6 Quản trị — chỉ Desktop
 
 | Nhóm | Route gốc | Quyền |
 |---|---|---|
@@ -109,7 +131,7 @@ Token là opaque bearer, gửi qua header `Authorization: Bearer <accessToken>`.
 | Dashboard | `/api/dashboard` | Staff |
 | Báo cáo | `/api/baocao` | Staff |
 
-### 4.6 Dev only (chỉ `Development`)
+### 4.7 Dev only (chỉ `Development`)
 
 | Method | Route | Quyền |
 |---|---|---|
@@ -125,13 +147,15 @@ Token là opaque bearer, gửi qua header `Authorization: Bearer <accessToken>`.
 - `GET /api/muontra/me` và `/me/{id}` → `/lich-su-muon`, `/lich-su-muon/{id}`.
 - `GET /api/muontra/me/{id}/tien-phat` → bảng tiền phạt từng lần trả (phải thu / đã thu / còn nợ).
 - `GET /api/sach`, `/api/theloai` gọi anonymous được → `/`, `/sach`, `/sach/{id}` không cần đăng nhập.
-- Trang chủ và layout đã thay dữ liệu mockup bằng dữ liệu thật: sách nổi bật, thể loại, sách đang mượn, cảnh báo sắp đến hạn/quá hạn, badge thông báo.
+- `POST /api/yeucau` → nút **Gửi yêu cầu mượn / Đặt trước** ở `/sach/{id}`; `GET /api/yeucau/me` → `/yeu-cau`; `POST /api/yeucau/me/{id}/huy` → nút **Hủy**.
+- Trang `/sach/{id}` phân biệt 4 trạng thái: khách (mời đăng nhập), đang mượn cuốn này (kèm phiếu), đã có yêu cầu chờ duyệt (kèm nút hủy), còn lại (form đặt mượn).
+- Trang chủ và layout đã thay dữ liệu mockup bằng dữ liệu thật: sách nổi bật, thể loại, sách đang mượn, cảnh báo sắp đến hạn/quá hạn, badge thông báo và badge yêu cầu chờ duyệt.
 - Phân quyền đã đúng: độc giả gọi API quản trị trả `403`, admin gọi `/api/muontra/me` trả `403`, admin đăng nhập Web bị chặn.
 
 Còn thiếu (thuộc phần việc user):
 
-1. **Gửi yêu cầu mượn / đặt sách** — chưa có endpoint, chưa có bảng `YeuCauMuon`. Kế hoạch dự án ghi đây là "nên có". Hiện `/sach/{id}` chỉ hướng dẫn độc giả ra quầy mượn.
-2. **Đổi mật khẩu trên Web** — API chưa có endpoint cho độc giả tự đổi; hiện phải nhờ thủ thư.
+1. **Đổi mật khẩu trên Web** — API đã có `/api/auth/change-password` nhưng Web chưa có form.
+2. **Gia hạn phiếu mượn trực tuyến** — chưa có endpoint; hiện thủ thư xử lý ở quầy.
 
 ### Cấu trúc Web hiện tại
 
@@ -140,16 +164,18 @@ SourceCode/QuanLyThuVien.Web/
 ├── Controllers/
 │   ├── HomeController.cs        trang chủ + mockup Manager/Admin
 │   ├── SachController.cs        /sach (tìm kiếm, lọc thể loại) + /sach/{id}
+│   ├── YeuCauMuonController.cs  /yeu-cau, gửi yêu cầu, hủy yêu cầu
 │   └── TaiKhoanController.cs    đăng nhập/đăng xuất/lịch sử mượn/hồ sơ
 ├── Services/
 │   ├── LibraryApiClient.cs      cửa ngõ duy nhất gọi REST API, gắn Bearer token
 │   └── ReaderSession.cs         đọc/ghi claim cookie, đăng nhập/đăng xuất
-├── ViewModels/                  Home, BookSearch, Account (login/loan/profile)
+├── ViewModels/                  Home, BookSearch, BorrowRequest, Account
 └── Views/
     ├── Shared/_Layout.cshtml    layout độc giả, menu theo route, badge thông báo
     ├── Shared/_BookCard.cshtml  thẻ sách dùng lại
     ├── Home/Index.cshtml
     ├── Sach/Index.cshtml, Details.cshtml
+    ├── YeuCauMuon/Index.cshtml
     └── TaiKhoan/Login.cshtml, LichSuMuon.cshtml, ChiTietMuon.cshtml, HoSo.cshtml
 ```
 
@@ -163,6 +189,20 @@ Nếu cần thêm nghiệp vụ mới, thứ tự thêm để không phá phần
 4. `Api/Controllers` — thêm route, dùng `AccountRoles.Reader`.
 5. `Web` — trang và client.
 6. Cập nhật lại chính file này (mục 4 và 5).
+
+### 5.1 Route Web độc giả
+
+| Route | Controller/Action | Ghi chú |
+|---|---|---|
+| `GET /` | `Home/Index` | Trang chủ, tổng hợp thông báo |
+| `GET /sach` | `Sach/Index` | Tìm kiếm, lọc thể loại |
+| `GET /sach/{id}` | `Sach/Details` | Chi tiết + form đặt mượn |
+| `POST /yeu-cau/dat/{maSach}` | `YeuCauMuon/Create` | Gửi yêu cầu, cần đăng nhập |
+| `GET /yeu-cau` | `YeuCauMuon/Index` | Danh sách + tab trạng thái |
+| `POST /yeu-cau/{id}/huy` | `YeuCauMuon/Cancel` | Hủy yêu cầu đang chờ |
+| `GET /lich-su-muon`, `/lich-su-muon/{id}` | `TaiKhoan/LichSuMuon`, `ChiTietMuon` | Phiếu mượn, tiền phạt |
+| `GET /tai-khoan` | `TaiKhoan/HoSo` | Hồ sơ độc giả |
+| `GET/POST /dang-nhap`, `POST /dang-xuat` | `TaiKhoan/Login`, `Logout` | Cookie auth |
 
 ## 6. Quy ước chung
 

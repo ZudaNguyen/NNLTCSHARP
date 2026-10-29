@@ -11,11 +11,11 @@ Thư mục này chứa script và seeder cho SQL Server.
 
 ## Schema chuẩn
 
-Nguồn schema chính là 6 file trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/`:
+Nguồn schema chính là 7 file trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/`:
 
-`BooksSchema.sql` → `CatalogModuleSchema.sql` → `ReaderModuleSchema.sql` → `EmployeeModuleSchema.sql` → `AuthenticationModuleSchema.sql` → `BorrowingModuleSchema.sql`
+`BooksSchema.sql` → `CatalogModuleSchema.sql` → `ReaderModuleSchema.sql` → `EmployeeModuleSchema.sql` → `AuthenticationModuleSchema.sql` → `BorrowingModuleSchema.sql` → `BorrowRequestModuleSchema.sql`
 
-Chạy đúng thứ tự này, sau đó kiểm tra phải có **14 bảng** trong `sys.tables`. Hướng dẫn đầy đủ (kể cả cách chạy bằng Docker trên macOS): [`docs/SETUP_GUIDE.md`](../docs/SETUP_GUIDE.md).
+Chạy đúng thứ tự này, sau đó kiểm tra phải có **15 bảng** trong `sys.tables`. Hướng dẫn đầy đủ (kể cả cách chạy bằng Docker trên macOS): [`docs/SETUP_GUIDE.md`](../docs/SETUP_GUIDE.md).
 
 ## Script cũ
 

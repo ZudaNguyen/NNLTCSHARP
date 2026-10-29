@@ -178,6 +178,9 @@ staff.sh — điều khiển API như Admin/Thủ thư (test song song với Web
   fines <maPhieu>                tiền phạt của phiếu
   dashboard                      số liệu tổng quan (Thủ thư)
   reports                        báo cáo sách đang mượn / mượn nhiều / tiền phạt
+  requests [trangThai|search]    yêu cầu mượn từ Web
+                                 (trangThai: cho-duyet, da-duyet, tu-choi, da-huy)
+  request <maYeuCau>             chi tiết một yêu cầu mượn
   whoami                         tài khoản đang dùng
 
 Thao tác nghiệp vụ:
@@ -197,6 +200,8 @@ Thao tác nghiệp vụ:
   set-fine <maPhieu> <maLanTra> <soTien>
                                  sửa số tiền phạt phải thu
   rate [mucMoiNgay]              xem / đổi mức phạt mỗi ngày (đổi: chỉ Admin)
+  approve <maYeuCau>             duyệt yêu cầu mượn, tạo phiếu 14 ngày
+  reject <maYeuCau> [lyDo]       từ chối yêu cầu mượn (có thể kèm lý do)
 
 Tùy chọn:
   AS=manager ./scripts/dev/staff.sh ...   dùng tài khoản thủ thư thay vì admin
@@ -246,6 +251,42 @@ cmd_overdue() { need_auth; api_request GET "/api/muontra/qua-han" | pretty; }
 cmd_loan() { need_auth; api_request GET "/api/muontra/$1" | pretty; }
 cmd_fines() { need_auth; api_request GET "/api/muontra/$1/tien-phat" | pretty; }
 cmd_dashboard() { need_auth; api_request GET "/api/dashboard/tong-quan" | pretty; }
+
+# --------------------------- yêu cầu mượn (Web) ----------------------------
+
+urlencode() { python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' "$1"; }
+
+cmd_requests() {
+  need_auth
+  local arg="${1-}" query=""
+  case "$arg" in
+    "") ;;
+    cho-duyet|da-duyet|tu-choi|da-huy)
+      case "$arg" in
+        cho-duyet) query="?trangThai=$(urlencode 'Chờ duyệt')" ;;
+        da-duyet) query="?trangThai=$(urlencode 'Đã duyệt')" ;;
+        tu-choi) query="?trangThai=$(urlencode 'Từ chối')" ;;
+        da-huy) query="?trangThai=$(urlencode 'Đã hủy')" ;;
+      esac ;;
+    *) query="?search=$(urlencode "$arg")" ;;
+  esac
+  api_request GET "/api/yeucau$query" | pretty
+}
+
+cmd_request() { need_auth; api_request GET "/api/yeucau/$1" | pretty; }
+
+cmd_approve() {
+  need_auth
+  note "Duyệt yêu cầu $1 (phiếu mượn 14 ngày)"
+  api_request POST "/api/yeucau/$1/duyet" | pretty
+}
+
+cmd_reject() {
+  local ma_yeu_cau="${1:?Thiếu mã yêu cầu}" ly_do="${2:-Thủ thư từ chối yêu cầu.}"
+  need_auth
+  note "Từ chối yêu cầu $ma_yeu_cau"
+  api_request POST "/api/yeucau/$ma_yeu_cau/tu-choi" "$(mkjson lyDo="$ly_do")" | pretty
+}
 
 cmd_reports() {
   need_auth
@@ -439,6 +480,10 @@ case "$command" in
   fines) cmd_fines "${1:?Thiếu mã phiếu}" ;;
   dashboard) cmd_dashboard ;;
   reports) cmd_reports ;;
+  requests) cmd_requests "${1-}" ;;
+  request) cmd_request "${1:?Thiếu mã yêu cầu}" ;;
+  approve) cmd_approve "${1:?Thiếu mã yêu cầu}" ;;
+  reject) cmd_reject "${1:?Thiếu mã yêu cầu}" "${2-}" ;;
   new-reader) cmd_new_reader "${1-}" "${2-}" "${3-}" "${4-}" ;;
   new-staff) cmd_new_staff "${1-}" "${2-}" "${3-}" ;;
   new-loan) cmd_new_loan "${1-}" "${2-}" "${3-}" "${4-}" "${5-}" ;;

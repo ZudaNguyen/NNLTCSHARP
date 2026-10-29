@@ -60,6 +60,11 @@ API là nguồn sự thật duy nhất, Web và Desktop chỉ đọc lại dữ 
 # 4. Thu tiền phạt
 ./scripts/dev/staff.sh pay-all 3
 #    → F5 Web: "Đã thu đủ", còn nợ 0đ
+
+# 5. Duyệt yêu cầu mượn do độc giả gửi từ Web
+./scripts/dev/staff.sh requests cho-duyet
+./scripts/dev/staff.sh approve 1
+#    → Web /yeu-cau: "Đã duyệt", xuất hiện phiếu PM-...
 ```
 
 ### 1.4 Danh sách lệnh
@@ -86,6 +91,10 @@ API là nguồn sự thật duy nhất, Web và Desktop chỉ đọc lại dữ 
 | `pay-all <maPhieu>` | Thu nốt toàn bộ còn nợ |
 | `set-fine <maPhieu> <maLanTra> <soTien>` | Sửa số tiền phạt phải thu |
 | `rate [mucMoiNgay]` | Xem / đổi mức phạt mỗi ngày |
+| `requests [trangThai\|search]` | Yêu cầu mượn từ Web (`cho-duyet`, `da-duyet`, `tu-choi`, `da-huy`) |
+| `request <maYeuCau>` | Chi tiết một yêu cầu mượn |
+| `approve <maYeuCau>` | Duyệt yêu cầu → tạo phiếu mượn 14 ngày |
+| `reject <maYeuCau> [lyDo]` | Từ chối yêu cầu (kèm lý do hiển thị trên Web) |
 
 Tình trạng sách hợp lệ: `Nguyên vẹn`, `Rách hoặc bẩn nhẹ`, `Hỏng nặng`, `Mất`.
 
@@ -103,7 +112,7 @@ AS=manager ./scripts/dev/staff.sh accounts    # 403 — đúng: quản lý tài 
 
 ### 1.6 Dùng file request có sẵn
 
-`scripts/dev/api.http` chứa 18 request mẫu. Cài extension **REST Client** trong VS Code,
+`scripts/dev/api.http` chứa các request mẫu, gồm cả luồng yêu cầu mượn. Cài extension **REST Client** trong VS Code,
 mở file và bấm *Send Request* trên từng khối (chạy khối đăng nhập trước).
 
 File này không chứa mật khẩu: nó đọc `ADMIN_USER`, `ADMIN_PASS`, `READER_USER`,
@@ -177,6 +186,11 @@ SQL Server vẫn chạy Docker trên Mac (cổng `14333`); API giữ nguyên con
 | 8 | `new-loan` hết bản sách | `/sach/{id}` hiện "Tạm hết sách" |
 | 9 | `AS=manager ... accounts` | 403 — phân quyền đúng |
 | 10 | Xóa/khóa tài khoản (API `PATCH /api/taikhoan/{id}/trang-thai`) | Đăng nhập Web bị từ chối |
+| 11 | Độc giả bấm **Gửi yêu cầu mượn** ở `/sach/{id}` | `/yeu-cau` có dòng "Chờ duyệt", badge menu tăng |
+| 12 | `requests cho-duyet` rồi `approve <maYeuCau>` | Yêu cầu chuyển "Đã duyệt" + số phiếu; `/sach/{id}` báo bạn đang mượn cuốn này |
+| 13 | `reject <maYeuCau> "Sách đang bảo trì"` | Yêu cầu chuyển "Từ chối", hiện lý do trên Web |
+| 14 | Độc giả bấm **Hủy** (tab Chờ duyệt) | Chuyển "Đã hủy", biến khỏi tab Chờ duyệt |
+| 15 | Gửi trùng yêu cầu cho cùng đầu sách | Web báo "Bạn đã có một yêu cầu đang chờ duyệt cho cuốn sách này." |
 
 Sau mỗi bước, **F5** trang Web tương ứng. Không cần đăng xuất/đăng nhập lại.
 

@@ -48,7 +48,7 @@ Thư mục `_archive/` ở gốc repo chứa bản Desktop cũ và script SQL ba
 | API: sách, thể loại, tác giả, độc giả, nhân viên, tài khoản, mượn trả, phạt, dashboard, báo cáo | nhóm | Xong, đã kiểm chứng runtime |
 | Desktop: đăng nhập, phân quyền, CRUD, mượn trả, báo cáo | nhóm | Xong, build được; chỉ chạy trên Windows |
 | Web độc giả: trang chủ, danh mục, tìm kiếm, chi tiết, đăng nhập, lịch sử mượn, phạt | **user** | Xong, đã kiểm chứng runtime với API + SQL Server thật |
-| Gửi yêu cầu mượn/đặt sách trực tuyến | **user** | Chưa có |
+| Gửi yêu cầu mượn/đặt sách trực tuyến (`YeuCauMuon`) | **user** | Xong: độc giả gửi/hủy, thủ thư duyệt/từ chối |
 
 ## 4. Chạy nhanh
 
@@ -79,7 +79,7 @@ Web cần API đang chạy (mặc định đọc `ApiBaseUrl` = `http://localhos
 dotnet run --project SourceCode/QuanLyThuVien.Web/QuanLyThuVien.Web.csproj --launch-profile http
 ```
 
-Trang độc giả: `/`, `/sach`, `/sach/{id}`, `/dang-nhap`, `/lich-su-muon`, `/lich-su-muon/{id}`, `/tai-khoan`. Chỉ tài khoản vai trò `DOC_GIA` đăng nhập được trên Web; Admin/Thủ thư dùng Desktop.
+Trang độc giả: `/`, `/sach`, `/sach/{id}`, `/yeu-cau`, `/dang-nhap`, `/lich-su-muon`, `/lich-su-muon/{id}`, `/tai-khoan`. Chỉ tài khoản vai trò `DOC_GIA` đăng nhập được trên Web; Admin/Thủ thư dùng Desktop.
 
 Trên macOS không chạy được Desktop (WinForms). Để test nghiệp vụ Admin/Thủ thư song song với Web, dùng bộ công cụ trong [`scripts/dev`](scripts/dev/) — xem hướng dẫn [`docs/TESTING_ON_MACOS.md`](docs/TESTING_ON_MACOS.md):
 
@@ -106,7 +106,7 @@ Ghi thông tin đăng nhập demo vào `docs/DEMO_ACCOUNTS.local.md` (đã gitig
 
 ## 6. Dữ liệu mẫu
 
-- Schema: 6 file trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/`, chạy theo thứ tự trong SETUP_GUIDE.
+- Schema: 7 file trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/`, chạy theo thứ tự trong SETUP_GUIDE.
 - Gộp schema + dữ liệu mẫu cho database trống: [`Database/AllTablesAndDemoData.sql`](Database/AllTablesAndDemoData.sql), chạy ở **SQLCMD Mode**.
 - Seeder C# có kiểm tra backup: [`Database/seeds/README.md`](Database/seeds/README.md).
 

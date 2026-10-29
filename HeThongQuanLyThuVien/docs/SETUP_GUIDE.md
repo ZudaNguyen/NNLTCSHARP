@@ -43,7 +43,7 @@ Các file schema nằm trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/`
 
 ### 2.1 Database demo trống — đường nhanh nhất
 
-Chạy lần lượt 6 file theo đúng thứ tự phụ thuộc. Script không tạo database, nên tạo trước:
+Chạy lần lượt 7 file theo đúng thứ tự phụ thuộc. Script không tạo database, nên tạo trước:
 
 ```bash
 docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
@@ -51,14 +51,15 @@ docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
   -Q "IF DB_ID('QuanLyThuVienDB') IS NULL CREATE DATABASE QuanLyThuVienDB;"
 
 for f in BooksSchema.sql CatalogModuleSchema.sql ReaderModuleSchema.sql \
-         EmployeeModuleSchema.sql AuthenticationModuleSchema.sql BorrowingModuleSchema.sql; do
+         EmployeeModuleSchema.sql AuthenticationModuleSchema.sql BorrowingModuleSchema.sql \
+         BorrowRequestModuleSchema.sql; do
   docker cp "SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/$f" qltv-sqlserver:/tmp/"$f"
   docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
     -S localhost -U sa -P '<MAT_KHAU_SA>' -C -d QuanLyThuVienDB -b -i /tmp/"$f"
 done
 ```
 
-Kiểm tra kết quả — phải có **14 bảng**:
+Kiểm tra kết quả — phải có **15 bảng**:
 
 ```bash
 docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
@@ -221,7 +222,7 @@ Build thành công **không** xác nhận kết nối database, đăng nhập, C
 Ngày 2026-10-29, trên macOS (Intel i7-8569U), đã chạy thật và đạt:
 
 - `dotnet build QuanLyThuVien.slnx` → 0 error.
-- SQL Server 2022 Developer (`16.0.4236.2`) trong Docker, database `QuanLyThuVienDB` với 14 bảng và 8 foreign key sau khi chạy 6 script schema.
+- SQL Server 2022 Developer (`16.0.4236.2`) trong Docker, database `QuanLyThuVienDB` với 15 bảng sau khi chạy 7 script schema.
 - API khởi động ở `http://localhost:5058`, `GET /api/dev/ping` trả 200.
 - Bootstrap Admin thành công, `POST /api/auth/login` trả token, `GET /api/auth/me` và `GET /api/dev/db-check` trả 200.
 - Tạo độc giả + tài khoản `DOC_GIA` qua API; `GET /api/docgia/me`, `GET /api/muontra/me` trả 200.

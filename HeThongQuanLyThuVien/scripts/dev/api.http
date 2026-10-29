@@ -153,3 +153,39 @@ Authorization: Bearer {{readerToken}}
 ### 18. Kiểm tra chặn quyền: độc giả gọi API quản trị (phải 403)
 GET {{host}}/api/nhanvien
 Authorization: Bearer {{readerToken}}
+
+### 19. Độc giả gửi yêu cầu mượn sách
+POST {{host}}/api/yeucau
+Authorization: Bearer {{readerToken}}
+Content-Type: application/json
+
+{
+  "maSach": 1,
+  "soLuong": 1,
+  "ghiChu": "Cần cho buổi học tối thứ Ba"
+}
+
+### 20. Độc giả xem yêu cầu của mình (lọc: Chờ duyệt / Đã duyệt / Từ chối / Đã hủy)
+GET {{host}}/api/yeucau/me
+Authorization: Bearer {{readerToken}}
+
+### 21. Thủ thư xem yêu cầu đang chờ duyệt
+GET {{host}}/api/yeucau?trangThai=Ch%E1%BB%9D%20duy%E1%BB%87t
+Authorization: Bearer {{adminToken}}
+
+### 22. Thủ thư duyệt yêu cầu (đổi id theo kết quả #19 hoặc #21)
+POST {{host}}/api/yeucau/1/duyet
+Authorization: Bearer {{adminToken}}
+
+### 23. Thủ thư từ chối yêu cầu
+POST {{host}}/api/yeucau/1/tu-choi
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "lyDo": "Sách đang được bảo trì, vui lòng chọn cuốn khác."
+}
+
+### 24. Độc giả hủy yêu cầu đang chờ
+POST {{host}}/api/yeucau/me/1/huy
+Authorization: Bearer {{readerToken}}
