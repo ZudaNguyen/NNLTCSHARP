@@ -83,9 +83,12 @@ namespace QuanLyThuVien.Desktop.Forms
                 AddCaption(nav, "NGHIỆP VỤ");
                 AddNav(nav, "Mượn / Trả sách", () => new MuonTraControl(_username), "Mượn / Trả sách");
                 AddNav(nav, "Báo cáo & Thống kê", () => new BaoCaoControl(), "Báo cáo & Thống kê");
+                if (!isAdmin)
+                    AddNav(nav, "Yêu cầu khóa tài khoản", () => new YeuCauKhoaTaiKhoanControl(false), "Yêu cầu khóa tài khoản");
                 if (isAdmin)
                 {
                     AddCaption(nav, "QUẢN TRỊ");
+                    AddNav(nav, "Duyệt khóa tài khoản", () => new YeuCauKhoaTaiKhoanControl(true), "Duyệt khóa tài khoản");
                     AddNav(nav, "Nhân viên", () => new NhanVienControl(), "Nhân viên");
                     AddNav(nav, "Tài khoản", () => new TaiKhoanControl(), "Tài khoản & Phân quyền");
                 }
