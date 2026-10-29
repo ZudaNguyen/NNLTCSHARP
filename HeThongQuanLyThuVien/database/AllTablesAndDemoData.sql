@@ -505,7 +505,8 @@ END;
 
 -- ===== Extended DEMO catalog for reader-facing testing =====
 -- Every row is synthetic and guarded by ISBN/name so the script can be re-run.
--- Covers: many copies, one copy left, out of stock, multiple authors, hidden book.
+-- Each category below has 5 visible titles; copy counts vary from 1 to 5.
+-- Also covers: one copy left, out of stock, multiple authors, hidden book.
 IF NOT EXISTS (SELECT 1 FROM dbo.TheLoai WHERE TenTheLoai = N'Kỹ thuật phần mềm')
     INSERT dbo.TheLoai (TenTheLoai, MoTa) VALUES (N'Kỹ thuật phần mềm', N'Thể loại giả lập để thử nghiệm.');
 IF NOT EXISTS (SELECT 1 FROM dbo.TheLoai WHERE TenTheLoai = N'Thiếu nhi')
@@ -552,13 +553,35 @@ INSERT @DemoSachMoi (ISBN, TenSach, TenTheLoai, NamXB, NhaXB, SoLuong, SoLuongCo
     (N'9786042000048', N'DEMO - Kiểm thử tự động với .NET', N'Kỹ thuật phần mềm', 2024, N'Nhà xuất bản Demo', 4, 0, N'Sách giả lập: đã hết bản, vẫn cho đặt trước.', 0),
     (N'9786042000055', N'DEMO - Truyện ngắn chọn lọc', N'Văn học kinh điển', 2020, N'Nhà xuất bản Demo', 3, 2, N'Sách giả lập: thể loại văn học.', 0),
     (N'9786042000062', N'DEMO - Thơ tình thế kỷ XX', N'Văn học kinh điển', 2019, N'Nhà xuất bản Demo', 2, 2, N'Sách giả lập: thể loại văn học.', 0),
-    (N'9786042000079', N'DEMO - Quản trị tài chính cá nhân', N'Kinh tế - Quản trị', 2023, N'Nhà xuất bản Demo', 6, 4, N'Sách giả lập: thể loại kinh tế.', 0),
+    (N'9786042000079', N'DEMO - Quản trị tài chính cá nhân', N'Kinh tế - Quản trị', 2023, N'Nhà xuất bản Demo', 5, 4, N'Sách giả lập: thể loại kinh tế.', 0),
     (N'9786042000086', N'DEMO - Khởi nghiệp tinh gọn', N'Kinh tế - Quản trị', 2021, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập: chỉ có 1 bản.', 0),
     (N'9786042000093', N'DEMO - Kỹ năng giao tiếp hiệu quả', N'Kỹ năng sống', 2022, N'Nhà xuất bản Demo', 5, 5, N'Sách giả lập: thể loại kỹ năng sống.', 0),
     (N'9786042000109', N'DEMO - Quản lý thời gian', N'Kỹ năng sống', 2020, N'Nhà xuất bản Demo', 3, 3, N'Sách giả lập: thể loại kỹ năng sống.', 0),
     (N'9786042000116', N'DEMO - Cuộc phiêu lưu của chú mèo nhỏ', N'Thiếu nhi', 2023, N'Nhà xuất bản Demo', 4, 4, N'Sách giả lập: thể loại thiếu nhi.', 0),
     (N'9786042000123', N'DEMO - Lịch sử Việt Nam bằng tranh', N'Lịch sử - Địa lý', 2022, N'Nhà xuất bản Demo', 3, 3, N'Sách giả lập: thể loại lịch sử - địa lý.', 0),
-    (N'9786042000130', N'DEMO - Sách đã ẩn (kiểm thử lọc)', N'Công nghệ thông tin', 2018, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập đã ẩn để kiểm thử lọc danh sách.', 1);
+    (N'9786042000130', N'DEMO - Sách đã ẩn (kiểm thử lọc)', N'Công nghệ thông tin', 2018, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập đã ẩn để kiểm thử lọc danh sách.', 1),
+    (N'9786042000147', N'DEMO - Lập trình Python cho người mới', N'Công nghệ thông tin', 2024, N'Nhà xuất bản Demo', 2, 2, N'Sách giả lập: nhập môn lập trình Python.', 0),
+    (N'9786042000154', N'DEMO - Cơ sở dữ liệu nâng cao', N'Công nghệ thông tin', 2023, N'Nhà xuất bản Demo', 5, 5, N'Sách giả lập: tối ưu truy vấn và thiết kế dữ liệu.', 0),
+    (N'9786042000161', N'DEMO - Trí tuệ nhân tạo nhập môn', N'Công nghệ thông tin', 2024, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập: khái niệm cơ bản về AI.', 0),
+    (N'9786042000178', N'DEMO - Mùa hè không tên', N'Văn học kinh điển', 2021, N'Nhà xuất bản Demo', 4, 4, N'Sách giả lập: tiểu thuyết thanh xuân.', 0),
+    (N'9786042000185', N'DEMO - Tuyển tập truyện ngắn Việt Nam', N'Văn học kinh điển', 2020, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập: tuyển tập truyện ngắn.', 0),
+    (N'9786042000192', N'DEMO - Thơ cho tuổi trẻ', N'Văn học kinh điển', 2022, N'Nhà xuất bản Demo', 3, 3, N'Sách giả lập: thơ dành cho bạn trẻ.', 0),
+    (N'9786042000208', N'DEMO - Kinh tế học vi mô căn bản', N'Kinh tế - Quản trị', 2023, N'Nhà xuất bản Demo', 5, 5, N'Sách giả lập: kiến thức kinh tế vi mô.', 0),
+    (N'9786042000215', N'DEMO - Quản trị dự án hiện đại', N'Kinh tế - Quản trị', 2024, N'Nhà xuất bản Demo', 2, 2, N'Sách giả lập: quản trị dự án theo Agile.', 0),
+    (N'9786042000222', N'DEMO - Tài chính doanh nghiệp', N'Kinh tế - Quản trị', 2022, N'Nhà xuất bản Demo', 4, 4, N'Sách giả lập: quản trị tài chính doanh nghiệp.', 0),
+    (N'9786042000239', N'DEMO - Sống tập trung', N'Kỹ năng sống', 2023, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập: rèn luyện sự tập trung.', 0),
+    (N'9786042000246', N'DEMO - Giao tiếp trong công việc', N'Kỹ năng sống', 2024, N'Nhà xuất bản Demo', 3, 3, N'Sách giả lập: kỹ năng giao tiếp nơi làm việc.', 0),
+    (N'9786042000253', N'DEMO - Rèn luyện thói quen tốt', N'Kỹ năng sống', 2021, N'Nhà xuất bản Demo', 5, 5, N'Sách giả lập: xây dựng thói quen tích cực.', 0),
+    (N'9786042000260', N'DEMO - DevOps thực hành', N'Kỹ thuật phần mềm', 2024, N'Nhà xuất bản Demo', 2, 2, N'Sách giả lập: quy trình DevOps thực tế.', 0),
+    (N'9786042000277', N'DEMO - Thiết kế hệ thống phân tán', N'Kỹ thuật phần mềm', 2023, N'Nhà xuất bản Demo', 4, 4, N'Sách giả lập: thiết kế hệ thống phân tán.', 0),
+    (N'9786042000284', N'DEMO - Bộ sưu tập truyện cổ tích', N'Thiếu nhi', 2022, N'Nhà xuất bản Demo', 5, 5, N'Sách giả lập: truyện cổ tích cho thiếu nhi.', 0),
+    (N'9786042000291', N'DEMO - Khám phá vũ trụ cho trẻ em', N'Thiếu nhi', 2024, N'Nhà xuất bản Demo', 2, 2, N'Sách giả lập: kiến thức vũ trụ cho trẻ em.', 0),
+    (N'9786042000307', N'DEMO - Chú gấu con học chữ', N'Thiếu nhi', 2021, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập: truyện tranh tập đọc.', 0),
+    (N'9786042000314', N'DEMO - Những câu đố vui cho bé', N'Thiếu nhi', 2023, N'Nhà xuất bản Demo', 4, 4, N'Sách giả lập: câu đố vui và trò chơi.', 0),
+    (N'9786042000321', N'DEMO - Lịch sử thế giới cận đại', N'Lịch sử - Địa lý', 2022, N'Nhà xuất bản Demo', 3, 3, N'Sách giả lập: lịch sử thế giới cận đại.', 0),
+    (N'9786042000338', N'DEMO - Địa lý Việt Nam qua bản đồ', N'Lịch sử - Địa lý', 2024, N'Nhà xuất bản Demo', 5, 5, N'Sách giả lập: địa lý Việt Nam trực quan.', 0),
+    (N'9786042000345', N'DEMO - Danh nhân lịch sử Việt Nam', N'Lịch sử - Địa lý', 2020, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập: chân dung danh nhân lịch sử.', 0),
+    (N'9786042000352', N'DEMO - Các nền văn minh cổ đại', N'Lịch sử - Địa lý', 2023, N'Nhà xuất bản Demo', 2, 2, N'Sách giả lập: khảo cứu các nền văn minh cổ đại.', 0);
 
 INSERT dbo.Sach (ISBN, TenSach, MaTheLoai, NamXB, NhaXB, SoLuong, SoLuongCon, MoTa, IsDeleted)
 SELECT d.ISBN, d.TenSach, t.MaTheLoai, d.NamXB, d.NhaXB, d.SoLuong, d.SoLuongCon, d.MoTa, d.IsDeleted
@@ -595,7 +618,33 @@ INSERT @DemoSachTacGia (ISBN, TenTacGia) VALUES
     (N'9786042000116', N'DEMO - Phạm Thu Hà'),
     (N'9786042000123', N'DEMO - Hoàng Anh Tuấn'),
     (N'9786042000123', N'DEMO - Trần Thị Minh'),
-    (N'9786042000130', N'DEMO - Nguyễn Văn Lập');
+    (N'9786042000130', N'DEMO - Nguyễn Văn Lập'),
+    (N'9786042000147', N'DEMO - Nguyễn Văn Lập'),
+    (N'9786042000154', N'DEMO - Đặng Quốc Bảo'),
+    (N'9786042000161', N'DEMO - Nguyễn Văn Lập'),
+    (N'9786042000161', N'DEMO - Đặng Quốc Bảo'),
+    (N'9786042000178', N'DEMO - Trần Thị Minh'),
+    (N'9786042000185', N'DEMO - Trần Thị Minh'),
+    (N'9786042000185', N'DEMO - Phạm Thu Hà'),
+    (N'9786042000192', N'DEMO - Phạm Thu Hà'),
+    (N'9786042000208', N'DEMO - Lê Hoàng Nam'),
+    (N'9786042000215', N'DEMO - Lê Hoàng Nam'),
+    (N'9786042000215', N'DEMO - Hoàng Anh Tuấn'),
+    (N'9786042000222', N'DEMO - Vũ Minh Châu'),
+    (N'9786042000239', N'DEMO - Vũ Minh Châu'),
+    (N'9786042000246', N'DEMO - Phạm Thu Hà'),
+    (N'9786042000253', N'DEMO - Hoàng Anh Tuấn'),
+    (N'9786042000260', N'DEMO - Nguyễn Văn Lập'),
+    (N'9786042000260', N'DEMO - Hoàng Anh Tuấn'),
+    (N'9786042000277', N'DEMO - Đặng Quốc Bảo'),
+    (N'9786042000284', N'DEMO - Phạm Thu Hà'),
+    (N'9786042000291', N'DEMO - Hoàng Anh Tuấn'),
+    (N'9786042000307', N'DEMO - Vũ Minh Châu'),
+    (N'9786042000314', N'DEMO - Trần Thị Minh'),
+    (N'9786042000321', N'DEMO - Lê Hoàng Nam'),
+    (N'9786042000338', N'DEMO - Hoàng Anh Tuấn'),
+    (N'9786042000345', N'DEMO - Trần Thị Minh'),
+    (N'9786042000352', N'DEMO - Đặng Quốc Bảo');
 
 INSERT dbo.Sach_TacGia (MaSach, MaTacGia)
 SELECT s.MaSach, a.MaTacGia
