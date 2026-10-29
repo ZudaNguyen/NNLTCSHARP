@@ -31,6 +31,7 @@ public sealed class TheLoaiController(ITheLoaiService service) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<ActionResult<TheLoaiDto>> Create(
         [FromBody] TheLoaiWriteDto request, CancellationToken cancellationToken)
     {
@@ -46,6 +47,7 @@ public sealed class TheLoaiController(ITheLoaiService service) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<ActionResult<TheLoaiDto>> Update(
         int id, [FromBody] TheLoaiWriteDto request, CancellationToken cancellationToken)
     {
@@ -61,6 +63,7 @@ public sealed class TheLoaiController(ITheLoaiService service) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         try
@@ -74,6 +77,7 @@ public sealed class TheLoaiController(ITheLoaiService service) : ControllerBase
     }
 
     [HttpPost("{id:int}/restore")]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Restore(int id, CancellationToken cancellationToken) =>
         await service.RestoreAsync(id, cancellationToken) ? NoContent() : NotFound();
 }

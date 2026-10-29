@@ -33,19 +33,20 @@ public partial class MuonTraControl
 
     private async Task LoadLoansAsync(int? preferredLoanId = null)
     {
-        preferredLoanId ??= dgvPhieuMuon.CurrentRow?.Tag as int?;
+        preferredLoanId ??= dgvPhieuMuon.CurrentRow?.Tag is MuonTraDto current ? current.MaPhieu : null;
         var status = cboLocTrangThai.SelectedIndex > 0 ? cboLocTrangThai.SelectedItem?.ToString() : null;
         var loans = await _api.SearchAsync(txtTimPhieu.Text, status, CancellationToken.None);
         dgvPhieuMuon.Rows.Clear();
         foreach (var loan in loans)
         {
             var i = dgvPhieuMuon.Rows.Add(loan.SoPhieu, loan.TenDocGia, loan.NguoiLap,
-                loan.NgayMuon.ToString("dd/MM/yyyy"), loan.HanTra.ToString("dd/MM/yyyy"), loan.TrangThai);
-            dgvPhieuMuon.Rows[i].Tag = loan.MaPhieu;
+                loan.NgayMuon.ToString("dd/MM/yyyy"), loan.HanTra.ToString("dd/MM/yyyy"),
+                $"{loan.SoLanGiaHan}/{loan.SoLanGiaHanToiDa}", loan.TrangThai);
+            dgvPhieuMuon.Rows[i].Tag = loan;
         }
         var selectedIndex = -1;
         for (var i = 0; i < dgvPhieuMuon.Rows.Count; i++)
-            if (dgvPhieuMuon.Rows[i].Tag is int rowId && rowId == preferredLoanId) { selectedIndex = i; break; }
+            if (dgvPhieuMuon.Rows[i].Tag is MuonTraDto row && row.MaPhieu == preferredLoanId) { selectedIndex = i; break; }
         if (selectedIndex < 0 && dgvPhieuMuon.Rows.Count > 0) selectedIndex = 0;
         if (selectedIndex >= 0) { dgvPhieuMuon.Rows[selectedIndex].Selected = true; dgvPhieuMuon.CurrentCell = dgvPhieuMuon.Rows[selectedIndex].Cells[0]; }
     }
@@ -53,6 +54,42 @@ public partial class MuonTraControl
     private async void ApiFilterMasterGrid()
     {
         try { await LoadLoansAsync(); } catch (Exception ex) { ShowApiError(ex); }
+    }
+
+    private async void ApiBtnGiaHan_Click(object? sender, EventArgs e)
+    {
+        if (dgvPhieuMuon.CurrentRow?.Tag is not MuonTraDto loan)
+        {
+            MessageBox.Show("Chọn phiếu mượn cần gia hạn.", "Gia hạn phiếu mượn", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        if (!loan.CoTheGiaHan)
+        {
+            MessageBox.Show(loan.LyDoKhongGiaHan ?? "Phiếu mượn không đủ điều kiện gia hạn.",
+                "Không thể gia hạn", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var hanTraMoi = loan.HanTra.AddDays(loan.SoNgayGiaHanMoiLan);
+        var conLaiSauKhiGiaHan = loan.SoLanGiaHanToiDa - loan.SoLanGiaHan - 1;
+        var confirm = MessageBox.Show(
+            $"Gia hạn phiếu {loan.SoPhieu} của {loan.TenDocGia}?\n\n" +
+            $"Hạn trả: {loan.HanTra:dd/MM/yyyy} → {hanTraMoi:dd/MM/yyyy} (+{loan.SoNgayGiaHanMoiLan} ngày)\n" +
+            $"Đã gia hạn: {loan.SoLanGiaHan}/{loan.SoLanGiaHanToiDa} lần. Sau thao tác này còn {conLaiSauKhiGiaHan} lần.",
+            "Xác nhận gia hạn phiếu mượn", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (confirm != DialogResult.Yes) return;
+
+        try
+        {
+            var result = await _api.GiaHanAsync(loan.MaPhieu, CancellationToken.None);
+            await LoadLoansAsync(result.MaPhieu);
+            MessageBox.Show(
+                $"Đã gia hạn {result.SoPhieu}.\nHạn trả mới: {result.HanTra:dd/MM/yyyy}.\n" +
+                $"Đã dùng {result.SoLanGiaHan}/{result.SoLanGiaHanToiDa} lần gia hạn.",
+                "Gia hạn thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex) { ShowApiError(ex); }
     }
 
     private async Task OpenNhanTraDialogAsync(int loanId)

@@ -39,7 +39,7 @@ public sealed class MuonTraController(IMuonTraService service) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Search([FromQuery] string? search, [FromQuery] string? trangThai,
         [FromQuery] string? loaiNgay, [FromQuery] DateTime? tuNgay, [FromQuery] DateTime? denNgay,
         [FromQuery] bool chiQuaHan, CancellationToken ct)
@@ -49,20 +49,20 @@ public sealed class MuonTraController(IMuonTraService service) : ControllerBase
     }
 
     [HttpGet("docgia/{readerId:int}")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> ReaderHistory(int readerId, CancellationToken ct) =>
         Ok(await service.GetForReaderAsync(readerId, ct));
 
     [HttpGet("sach-con-hang")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Books(CancellationToken ct) => Ok(await service.GetSachConHangAsync(ct));
 
     [HttpGet("qua-han")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Overdue([FromQuery] string? search, CancellationToken ct) => Ok(await service.GetQuaHanAsync(search, ct));
 
     [HttpGet("cau-hinh/tien-phat")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> GetRate(CancellationToken ct) => Ok(await service.GetCauHinhTienPhatAsync(ct));
 
     [Authorize(Roles = AccountRoles.Admin)]
@@ -74,7 +74,7 @@ public sealed class MuonTraController(IMuonTraService service) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Get(int id, CancellationToken ct)
     {
         var result = await service.GetByIdAsync(id, ct);
@@ -82,7 +82,7 @@ public sealed class MuonTraController(IMuonTraService service) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Create([FromBody] TaoMuonTraDto request, CancellationToken ct)
     {
         try { var result = await service.CreateAsync(request, ct); return CreatedAtAction(nameof(Get), new { id = result.MaPhieu }, result); }
@@ -92,7 +92,7 @@ public sealed class MuonTraController(IMuonTraService service) : ControllerBase
     }
 
     [HttpPatch("{id:int}/chi-tiet/{detailId:int}/tra")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Return(int id, int detailId, [FromBody] TraChiTietDto request, CancellationToken ct)
     {
         try
@@ -105,8 +105,22 @@ public sealed class MuonTraController(IMuonTraService service) : ControllerBase
         catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { message = "Dữ liệu đã thay đổi hoặc vi phạm ràng buộc cơ sở dữ liệu." }); }
     }
 
+    [HttpPost("{id:int}/gia-han")]
+    [Authorize(Roles = AccountRoles.Librarian)]
+    public async Task<IActionResult> Renew(int id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await service.GiaHanAsync(id, ct);
+            return result is null ? NotFound() : Ok(result);
+        }
+        catch (BorrowingRuleException ex) { return BadRequest(new { message = ex.Message }); }
+        catch (BorrowingConflictException ex) { return Conflict(new { message = ex.Message }); }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { return Conflict(new { message = "Dữ liệu đã thay đổi hoặc vi phạm ràng buộc cơ sở dữ liệu." }); }
+    }
+
     [HttpGet("{id:int}/tien-phat")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Fines(int id, CancellationToken ct)
     {
         var result = await service.GetTienPhatAsync(id, ct);
@@ -114,7 +128,7 @@ public sealed class MuonTraController(IMuonTraService service) : ControllerBase
     }
 
     [HttpPatch("{id:int}/tien-phat")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> UpdateFine(int id, [FromBody] CapNhatTienPhatDto request, CancellationToken ct)
     {
         try { var result = await service.UpdateTienPhatAsync(id, request, ct); return result is null ? NotFound() : Ok(result); }
@@ -122,7 +136,7 @@ public sealed class MuonTraController(IMuonTraService service) : ControllerBase
     }
 
     [HttpPost("{id:int}/tien-phat/thu")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> PayFine(int id, [FromBody] ThuTienPhatDto request, CancellationToken ct)
     {
         try { return Ok(await service.ThuTienPhatAsync(id, request, ct)); }

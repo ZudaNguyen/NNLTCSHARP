@@ -67,6 +67,12 @@ public sealed class MuonTraService(IMuonTraRepository repository) : IMuonTraServ
         return loan is null ? null : MapDetail(loan);
     }
 
+    public async Task<MuonTraChiTietDto?> GiaHanAsync(int maPhieu, CancellationToken cancellationToken)
+    {
+        var loan = await repository.GiaHanAsync(maPhieu, cancellationToken);
+        return loan is null ? null : MapDetail(loan);
+    }
+
     public Task<TienPhatDto?> GetTienPhatAsync(int maPhieu, CancellationToken cancellationToken) =>
         repository.GetTienPhatAsync(maPhieu, cancellationToken);
 
@@ -90,6 +96,10 @@ public sealed class MuonTraService(IMuonTraRepository repository) : IMuonTraServ
     private static MuonTraDto MapHeader(PhieuMuon loan)
     {
         var outstanding = loan.ChiTiets.Sum(item => item.SoLuongMuon - item.SoLuongDaXuLy);
+        var conNo = GiaHanMuonPolicy.TinhConNo(loan.ChiTiets.SelectMany(item => item.LichSuTra));
+        var lyDoKhongGiaHan = GiaHanMuonPolicy.KiemTra(
+            outstanding, loan.HanTra, loan.SoLanGiaHan, conNo, DateTime.Today);
+
         return new MuonTraDto
         {
             MaPhieu = loan.MaPhieu,
@@ -99,7 +109,12 @@ public sealed class MuonTraService(IMuonTraRepository repository) : IMuonTraServ
             NgayMuon = loan.NgayMuon,
             HanTra = loan.HanTra,
             SoLuongConMuon = outstanding,
-            TrangThai = GetStatus(loan, outstanding)
+            TrangThai = GetStatus(loan, outstanding),
+            SoLanGiaHan = loan.SoLanGiaHan,
+            SoLanGiaHanToiDa = GiaHanMuonPolicy.SoLanToiDa,
+            SoNgayGiaHanMoiLan = GiaHanMuonPolicy.SoNgayMoiLan,
+            CoTheGiaHan = lyDoKhongGiaHan is null,
+            LyDoKhongGiaHan = lyDoKhongGiaHan
         };
     }
 
@@ -116,6 +131,11 @@ public sealed class MuonTraService(IMuonTraRepository repository) : IMuonTraServ
             HanTra = header.HanTra,
             SoLuongConMuon = header.SoLuongConMuon,
             TrangThai = header.TrangThai,
+            SoLanGiaHan = header.SoLanGiaHan,
+            SoLanGiaHanToiDa = header.SoLanGiaHanToiDa,
+            SoNgayGiaHanMoiLan = header.SoNgayGiaHanMoiLan,
+            CoTheGiaHan = header.CoTheGiaHan,
+            LyDoKhongGiaHan = header.LyDoKhongGiaHan,
             ChiTiet = loan.ChiTiets.OrderBy(item => item.MaChiTiet).Select(item => new ChiTietMuonTraDto
             {
                 MaChiTiet = item.MaChiTiet,

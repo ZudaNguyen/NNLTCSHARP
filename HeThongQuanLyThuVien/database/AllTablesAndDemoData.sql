@@ -336,10 +336,24 @@ BEGIN
         NgayMuon date NOT NULL,
         HanTra date NOT NULL,
         IdempotencyKey uniqueidentifier NOT NULL,
+        SoLanGiaHan int NOT NULL CONSTRAINT DF_PhieuMuon_SoLanGiaHan DEFAULT(0),
         CONSTRAINT FK_PhieuMuon_DocGia FOREIGN KEY (MaDocGia) REFERENCES dbo.DocGia(MaDocGia),
-        CONSTRAINT CK_PhieuMuon_Ngay CHECK (HanTra >= NgayMuon)
+        CONSTRAINT CK_PhieuMuon_Ngay CHECK (HanTra >= NgayMuon),
+        CONSTRAINT CK_PhieuMuon_SoLanGiaHan CHECK (SoLanGiaHan BETWEEN 0 AND 2)
     );
     CREATE UNIQUE INDEX UX_PhieuMuon_IdempotencyKey ON dbo.PhieuMuon(IdempotencyKey);
+END;
+
+IF COL_LENGTH(N'dbo.PhieuMuon', N'SoLanGiaHan') IS NULL
+BEGIN
+    ALTER TABLE dbo.PhieuMuon
+        ADD SoLanGiaHan int NOT NULL CONSTRAINT DF_PhieuMuon_SoLanGiaHan DEFAULT(0);
+END;
+
+IF OBJECT_ID(N'dbo.CK_PhieuMuon_SoLanGiaHan', N'C') IS NULL
+BEGIN
+    EXEC(N'ALTER TABLE dbo.PhieuMuon
+        ADD CONSTRAINT CK_PhieuMuon_SoLanGiaHan CHECK (SoLanGiaHan BETWEEN 0 AND 2)');
 END;
 
 IF OBJECT_ID(N'dbo.ChiTiet_PhieuMuon', N'U') IS NULL

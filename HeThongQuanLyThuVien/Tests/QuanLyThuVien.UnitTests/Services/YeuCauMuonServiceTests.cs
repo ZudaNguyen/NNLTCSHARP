@@ -278,6 +278,9 @@ public sealed class YeuCauMuonServiceTests
             int maPhieu, int maChiTiet, TraChiTietDto request, CancellationToken cancellationToken) =>
             Task.FromResult<MuonTraChiTietDto?>(null);
 
+        public Task<MuonTraChiTietDto?> GiaHanAsync(int maPhieu, CancellationToken cancellationToken) =>
+            Task.FromResult<MuonTraChiTietDto?>(null);
+
         public Task<TienPhatDto?> GetTienPhatAsync(int maPhieu, CancellationToken cancellationToken) =>
             Task.FromResult<TienPhatDto?>(null);
 

@@ -82,6 +82,26 @@ public sealed class MuonTraRepository(LibraryDbContext db) : IMuonTraRepository
         return (await GetByIdAsync(loan.MaPhieu, ct))!;
     }
 
+    public async Task<PhieuMuon?> GiaHanAsync(int maPhieu, CancellationToken ct)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        var loan = await db.PhieuMuon
+            .Include(x => x.ChiTiets).ThenInclude(x => x.LichSuTra).ThenInclude(x => x.CacKhoanThu)
+            .FirstOrDefaultAsync(x => x.MaPhieu == maPhieu, ct);
+        if (loan is null) return null;
+
+        var outstanding = loan.ChiTiets.Sum(x => x.SoLuongMuon - x.SoLuongDaXuLy);
+        var conNo = GiaHanMuonPolicy.TinhConNo(loan.ChiTiets.SelectMany(x => x.LichSuTra));
+        var error = GiaHanMuonPolicy.KiemTra(outstanding, loan.HanTra, loan.SoLanGiaHan, conNo, DateTime.Today);
+        if (error is not null) throw new BorrowingRuleException(error);
+
+        loan.HanTra = loan.HanTra.AddDays(GiaHanMuonPolicy.SoNgayMoiLan);
+        loan.SoLanGiaHan += 1;
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return await GetByIdAsync(maPhieu, ct);
+    }
+
     public async Task<PhieuMuon?> TraChiTietAsync(int maPhieu, int maChiTiet, TraChiTietDto request, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);

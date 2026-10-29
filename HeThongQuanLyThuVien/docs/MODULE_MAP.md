@@ -123,6 +123,7 @@ Quy tắc nghiệp vụ:
 - Vẫn cho đặt khi sách đã hết bản; thủ thư duyệt sẽ báo lỗi tồn kho nếu không còn bản.
 - Duyệt lại yêu cầu `Đã duyệt` là idempotent: trả về phiếu cũ, không sinh phiếu thứ hai (dùng `IdempotencyKey` của yêu cầu).
 - Từ chối mặc định lý do `Thủ thư từ chối yêu cầu.` nếu để trống.
+- Desktop: màn hình **Duyệt yêu cầu mượn** (`YeuCauMuonControl`) nằm trong nhóm NGHIỆP VỤ, dùng chung cho `THU_THU` và `ADMIN`; mặc định lọc `Chờ duyệt`, cho phép duyệt (tạo phiếu 14 ngày) hoặc từ chối kèm lý do.
 
 ### 4.6 Yêu cầu khóa tài khoản — `api/yeucau-khoa`
 

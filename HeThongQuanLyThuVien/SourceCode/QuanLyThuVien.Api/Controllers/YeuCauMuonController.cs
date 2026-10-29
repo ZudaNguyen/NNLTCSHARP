@@ -74,13 +74,13 @@ public sealed class YeuCauMuonController(IYeuCauMuonService service) : Controlle
     // ------------------------------ Thủ thư ------------------------------
 
     [HttpGet]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Search(
         [FromQuery] string? search, [FromQuery] string? trangThai, CancellationToken ct) =>
         Ok(await service.SearchAsync(search, trangThai, ct));
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Get(int id, CancellationToken ct)
     {
         var result = await service.GetByIdAsync(id, ct);
@@ -88,7 +88,7 @@ public sealed class YeuCauMuonController(IYeuCauMuonService service) : Controlle
     }
 
     [HttpPost("{id:int}/duyet")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Approve(int id, CancellationToken ct)
     {
         try
@@ -105,7 +105,7 @@ public sealed class YeuCauMuonController(IYeuCauMuonService service) : Controlle
     }
 
     [HttpPost("{id:int}/tu-choi")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Reject(
         int id, [FromBody] TuChoiYeuCauMuonDto request, CancellationToken ct)
     {

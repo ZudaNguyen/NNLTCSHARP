@@ -40,6 +40,7 @@ public sealed class SachController(ISachService sachService) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<ActionResult<SachDto>> Create(
         [FromBody] SachWriteDto request,
         CancellationToken cancellationToken)
@@ -60,6 +61,7 @@ public sealed class SachController(ISachService sachService) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<ActionResult<SachDto>> Update(
         int id,
         [FromBody] SachWriteDto request,
@@ -81,6 +83,7 @@ public sealed class SachController(ISachService sachService) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var deleted = await sachService.SoftDeleteAsync(id, cancellationToken);
@@ -88,6 +91,7 @@ public sealed class SachController(ISachService sachService) : ControllerBase
     }
 
     [HttpPost("{id:int}/restore")]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<IActionResult> Restore(int id, CancellationToken cancellationToken)
     {
         try

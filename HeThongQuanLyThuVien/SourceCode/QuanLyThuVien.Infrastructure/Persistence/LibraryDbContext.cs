@@ -177,6 +177,7 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
             entity.Property(x => x.NguoiLap).HasMaxLength(100);
             entity.Property(x => x.NgayMuon).HasColumnType("date");
             entity.Property(x => x.HanTra).HasColumnType("date");
+            entity.Property(x => x.SoLanGiaHan).HasDefaultValue(0);
             entity.HasIndex(x => x.IdempotencyKey).IsUnique();
             entity.HasOne(x => x.DocGia).WithMany().HasForeignKey(x => x.MaDocGia).OnDelete(DeleteBehavior.Restrict);
         });

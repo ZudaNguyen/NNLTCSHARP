@@ -14,6 +14,7 @@ public interface IMuonTraService
     Task<IReadOnlyList<QuaHanDto>> GetQuaHanAsync(string? search, CancellationToken cancellationToken);
     Task<MuonTraChiTietDto> CreateAsync(TaoMuonTraDto request, CancellationToken cancellationToken);
     Task<MuonTraChiTietDto?> TraChiTietAsync(int maPhieu, int maChiTiet, TraChiTietDto request, CancellationToken cancellationToken);
+    Task<MuonTraChiTietDto?> GiaHanAsync(int maPhieu, CancellationToken cancellationToken);
     Task<TienPhatDto?> GetTienPhatAsync(int maPhieu, CancellationToken cancellationToken);
     Task<TienPhatDto?> GetTienPhatForReaderAsync(int readerId, int maPhieu, CancellationToken cancellationToken);
     Task<TienPhatDto?> UpdateTienPhatAsync(int maPhieu, CapNhatTienPhatDto request, CancellationToken cancellationToken);

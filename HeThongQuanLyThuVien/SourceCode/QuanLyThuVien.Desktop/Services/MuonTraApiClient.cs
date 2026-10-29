@@ -36,6 +36,7 @@ internal sealed class MuonTraApiClient
     public Task<List<DocGiaDto>> GetReadersAsync(CancellationToken ct) => GetAsync<List<DocGiaDto>>("api/docgia?trangThai=Hoạt động", ct);
     public Task<MuonTraChiTietDto> CreateAsync(TaoMuonTraDto body, CancellationToken ct) => SendAsync<MuonTraChiTietDto>(HttpMethod.Post, "api/muontra", body, ct);
     public Task<MuonTraChiTietDto> ReturnAsync(int id, int detailId, TraChiTietDto body, CancellationToken ct) => SendAsync<MuonTraChiTietDto>(HttpMethod.Patch, $"api/muontra/{id}/chi-tiet/{detailId}/tra", body, ct);
+    public Task<MuonTraChiTietDto> GiaHanAsync(int id, CancellationToken ct) => SendAsync<MuonTraChiTietDto>(HttpMethod.Post, $"api/muontra/{id}/gia-han", new { }, ct);
     public Task<CauHinhTienPhatDto> GetRateAsync(CancellationToken ct) => GetAsync<CauHinhTienPhatDto>("api/muontra/cau-hinh/tien-phat", ct);
     public Task<CauHinhTienPhatDto> SetRateAsync(CapNhatCauHinhTienPhatDto body, CancellationToken ct) => SendAsync<CauHinhTienPhatDto>(HttpMethod.Put, "api/muontra/cau-hinh/tien-phat", body, ct);
     public Task<KhoanThuTienPhatDto> PayFineAsync(int loanId, ThuTienPhatDto body, CancellationToken ct) => SendAsync<KhoanThuTienPhatDto>(HttpMethod.Post, $"api/muontra/{loanId}/tien-phat/thu", body, ct);

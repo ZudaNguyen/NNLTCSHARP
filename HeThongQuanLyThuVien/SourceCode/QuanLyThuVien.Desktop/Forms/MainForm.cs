@@ -76,21 +76,25 @@ namespace QuanLyThuVien.Desktop.Forms
             else
             {
                 AddNav(nav, "Tổng quan", () => new DashboardControl(), "Tổng quan", firstActive: true);
-                AddCaption(nav, "DANH MỤC");
-                AddNav(nav, "Kho sách", () => new SachControl(), "Kho sách");
-                AddNav(nav, "Tác giả & Thể loại", () => new TacGiaTheLoaiControl(), "Tác giả & Thể loại");
-                AddNav(nav, "Độc giả", () => new DocGiaControl(), "Độc giả");
-                AddCaption(nav, "NGHIỆP VỤ");
-                AddNav(nav, "Mượn / Trả sách", () => new MuonTraControl(_username), "Mượn / Trả sách");
-                AddNav(nav, "Báo cáo & Thống kê", () => new BaoCaoControl(), "Báo cáo & Thống kê");
-                if (!isAdmin)
-                    AddNav(nav, "Yêu cầu khóa tài khoản", () => new YeuCauKhoaTaiKhoanControl(false), "Yêu cầu khóa tài khoản");
                 if (isAdmin)
                 {
+                    // Admin chỉ quản lý tài khoản và duyệt yêu cầu khóa tài khoản.
                     AddCaption(nav, "QUẢN TRỊ");
                     AddNav(nav, "Duyệt khóa tài khoản", () => new YeuCauKhoaTaiKhoanControl(true), "Duyệt khóa tài khoản");
                     AddNav(nav, "Nhân viên", () => new NhanVienControl(), "Nhân viên");
                     AddNav(nav, "Tài khoản", () => new TaiKhoanControl(), "Tài khoản & Phân quyền");
+                }
+                else
+                {
+                    AddCaption(nav, "DANH MỤC");
+                    AddNav(nav, "Kho sách", () => new SachControl(), "Kho sách");
+                    AddNav(nav, "Tác giả & Thể loại", () => new TacGiaTheLoaiControl(), "Tác giả & Thể loại");
+                    AddNav(nav, "Độc giả", () => new DocGiaControl(), "Độc giả");
+                    AddCaption(nav, "NGHIỆP VỤ");
+                    AddNav(nav, "Mượn / Trả sách", () => new MuonTraControl(_username), "Mượn / Trả sách");
+                    AddNav(nav, "Duyệt yêu cầu mượn", () => new YeuCauMuonControl(), "Duyệt yêu cầu mượn");
+                    AddNav(nav, "Yêu cầu khóa tài khoản", () => new YeuCauKhoaTaiKhoanControl(false), "Yêu cầu khóa tài khoản");
+                    AddNav(nav, "Báo cáo & Thống kê", () => new BaoCaoControl(), "Báo cáo & Thống kê");
                 }
             }
 

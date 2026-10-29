@@ -111,14 +111,16 @@ namespace QuanLyThuVien.Desktop.UserControls
             var btnViewDetail = Ui.Button("Chi tiết / Nhận trả", ButtonKind.Primary);
             btnViewDetail.Click += async (_, _) =>
             {
-                if (dgvPhieuMuon.CurrentRow?.Tag is int loanId) await OpenNhanTraDialogAsync(loanId);
+                if (dgvPhieuMuon.CurrentRow?.Tag is MuonTraDto loan) await OpenNhanTraDialogAsync(loan.MaPhieu);
                 else MessageBox.Show("Chọn phiếu mượn cần xem.");
             };
+            var btnGiaHan = Ui.Button("Gia hạn");
+            btnGiaHan.Click += ApiBtnGiaHan_Click;
 
             var toolbar = new ToolbarRow();
             toolbar.AddField("Tìm phiếu / độc giả", txtTimPhieu);
             toolbar.AddField("Trạng thái", cboLocTrangThai);
-            toolbar.AddActions(btnRefreshLoans, btnViewDetail);
+            toolbar.AddActions(btnRefreshLoans, btnGiaHan, btnViewDetail);
 
             dgvPhieuMuon = Ui.Grid();
             dgvPhieuMuon.Columns.Add("MaPhieu", "Mã phiếu");
@@ -128,11 +130,13 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvPhieuMuon.Columns.Add("NhanVien", "Người lập");
             dgvPhieuMuon.Columns.Add("NgayMuon", "Ngày mượn");
             dgvPhieuMuon.Columns.Add("HanTra", "Hạn trả");
+            dgvPhieuMuon.Columns.Add("GiaHan", "Gia hạn");
+            dgvPhieuMuon.Columns["GiaHan"].FillWeight = 55;
             dgvPhieuMuon.Columns.Add("TrangThai", "Trạng thái");
             dgvPhieuMuon.CellDoubleClick += async (_, e) =>
             {
-                if (e.RowIndex >= 0 && dgvPhieuMuon.Rows[e.RowIndex].Tag is int loanId)
-                    await OpenNhanTraDialogAsync(loanId);
+                if (e.RowIndex >= 0 && dgvPhieuMuon.Rows[e.RowIndex].Tag is MuonTraDto loan)
+                    await OpenNhanTraDialogAsync(loan.MaPhieu);
             };
 
             var card = new CardPanel("Sổ phiếu mượn", autoHeight: false);

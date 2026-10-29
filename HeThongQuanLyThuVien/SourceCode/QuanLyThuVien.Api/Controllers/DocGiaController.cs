@@ -40,7 +40,7 @@ public sealed class DocGiaController(IDocGiaService service) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<ActionResult<DocGiaDto>> Create(CreateDocGiaDto request, CancellationToken cancellationToken)
     {
         try
@@ -52,7 +52,7 @@ public sealed class DocGiaController(IDocGiaService service) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<ActionResult<DocGiaDto>> Update(int id, UpdateDocGiaDto request, CancellationToken cancellationToken)
     {
         if (id <= 0) return BadRequest(new ProblemDetails { Title = "Mã độc giả phải lớn hơn 0.", Status = StatusCodes.Status400BadRequest });
@@ -65,7 +65,7 @@ public sealed class DocGiaController(IDocGiaService service) : ControllerBase
     }
 
     [HttpPatch("{id:int}/trang-thai")]
-    [Authorize(Roles = AccountRoles.Staff)]
+    [Authorize(Roles = AccountRoles.Librarian)]
     public async Task<ActionResult<DocGiaDto>> UpdateTrangThai(
         int id, UpdateDocGiaTrangThaiDto request, CancellationToken cancellationToken)
     {

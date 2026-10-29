@@ -13,6 +13,11 @@ public class MuonTraDto
     public DateTime HanTra { get; init; }
     public int SoLuongConMuon { get; init; }
     public string TrangThai { get; init; } = string.Empty;
+    public int SoLanGiaHan { get; init; }
+    public int SoLanGiaHanToiDa { get; init; }
+    public int SoNgayGiaHanMoiLan { get; init; }
+    public bool CoTheGiaHan { get; init; }
+    public string? LyDoKhongGiaHan { get; init; }
 }
 
 public sealed class MuonTraChiTietDto : MuonTraDto

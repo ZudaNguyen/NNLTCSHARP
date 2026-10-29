@@ -9,7 +9,7 @@ namespace QuanLyThuVien.Api.Controllers;
 
 [ApiController]
 [Route("api/baocao")]
-[Authorize(Roles = AccountRoles.Staff)]
+[Authorize(Roles = AccountRoles.Librarian)]
 public sealed class BaoCaoController(IThongKeService service) : ControllerBase
 {
     [HttpGet("sach-dang-muon")]
