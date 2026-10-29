@@ -1,4 +1,5 @@
 using System.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Application.Interfaces;
@@ -34,6 +35,9 @@ public sealed class TaiKhoanRepository(LibraryDbContext db) : ITaiKhoanRepositor
         db.TaiKhoan.AnyAsync(x => x.TenDangNhapChuanHoa == normalizedUserName
             && (!excludingId.HasValue || x.MaTaiKhoan != excludingId.Value), ct);
 
+    public Task<bool> ReaderEmailExistsAsync(string email, CancellationToken ct) =>
+        db.DocGia.AnyAsync(x => x.Email == email, ct);
+
     public Task<bool> EmployeeExistsAsync(int id, CancellationToken ct) =>
         db.NhanVien.AnyAsync(x => x.MaNhanVien == id && x.TrangThai == "Hoạt động", ct);
 
@@ -47,6 +51,26 @@ public sealed class TaiKhoanRepository(LibraryDbContext db) : ITaiKhoanRepositor
     {
         db.TaiKhoan.Add(account);
         await db.SaveChangesAsync(ct);
+    }
+
+    public async Task AddReaderWithAccountAsync(DocGia reader, TaiKhoan account, CancellationToken ct)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        try
+        {
+            db.DocGia.Add(reader);
+            await db.SaveChangesAsync(ct);
+
+            account.MaDocGia = reader.MaDocGia;
+            db.TaiKhoan.Add(account);
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 2601 or 2627 })
+        {
+            await transaction.RollbackAsync(ct);
+            throw new AccountConflictException("Tên đăng nhập hoặc email đã được sử dụng.");
+        }
     }
 
     public async Task AddBootstrapAdminIfNoneAsync(TaiKhoan account, CancellationToken ct)

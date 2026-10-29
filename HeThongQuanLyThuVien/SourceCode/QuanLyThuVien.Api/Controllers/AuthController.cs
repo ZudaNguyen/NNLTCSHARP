@@ -10,7 +10,7 @@ namespace QuanLyThuVien.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(IAuthService authService, IAccountService accountService) : ControllerBase
 {
     [AllowAnonymous]
     [EnableRateLimiting("auth-login")]
@@ -19,6 +19,33 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     {
         try { return Ok(await authService.LoginAsync(request, ct)); }
         catch (InvalidLoginException ex) { return Unauthorized(new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status401Unauthorized }); }
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("auth-register")]
+    [HttpPost("register")]
+    public async Task<ActionResult<LoginResponseDto>> Register(
+        [FromBody] RegisterReaderRequestDto request, CancellationToken ct)
+    {
+        try
+        {
+            await accountService.RegisterReaderAsync(request, ct);
+        }
+        catch (AccountConflictException ex)
+        {
+            return Conflict(new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status409Conflict });
+        }
+        catch (PasswordPolicyException ex)
+        {
+            return BadRequest(new ProblemDetails { Title = ex.Message, Status = StatusCodes.Status400BadRequest });
+        }
+
+        var login = await authService.LoginAsync(new LoginRequestDto
+        {
+            TenDangNhap = request.TenDangNhap,
+            MatKhau = request.MatKhau
+        }, ct);
+        return Ok(login);
     }
 
     [Authorize]

@@ -29,6 +29,45 @@ public sealed class LoginResponseDto
     public AuthUserDto User { get; init; } = new();
 }
 
+public sealed class RegisterReaderRequestDto : IValidatableObject
+{
+    [Required, StringLength(64, MinimumLength = 3), RegularExpression("^[A-Za-z0-9._-]+$")]
+    public string TenDangNhap { get; init; } = string.Empty;
+
+    [Required, StringLength(128, MinimumLength = 12)]
+    public string MatKhau { get; init; } = string.Empty;
+
+    [Required, StringLength(200)]
+    public string HoTen { get; init; } = string.Empty;
+
+    [DataType(DataType.Date)]
+    public DateTime NgaySinh { get; init; }
+
+    [Required, RegularExpression("^(Nam|Nữ|Khác)$", ErrorMessage = "Giới tính phải là Nam, Nữ hoặc Khác.")]
+    public string GioiTinh { get; init; } = string.Empty;
+
+    [Required, RegularExpression("^0[0-9]{9,10}$", ErrorMessage = "Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 chữ số.")]
+    public string SoDienThoai { get; init; } = string.Empty;
+
+    [Required, EmailAddress, StringLength(254)]
+    public string Email { get; init; } = string.Empty;
+
+    [StringLength(500)]
+    public string? DiaChi { get; init; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!PasswordPolicy.IsStrong(MatKhau))
+            yield return new ValidationResult(PasswordPolicy.Message, [nameof(MatKhau)]);
+        if (NgaySinh.Date == default)
+            yield return new ValidationResult("Vui lòng nhập ngày sinh.", [nameof(NgaySinh)]);
+        else if (NgaySinh.Date > DateTime.Today)
+            yield return new ValidationResult("Ngày sinh không được ở tương lai.", [nameof(NgaySinh)]);
+        if (string.IsNullOrWhiteSpace(HoTen))
+            yield return new ValidationResult("Họ và tên không được để trống.", [nameof(HoTen)]);
+    }
+}
+
 public sealed class ChangePasswordRequestDto
 {
     [Required, StringLength(128, MinimumLength = 1)]

@@ -45,6 +45,44 @@ public sealed class AccountService(ITaiKhoanRepository repository, IPasswordHash
         return Map(account);
     }
 
+    public async Task<AccountDto> RegisterReaderAsync(RegisterReaderRequestDto request, CancellationToken ct)
+    {
+        var userName = request.TenDangNhap.Trim();
+        var normalized = AuthService.NormalizeUserName(userName);
+        if (await repository.UserNameExistsAsync(normalized, null, ct))
+            throw new AccountConflictException("Tên đăng nhập đã được sử dụng.");
+
+        var email = request.Email.Trim();
+        if (await repository.ReaderEmailExistsAsync(email, ct))
+            throw new AccountConflictException("Email này đã được đăng ký cho một độc giả khác.");
+
+        EnsurePassword(request.MatKhau);
+
+        var reader = new DocGia
+        {
+            HoTen = request.HoTen.Trim(),
+            NgaySinh = request.NgaySinh.Date,
+            GioiTinh = request.GioiTinh.Trim(),
+            SoDienThoai = request.SoDienThoai.Trim(),
+            Email = email,
+            DiaChi = string.IsNullOrWhiteSpace(request.DiaChi) ? null : request.DiaChi.Trim(),
+            NgayDangKy = DateTime.Today,
+            TrangThai = "Hoạt động"
+        };
+        var account = new TaiKhoan
+        {
+            TenDangNhap = userName,
+            TenDangNhapChuanHoa = normalized,
+            TenHienThi = reader.HoTen,
+            VaiTro = AccountRoles.Reader,
+            TrangThai = "Hoạt động",
+            MatKhauHash = string.Empty
+        };
+        account.MatKhauHash = passwordHasher.Hash(account, request.MatKhau);
+        await repository.AddReaderWithAccountAsync(reader, account, ct);
+        return Map(account);
+    }
+
     public async Task<AccountDto?> UpdateAsync(int id, UpdateAccountRequestDto request, int actorId, CancellationToken ct)
     {
         var account = await repository.GetByIdAsync(id, ct);
