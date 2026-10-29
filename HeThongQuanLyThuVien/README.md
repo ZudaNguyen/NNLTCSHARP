@@ -81,6 +81,15 @@ dotnet run --project SourceCode/QuanLyThuVien.Web/QuanLyThuVien.Web.csproj --lau
 
 Trang độc giả: `/`, `/sach`, `/sach/{id}`, `/dang-nhap`, `/lich-su-muon`, `/lich-su-muon/{id}`, `/tai-khoan`. Chỉ tài khoản vai trò `DOC_GIA` đăng nhập được trên Web; Admin/Thủ thư dùng Desktop.
 
+Trên macOS không chạy được Desktop (WinForms). Để test nghiệp vụ Admin/Thủ thư song song với Web, dùng bộ công cụ trong [`scripts/dev`](scripts/dev/) — xem hướng dẫn [`docs/TESTING_ON_MACOS.md`](docs/TESTING_ON_MACOS.md):
+
+```bash
+cp scripts/dev/.env.dev.example scripts/dev/.env.dev   # điền ADMIN_PASS
+./scripts/dev/staff.sh whoami
+./scripts/dev/staff.sh overdue-loan 1 1 1 5            # lập phiếu quá hạn
+./scripts/dev/staff.sh return-all 3                    # trả sách → xem phạt
+```
+
 Tạo database và chạy schema theo thứ tự trong [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md). Desktop chỉ chạy được trên Windows:
 
 ```powershell

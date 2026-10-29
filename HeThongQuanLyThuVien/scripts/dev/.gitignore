@@ -1,0 +1,3 @@
+# Cấu hình và token cục bộ của công cụ dev — không commit
+.env.dev
+.tokens/

@@ -1,0 +1,155 @@
+##############################################################################
+# api.http — bộ request mẫu cho API thư viện (Admin / Thủ thư).
+#
+# Cách dùng: cài extension "REST Client" (VS Code) rồi bấm "Send Request"
+# phía trên từng khối. Chạy khối "Đăng nhập" trước — token được lưu vào biến
+# {{adminToken}} / {{readerToken}} dùng cho các request sau.
+#
+# KHÔNG ghi mật khẩu vào file này. Thêm 4 biến sau vào HeThongQuanLyThuVien/.env
+# (file .env đã bị gitignore, dùng chung với docker compose):
+#   ADMIN_USER=admin.dev
+#   ADMIN_PASS=<mật khẩu admin>
+#   READER_USER=docgia.dev
+#   READER_PASS=<mật khẩu độc giả>
+##############################################################################
+
+@host = http://localhost:5058
+@adminUser = {{$dotenv ADMIN_USER}}
+@adminPass = {{$dotenv ADMIN_PASS}}
+
+@readerUser = {{$dotenv READER_USER}}
+@readerPass = {{$dotenv READER_PASS}}
+
+### 0. Kiểm tra API còn sống
+GET {{host}}/api/dev/ping
+
+### 1. Đăng nhập Admin
+# @name loginAdmin
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "tenDangNhap": "{{adminUser}}", "matKhau": "{{adminPass}}" }
+
+### 2. Đăng nhập Độc giả
+# @name loginReader
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "tenDangNhap": "{{readerUser}}", "matKhau": "{{readerPass}}" }
+
+###
+@adminToken = {{loginAdmin.response.body.$.accessToken}}
+@readerToken = {{loginReader.response.body.$.accessToken}}
+
+### 3. Tôi là ai (Admin)
+GET {{host}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+
+### 4. Dashboard thủ thư
+GET {{host}}/api/dashboard/tong-quan
+Authorization: Bearer {{adminToken}}
+
+### 5. Sách còn hàng để lập phiếu
+GET {{host}}/api/muontra/sach-con-hang
+Authorization: Bearer {{adminToken}}
+
+### 6. Danh sách độc giả
+GET {{host}}/api/docgia
+Authorization: Bearer {{adminToken}}
+
+### 7. Danh sách phiếu mượn
+GET {{host}}/api/muontra
+Authorization: Bearer {{adminToken}}
+
+### 8. Phiếu quá hạn
+GET {{host}}/api/muontra/qua-han
+Authorization: Bearer {{adminToken}}
+
+### 9. Xem mức phạt mỗi ngày
+GET {{host}}/api/muontra/cau-hinh/tien-phat
+Authorization: Bearer {{adminToken}}
+
+### 10. Đổi mức phạt mỗi ngày (chỉ Admin)
+PUT {{host}}/api/muontra/cau-hinh/tien-phat
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "mucPhatMoiNgay": 5000 }
+
+### 11. Tạo độc giả
+POST {{host}}/api/docgia
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "hoTen": "Độc Giả HTTP",
+  "ngaySinh": "2001-05-20",
+  "gioiTinh": "Nữ",
+  "soDienThoai": "0987654321",
+  "trangThai": "Hoạt động"
+}
+
+### 12. Tạo tài khoản cho độc giả vừa tạo (đổi maDocGia theo kết quả #11)
+POST {{host}}/api/taikhoan
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "tenDangNhap": "docgia.http",
+  "tenHienThi": "Độc Giả HTTP",
+  "matKhau": "DocGia_Http_2026!A",
+  "vaiTro": "DOC_GIA",
+  "maDocGia": 3
+}
+
+### 13. Lập phiếu mượn (IdempotencyKey phải là GUID mới mỗi lần)
+POST {{host}}/api/muontra
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "maDocGia": 2,
+  "ngayMuon": "2026-10-10",
+  "hanTra": "2026-10-24",
+  "nguoiLap": "Quản trị demo",
+  "idempotencyKey": "11111111-2222-3333-4444-555555555555",
+  "chiTiet": [ { "maSach": 1, "soLuong": 1 } ]
+}
+
+### 14. Trả sách (đổi maPhieu / maChiTiet theo kết quả #13)
+PATCH {{host}}/api/muontra/3/chi-tiet/3/tra
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "soLuongXuLy": 1,
+  "ngayTra": "2026-10-29",
+  "tinhTrangSach": "Nguyên vẹn",
+  "soTienThu": 0,
+  "nguoiThu": "Quản trị demo",
+  "idempotencyKey": "66666666-7777-8888-9999-000000000000"
+}
+
+### 15. Tiền phạt của phiếu
+GET {{host}}/api/muontra/3/tien-phat
+Authorization: Bearer {{adminToken}}
+
+### 16. Thu tiền phạt
+POST {{host}}/api/muontra/3/tien-phat/thu
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "maLanTra": 2,
+  "soTien": 25000,
+  "nguoiThu": "Quản trị demo",
+  "idempotencyKey": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+}
+
+### 17. Độc giả xem phiếu của mình
+GET {{host}}/api/muontra/me
+Authorization: Bearer {{readerToken}}
+
+### 18. Kiểm tra chặn quyền: độc giả gọi API quản trị (phải 403)
+GET {{host}}/api/nhanvien
+Authorization: Bearer {{readerToken}}

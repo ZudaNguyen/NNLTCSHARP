@@ -483,3 +483,5 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Công cụ dev trên macOS: xem HeThongQuanLyThuVien/scripts/dev/.gitignore

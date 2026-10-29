@@ -171,6 +171,16 @@ Trên macOS/Linux chỉ build được (compile-check), không mở được gia
 dotnet build QuanLyThuVien.slnx
 ```
 
+### Test nghiệp vụ Admin/Thủ thư trên macOS
+
+Không cần Desktop: dùng [`scripts/dev/staff.sh`](../scripts/dev/staff.sh) để lập phiếu, trả sách, thu tiền phạt, xem dashboard qua API, rồi F5 Web độc giả để xem kết quả. Hướng dẫn đầy đủ (kèm cách dựng Windows VM cho giao diện Desktop): [`docs/TESTING_ON_MACOS.md`](TESTING_ON_MACOS.md).
+
+```bash
+cp scripts/dev/.env.dev.example scripts/dev/.env.dev   # điền ADMIN_PASS
+./scripts/dev/staff.sh whoami
+AS=manager ./scripts/dev/staff.sh dashboard             # kiểm tra phân quyền thủ thư
+```
+
 ## 5. Seed dữ liệu demo
 
 Seeder **opt-in**, chạy riêng, không tự chạy cùng API. Nó chỉ chấp nhận `Development`, host `127.0.0.1,14333`, database `QuanLyThuVienDB`, và **yêu cầu full backup không quá 7 ngày đã qua `RESTORE VERIFYONLY`**. Trên database mới tạo chưa có backup, seeder sẽ từ chối — đó là hành vi đúng, không tắt guard.
