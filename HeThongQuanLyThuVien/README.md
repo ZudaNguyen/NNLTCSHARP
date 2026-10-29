@@ -87,6 +87,8 @@ dotnet run --project SourceCode/QuanLyThuVien.Web/QuanLyThuVien.Web.csproj --lau
 
 Trang độc giả: `/`, `/sach`, `/sach/{id}`, `/yeu-cau`, `/dang-nhap`, `/dang-ky`, `/lich-su-muon`, `/lich-su-muon/{id}`, `/tai-khoan`. Chỉ tài khoản vai trò `DOC_GIA` đăng nhập được trên Web; Admin/Thủ thư dùng Desktop.
 
+Chuyển sang PC Windows để chạy đồng thời Desktop và Web: xem checklist [`docs/PC_HANDOFF.md`](docs/PC_HANDOFF.md).
+
 Trên macOS không chạy được Desktop (WinForms). Để test nghiệp vụ Admin/Thủ thư song song với Web, dùng bộ công cụ trong [`scripts/dev`](scripts/dev/) — xem hướng dẫn [`docs/TESTING_ON_MACOS.md`](docs/TESTING_ON_MACOS.md):
 
 ```bash
