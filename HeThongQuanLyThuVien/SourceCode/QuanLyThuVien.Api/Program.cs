@@ -65,6 +65,7 @@ if (!string.IsNullOrWhiteSpace(connectionString))
     builder.Services.AddScoped<INhanVienService, NhanVienService>();
     builder.Services.AddScoped<IMuonTraService, MuonTraService>();
     builder.Services.AddScoped<IYeuCauMuonService, YeuCauMuonService>();
+    builder.Services.AddScoped<IYeuCauKhoaTaiKhoanService, YeuCauKhoaTaiKhoanService>();
     builder.Services.AddScoped<IThongKeService, ThongKeService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IAccountService, AccountService>();

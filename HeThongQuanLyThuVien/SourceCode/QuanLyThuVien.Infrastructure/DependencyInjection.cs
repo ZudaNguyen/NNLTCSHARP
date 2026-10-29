@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<INhanVienRepository, NhanVienRepository>();
         services.AddScoped<IMuonTraRepository, MuonTraRepository>();
         services.AddScoped<IYeuCauMuonRepository, YeuCauMuonRepository>();
+        services.AddScoped<IYeuCauKhoaTaiKhoanRepository, YeuCauKhoaTaiKhoanRepository>();
         services.AddScoped<IThongKeRepository, ThongKeRepository>();
         services.AddScoped<ITaiKhoanRepository, TaiKhoanRepository>();
 
