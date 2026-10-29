@@ -138,6 +138,7 @@ public sealed class TaiKhoanController(LibraryApiClient api, ReaderSession sessi
             .ToList();
 
         ViewData["NotificationCount"] = rows.Count(l => l.IsOverdue);
+        await SetPendingRequestBadgeAsync(token, ct);
 
         return View(new LoanListViewModel { Loans = rows, Filter = filter });
     }
@@ -164,6 +165,7 @@ public sealed class TaiKhoanController(LibraryApiClient api, ReaderSession sessi
 
             var fine = await api.GetMyFineAsync(id, token, ct);
             ViewData["NotificationCount"] = fine?.ConNo > 0 ? 1 : 0;
+            await SetPendingRequestBadgeAsync(token, ct);
             return View(new LoanDetailViewModel { Loan = loan, Fine = fine });
         }
         catch (HttpRequestException)
@@ -199,6 +201,7 @@ public sealed class TaiKhoanController(LibraryApiClient api, ReaderSession sessi
             }
 
             var loans = await api.GetMyLoansAsync(token, ct) ?? [];
+            await SetPendingRequestBadgeAsync(token, ct);
             return View(new ProfileViewModel
             {
                 Profile = profile,
@@ -212,6 +215,20 @@ public sealed class TaiKhoanController(LibraryApiClient api, ReaderSession sessi
         catch (TaskCanceledException)
         {
             return NotFound();
+        }
+    }
+
+    /// <summary>Badge yêu cầu chờ duyệt ở sidebar; lỗi tạm thời không chặn trang.</summary>
+    private async Task SetPendingRequestBadgeAsync(string token, CancellationToken ct)
+    {
+        try
+        {
+            var requests = await api.GetMyBorrowRequestsAsync(token, ct: ct);
+            ViewData["PendingRequestCount"] = requests?.Count(r => r.CoTheHuy) ?? 0;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            ViewData["PendingRequestCount"] = 0;
         }
     }
 
