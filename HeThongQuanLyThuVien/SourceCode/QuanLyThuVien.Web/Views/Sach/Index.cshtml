@@ -23,13 +23,16 @@
         <h2>Tìm cuốn sách bạn muốn đọc</h2>
         <p>@Model.SelectedCategoryName@(string.IsNullOrWhiteSpace(Model.Search) ? string.Empty : $" · từ khóa \"{Model.Search}\"")</p>
     </div>
-    <form class="search-box" method="get" asp-action="Index">
+    <form class="search-box" method="get" asp-action="Index"
+          data-search-suggest="@Url.Action("Suggest", "Sach")">
         @if (Model.MaTheLoai is int maTheLoai)
         {
             <input type="hidden" name="maTheLoai" value="@maTheLoai" />
         }
         <span>⌕</span>
-        <input name="search" value="@Model.Search" placeholder="Tên sách, tác giả hoặc ISBN..." aria-label="Tìm kiếm sách" />
+        <input id="catalogSearch" name="search" value="@Model.Search" placeholder="Tên sách, tác giả hoặc ISBN..."
+               aria-label="Tìm kiếm sách" autocomplete="off" aria-autocomplete="list" aria-expanded="false" />
+        <div class="search-suggest" role="listbox" aria-label="Gợi ý sách" hidden></div>
         <button type="submit">Tìm kiếm</button>
     </form>
 </section>

@@ -40,6 +40,37 @@ public sealed class SachController(LibraryApiClient api, ReaderSession session) 
         });
     }
 
+    [HttpGet("suggest")]
+    public async Task<IActionResult> Suggest(string? q, CancellationToken ct)
+    {
+        var keyword = q?.Trim();
+        if (string.IsNullOrWhiteSpace(keyword) || keyword.Length < 2)
+            return Json(Array.Empty<object>());
+
+        try
+        {
+            var books = await api.GetBooksAsync(keyword, null, ct) ?? [];
+            var suggestions = books
+                .Where(book => !book.IsDeleted)
+                .Take(6)
+                .Select(book => new
+                {
+                    maSach = book.MaSach,
+                    tenSach = book.TenSach,
+                    tenTacGia = book.TenTacGiaHienThi,
+                    tenTheLoai = book.TenTheLoai,
+                    soLuongCon = book.SoLuongCon,
+                    conHang = book.ConHang,
+                    url = Url.Action(nameof(Details), "Sach", new { id = book.MaSach }) ?? $"/sach/{book.MaSach}"
+                });
+            return Json(suggestions);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            return Json(Array.Empty<object>());
+        }
+    }
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken ct)
     {
