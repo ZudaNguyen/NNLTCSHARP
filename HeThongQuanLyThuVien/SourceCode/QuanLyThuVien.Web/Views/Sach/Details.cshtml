@@ -9,7 +9,7 @@
     ];
     var book = Model.Book;
     var cover = covers[Math.Abs(book.MaSach) % covers.Length];
-    var maxQuantity = Math.Max(1, Math.Min(3, book.SoLuong));
+    var maxQuantity = Math.Max(1, book.SoLuongCon);
     var returnUrl = $"/sach/{book.MaSach}";
 }
 <section class="page-heading">
