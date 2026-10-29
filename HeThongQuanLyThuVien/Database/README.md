@@ -6,7 +6,7 @@ Thư mục này chứa script và seeder cho SQL Server.
 
 | Đường dẫn | Mô tả |
 |---|---|
-| `AllTablesAndDemoData.sql` | Gộp schema + dữ liệu mẫu cho **database demo trống**, kèm bộ sách DEMO gồm 35 đầu sách hiển thị (7 thể loại × 5 đầu sách, mỗi đầu 1–5 bản; còn nhiều bản, còn 1 bản, hết bản, nhiều tác giả, sách đã ẩn). Bắt buộc chạy ở **SQLCMD Mode**; từ chối chạy nếu đã có bảng nghiệp vụ. |
+| `AllTablesAndDemoData.sql` | Gộp schema + dữ liệu mẫu cho **database demo trống**, kèm bộ sách DEMO gồm 35 đầu sách hiển thị (7 thể loại × 5 đầu sách, số bản trong mỗi thể loại là 1–5; còn nhiều bản, còn 1 bản, hết bản, nhiều tác giả, sách đã ẩn). Bắt buộc chạy ở **SQLCMD Mode**; từ chối chạy nếu đã có bảng nghiệp vụ. |
 | `seeds/` | Seeder C# opt-in, có kiểm tra backup trước khi ghi. Xem [`seeds/README.md`](seeds/README.md). |
 
 ## Schema chuẩn

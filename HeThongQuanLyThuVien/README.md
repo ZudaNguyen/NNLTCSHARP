@@ -52,8 +52,9 @@ Thư mục `_archive/` ở gốc repo chứa bản Desktop cũ và script SQL ba
 | Tự đăng ký độc giả trên Web (`/dang-ky`) | **user** | Xong: tạo thẻ + tài khoản `Hoạt động` ngay, tự đăng nhập |
 
 Bộ dữ liệu demo trong `Database/AllTablesAndDemoData.sql` có **35 đầu sách hiển thị**,
-chia đều **5 đầu sách cho mỗi thể loại** (7 thể loại); số bản của mỗi đầu sách nằm trong
-khoảng **1–5**. Script còn giữ các ca kiểm thử còn 1 bản, hết bản, nhiều tác giả và sách đã ẩn.
+chia đều **5 đầu sách cho mỗi thể loại** (7 thể loại); trong mỗi thể loại, số bản của 5
+đầu sách lần lượt là **1, 2, 3, 4, 5**. Script còn giữ các ca kiểm thử còn 1 bản, hết bản,
+nhiều tác giả và sách đã ẩn.
 
 ## 4. Chạy nhanh
 

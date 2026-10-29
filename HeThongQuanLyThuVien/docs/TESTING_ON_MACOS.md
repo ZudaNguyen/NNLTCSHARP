@@ -226,13 +226,14 @@ COMMIT TRANSACTION;
 
 ### 3.2 Kiểm tra danh mục 35 sách và gợi ý tìm kiếm
 
-Bộ dữ liệu demo có **7 thể loại × 5 đầu sách = 35 sách hiển thị**, số bản mỗi đầu từ 1–5
-(ngoài ra còn 1 sách đã ẩn để kiểm thử lọc). Kiểm tra nhanh:
+Bộ dữ liệu demo có **7 thể loại × 5 đầu sách = 35 sách hiển thị**; trong mỗi thể loại, số
+bản của 5 đầu sách là 1, 2, 3, 4, 5 (ngoài ra còn 1 sách đã ẩn để kiểm thử lọc). Kiểm tra nhanh:
 
 ```sql
 SET QUOTED_IDENTIFIER ON;
 SET NOCOUNT ON;
-SELECT t.TenTheLoai, COUNT(*) AS SoDauSach, MIN(s.SoLuong) AS MinBan, MAX(s.SoLuong) AS MaxBan
+SELECT t.TenTheLoai, COUNT(*) AS SoDauSach, COUNT(DISTINCT s.SoLuong) AS SoMucBan,
+       MIN(s.SoLuong) AS MinBan, MAX(s.SoLuong) AS MaxBan
 FROM dbo.Sach s
 JOIN dbo.TheLoai t ON t.MaTheLoai = s.MaTheLoai
 WHERE s.IsDeleted = 0
@@ -240,7 +241,7 @@ GROUP BY t.TenTheLoai
 ORDER BY t.TenTheLoai;
 ```
 
-Kỳ vọng: 7 dòng, mỗi dòng `SoDauSach = 5`, `MinBan`/`MaxBan` nằm trong 1–5.
+Kỳ vọng: 7 dòng, mỗi dòng `SoDauSach = 5`, `SoMucBan = 5`, `MinBan = 1`, `MaxBan = 5`.
 
 Trên Web:
 
