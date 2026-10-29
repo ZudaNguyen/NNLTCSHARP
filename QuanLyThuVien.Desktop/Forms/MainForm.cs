@@ -1,0 +1,215 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using QuanLyThuVien.Desktop.UserControls;
+
+namespace QuanLyThuVien.Desktop.Forms
+{
+    public partial class MainForm : Form
+    {
+        private string _role;
+        private string _username;
+
+        private Panel pnlSidebar;
+        private Panel pnlHeader;
+        private Panel pnlContent;
+        private Label lblHeaderTitle;
+        private Button currentActiveButton;
+
+        // Bảng màu Thư viện cổ điển
+        private readonly Color WoodDark = Color.FromArgb(44, 30, 22);       // Nâu gỗ đậm
+        private readonly Color WoodDarker = Color.FromArgb(30, 20, 14);     // Nâu đen
+        private readonly Color Burgundy = Color.FromArgb(122, 40, 34);      // Đỏ đô bìa sách
+        private readonly Color PaperCream = Color.FromArgb(247, 243, 233);  // Màu giấy cũ
+        private readonly Color PaperHeader = Color.FromArgb(238, 230, 212); // Màu giấy đậm hơn cho Header
+        private readonly Color GoldText = Color.FromArgb(218, 176, 63);     // Vàng đồng
+
+        public MainForm(string role, string username)
+        {
+            InitializeComponent();
+            _role = role;
+            _username = username;
+
+            SetupMainLayout();
+            LoadUserControl(new DashboardControl(), "📜 Tổng quan Sổ sách Thư viện");
+        }
+
+        private void SetupMainLayout()
+        {
+            this.Text = $"📖 Hệ thống Quản lý Thư viện - Thủ thư trực: {_username} ({_role})";
+            this.Size = new Size(1280, 760);
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.MinimumSize = new Size(1024, 620);
+
+            // 1. SIDEBAR (Tủ gỗ danh mục bên trái)
+            pnlSidebar = new Panel
+            {
+                Dock = DockStyle.Left,
+                Width = 250,
+                BackColor = WoodDark
+            };
+
+            Label lblBrand = new Label
+            {
+                Text = "🏛️ THƯ VIỆN CỔ",
+                Font = new Font("Georgia", 14, FontStyle.Bold),
+                ForeColor = GoldText,
+                Dock = DockStyle.Top,
+                Height = 70,
+                TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = WoodDarker
+            };
+
+            // Các nút menu mang biểu tượng sách, bút lông, thẻ đọc
+            Button btnLogout = CreateMenuButton("🚪 Đóng sổ (Đăng xuất)");
+            btnLogout.Dock = DockStyle.Bottom;
+            btnLogout.BackColor = Color.FromArgb(90, 25, 20);
+            btnLogout.Click += (s, e) => Application.Restart();
+
+            Button btnBaoCao = CreateMenuButton("📊 Thống kê & Báo cáo");
+            Button btnNhanVien = CreateMenuButton("🔑 Quản lý Thủ thư");
+            Button btnPhieuMuon = CreateMenuButton("📝 Sổ Mượn / Trả sách");
+            Button btnDocGia = CreateMenuButton("🪪 Thẻ Độc giả");
+            Button btnTacGiaTheLoai = CreateMenuButton("✒️ Tác giả & Thể loại");
+            Button btnSach = CreateMenuButton("📚 Kho Sách & Ấn phẩm");
+            Button btnDashboard = CreateMenuButton("📜 Tổng quan Thư viện");
+
+            // Phân quyền: Ẩn Quản lý Thủ thư nếu không phải Admin
+            if (_role != "Admin")
+            {
+                btnNhanVien.Visible = false;
+            }
+
+            // Gắn sự kiện click
+            btnDashboard.Click += (s, e) => { SetActiveButton(btnDashboard); LoadUserControl(new DashboardControl(), "📜 Tổng quan Sổ sách Thư viện"); };
+            btnSach.Click += (s, e) => { SetActiveButton(btnSach); LoadUserControl(new SachControl(), "📚 Kho Sách & Ấn phẩm"); };
+            btnTacGiaTheLoai.Click += (s, e) => { SetActiveButton(btnTacGiaTheLoai); LoadUserControl(new TacGiaTheLoaiControl(), "✒️ Danh mục Tác giả & Thể loại"); };
+            btnDocGia.Click += (s, e) => { SetActiveButton(btnDocGia); LoadUserControl(new DocGiaControl(), "🪪 Hồ sơ Thẻ Độc giả"); };
+            btnPhieuMuon.Click += (s, e) => { SetActiveButton(btnPhieuMuon); LoadUserControl(new MuonTraControl(), "📝 Sổ theo dõi Mượn / Trả sách"); };
+            btnNhanVien.Click += (s, e) => { SetActiveButton(btnNhanVien); LoadUserControl(new NhanVienControl(), "🔑 Hồ sơ Nhân viên & Phân quyền"); };
+            btnBaoCao.Click += (s, e) => { SetActiveButton(btnBaoCao); LoadUserControl(new BaoCaoControl(), "📊 Báo cáo & Thống kê Thư viện"); };
+
+            pnlSidebar.Controls.Add(btnBaoCao);
+            pnlSidebar.Controls.Add(btnNhanVien);
+            pnlSidebar.Controls.Add(btnPhieuMuon);
+            pnlSidebar.Controls.Add(btnDocGia);
+            pnlSidebar.Controls.Add(btnTacGiaTheLoai);
+            pnlSidebar.Controls.Add(btnSach);
+            pnlSidebar.Controls.Add(btnDashboard);
+            pnlSidebar.Controls.Add(lblBrand);
+            pnlSidebar.Controls.Add(btnLogout);
+
+            SetActiveButton(btnDashboard);
+
+            // 2. HEADER (Thanh tiêu đề màu giấy ngả vàng)
+            pnlHeader = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 70,
+                BackColor = PaperHeader,
+                Padding = new Padding(25, 0, 25, 0)
+            };
+
+            // Đường kẻ viền mảnh dưới Header
+            Panel pnlHeaderBorder = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 2,
+                BackColor = Color.FromArgb(205, 190, 165)
+            };
+
+            lblHeaderTitle = new Label
+            {
+                Text = "📜 Tổng quan Sổ sách Thư viện",
+                Font = new Font("Georgia", 15, FontStyle.Bold),
+                ForeColor = WoodDark,
+                Dock = DockStyle.Left,
+                AutoSize = true,
+                Padding = new Padding(0, 20, 0, 0)
+            };
+
+            string chucDanh = _role == "Admin" ? "Quản장 (Admin)" : "Thủ thư trực";
+            Label lblUserInfo = new Label
+            {
+                Text = $"🪶 Người trực: {_username}  |  Cấp bậc: {chucDanh}",
+                Font = new Font("Georgia", 10, FontStyle.Italic | FontStyle.Bold),
+                ForeColor = Burgundy,
+                Dock = DockStyle.Right,
+                AutoSize = true,
+                Padding = new Padding(0, 25, 0, 0)
+            };
+
+            pnlHeader.Controls.Add(lblHeaderTitle);
+            pnlHeader.Controls.Add(lblUserInfo);
+            pnlHeader.Controls.Add(pnlHeaderBorder);
+
+            // 3. CONTENT (Trang giấy làm việc chính)
+            pnlContent = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = PaperCream
+            };
+
+            this.Controls.Add(pnlContent);
+            this.Controls.Add(pnlHeader);
+            this.Controls.Add(pnlSidebar);
+        }
+
+        private Button CreateMenuButton(string text)
+        {
+            Button btn = new Button
+            {
+                Text = "  " + text,
+                Dock = DockStyle.Top,
+                Height = 52,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10.5f, FontStyle.Regular),
+                ForeColor = Color.FromArgb(230, 220, 205),
+                BackColor = WoodDark,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(12, 0, 0, 0),
+                Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            return btn;
+        }
+
+        private void SetActiveButton(Button activeBtn)
+        {
+            if (currentActiveButton != null)
+            {
+                currentActiveButton.BackColor = WoodDark;
+                currentActiveButton.ForeColor = Color.FromArgb(230, 220, 205);
+                currentActiveButton.Font = new Font("Segoe UI", 10.5f, FontStyle.Regular);
+            }
+
+            currentActiveButton = activeBtn;
+            currentActiveButton.BackColor = Burgundy; // Đổi sang màu đỏ bìa sách khi chọn
+            currentActiveButton.ForeColor = GoldText;
+            currentActiveButton.Font = new Font("Segoe UI", 10.5f, FontStyle.Bold);
+        }
+
+        public void LoadUserControl(UserControl uc, string title)
+        {
+            lblHeaderTitle.Text = title;
+            pnlContent.Controls.Clear();
+            uc.Dock = DockStyle.Fill;
+            pnlContent.Controls.Add(uc);
+        }
+
+        private void ShowPlaceholder(string screenName)
+        {
+            lblHeaderTitle.Text = screenName;
+            pnlContent.Controls.Clear();
+            Label lbl = new Label
+            {
+                Text = $"✒️ Trang sổ [{screenName}] đang được biên.soạn...",
+                Font = new Font("Georgia", 13, FontStyle.Italic),
+                ForeColor = Color.FromArgb(120, 95, 80),
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            pnlContent.Controls.Add(lbl);
+        }
+    }
+}

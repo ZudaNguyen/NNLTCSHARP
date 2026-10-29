@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\MyLib\MyLib.csproj" />
-  </ItemGroup>
+</ItemGroup>
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>

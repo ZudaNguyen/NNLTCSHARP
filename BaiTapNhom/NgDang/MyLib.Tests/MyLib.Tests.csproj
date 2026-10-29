@@ -18,8 +18,4 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MyLib\MyLib.csproj" />
-  </ItemGroup>
-
 </Project>
