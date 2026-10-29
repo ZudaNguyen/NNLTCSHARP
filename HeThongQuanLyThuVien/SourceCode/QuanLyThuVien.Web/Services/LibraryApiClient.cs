@@ -88,6 +88,25 @@ public sealed class LibraryApiClient(HttpClient httpClient)
     public Task<TienPhatDto?> GetMyFineAsync(int id, string token, CancellationToken ct = default) =>
         GetAsync<TienPhatDto>($"api/muontra/me/{id}/tien-phat", token, ct);
 
+    // ---------- Yêu cầu mượn ----------
+
+    public Task<ApiResult<YeuCauMuonDto>> CreateBorrowRequestAsync(
+        int maSach, int soLuong, string? ghiChu, string token, CancellationToken ct = default) =>
+        PostAsync<YeuCauMuonDto>("api/yeucau", new { maSach, soLuong, ghiChu }, token, ct);
+
+    public Task<IReadOnlyList<YeuCauMuonDto>?> GetMyBorrowRequestsAsync(
+        string token, string? trangThai = null, CancellationToken ct = default)
+    {
+        var url = string.IsNullOrWhiteSpace(trangThai)
+            ? "api/yeucau/me"
+            : $"api/yeucau/me?trangThai={Uri.EscapeDataString(trangThai)}";
+        return GetListAsync<YeuCauMuonDto>(url, token, ct);
+    }
+
+    public Task<ApiResult<YeuCauMuonDto>> CancelBorrowRequestAsync(
+        int maYeuCau, string token, CancellationToken ct = default) =>
+        PostAsync<YeuCauMuonDto>($"api/yeucau/me/{maYeuCau}/huy", new { }, token, ct);
+
     // ---------- Hạ tầng ----------
 
     private async Task<T?> GetAsync<T>(string url, string? token, CancellationToken ct) where T : class
@@ -116,12 +135,42 @@ public sealed class LibraryApiClient(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<List<T>>(JsonOptions, ct);
     }
 
+    private async Task<ApiResult<T>> PostAsync<T>(
+        string url, object body, string token, CancellationToken ct) where T : class
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body, options: JsonOptions)
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using var response = await httpClient.SendAsync(request, ct);
+        if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+            return ApiResult<T>.Failed("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+
+        if (!response.IsSuccessStatusCode)
+            return ApiResult<T>.Failed(await ReadProblemAsync(response, ct) ?? "Không thực hiện được yêu cầu.");
+
+        var value = await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct);
+        return value is null
+            ? ApiResult<T>.Failed("API trả về dữ liệu không hợp lệ.")
+            : ApiResult<T>.Ok(value);
+    }
+
     private static async Task<string?> ReadProblemAsync(HttpResponseMessage response, CancellationToken ct)
     {
         try
         {
             var problem = await response.Content.ReadFromJsonAsync<ProblemDto>(JsonOptions, ct);
-            return problem?.Title;
+            if (problem is null) return null;
+
+            if (!string.IsNullOrWhiteSpace(problem.Message)) return problem.Message;
+
+            var firstError = problem.Errors?
+                .Values
+                .SelectMany(errors => errors)
+                .FirstOrDefault(error => !string.IsNullOrWhiteSpace(error));
+            return firstError ?? problem.Title ?? problem.Detail;
         }
         catch (JsonException)
         {
@@ -129,6 +178,14 @@ public sealed class LibraryApiClient(HttpClient httpClient)
         }
     }
 }
+
+public sealed record ApiResult<T>(bool Succeeded, T? Value, string? Error)
+{
+    public static ApiResult<T> Ok(T value) => new(true, value, null);
+
+    public static ApiResult<T> Failed(string error) => new(false, default, error);
+}
+
 
 public sealed record LoginResult(bool Succeeded, string? Error, LoginResponseDto? Payload)
 {
@@ -255,5 +312,29 @@ public sealed class TienPhatDto
 internal sealed class ProblemDto
 {
     public string? Title { get; init; }
+    public string? Detail { get; init; }
+    public string? Message { get; init; }
+    public Dictionary<string, string[]>? Errors { get; init; }
     public int? Status { get; init; }
+}
+
+public sealed class YeuCauMuonDto
+{
+    public int MaYeuCau { get; init; }
+    public string SoYeuCau => $"YC-{MaYeuCau:D6}";
+    public int MaDocGia { get; init; }
+    public string TenDocGia { get; init; } = string.Empty;
+    public int MaSach { get; init; }
+    public string TenSach { get; init; } = string.Empty;
+    public string ISBN { get; init; } = string.Empty;
+    public int SoLuong { get; init; }
+    public DateTime NgayTao { get; init; }
+    public string TrangThai { get; init; } = string.Empty;
+    public string? GhiChu { get; init; }
+    public string? LyDoTuChoi { get; init; }
+    public string? NguoiDuyet { get; init; }
+    public DateTime? NgayDuyet { get; init; }
+    public int? MaPhieu { get; init; }
+    public string? SoPhieu => MaPhieu is null ? null : $"PM-{MaPhieu.Value:D6}";
+    public bool CoTheHuy => TrangThai == "Chờ duyệt";
 }

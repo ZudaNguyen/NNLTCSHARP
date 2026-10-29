@@ -35,6 +35,7 @@
         var roleName = role == "admin" ? "Quản trị viên" : role == "manager" ? "Thủ thư" : authenticated ? "Độc giả" : "Chưa đăng nhập";
         var initials = role == "admin" ? "MA" : role == "manager" ? "TH" : authenticated ? ReaderSession.Initials : "?";
         var noticeCount = ViewData["NotificationCount"] as int? ?? 0;
+        var pendingRequestCount = ViewData["PendingRequestCount"] as int? ?? 0;
     }
     <div class="app-shell" data-role="@role">
         <aside class="sidebar" id="sidebar">
@@ -48,6 +49,13 @@
                     <a class="@NavClass(searchActive && action == "Index")" asp-controller="Sach" asp-action="Index"><span>⌕</span>Tìm kiếm sách</a>
                     <a class="@NavClass(searchActive && action == "Details")" asp-controller="Sach" asp-action="Index" asp-fragment="the-loai"><span>▥</span>Danh mục sách</a>
                     <a class="@NavClass(activeLoansActive)" asp-controller="TaiKhoan" asp-action="LichSuMuon" asp-route-trangThai="dang-muon"><span>▤</span>Sách đang mượn</a>
+                    <a class="@NavClass(controller == "YeuCauMuon")" asp-controller="YeuCauMuon" asp-action="Index">
+                        <span>▣</span>Yêu cầu mượn
+                        @if (pendingRequestCount > 0)
+                        {
+                            <b class="nav-badge">@pendingRequestCount</b>
+                        }
+                    </a>
                     <a class="@NavClass(historyActive)" asp-controller="TaiKhoan" asp-action="LichSuMuon"><span>◷</span>Lịch sử mượn trả</a>
                     <a class="@NavClass(profileActive)" asp-controller="TaiKhoan" asp-action="HoSo"><span>♙</span>Thông tin cá nhân</a>
                     <a asp-controller="Home" asp-action="Index" asp-fragment="notifications">

@@ -1,13 +1,16 @@
-@model SachDto
+@model BookDetailsViewModel
 @{
-    ViewData["Title"] = Model.TenSach;
+    ViewData["Title"] = Model.Book.TenSach;
     ViewData["Role"] = "reader";
     string[] covers =
     [
         "cover-dune", "cover-atomic", "cover-dacnhantam", "cover-alchemist", "cover-cosmos",
         "cover-sapiens", "cover-thinking", "cover-clean", "cover-change", "cover-mindful"
     ];
-    var cover = covers[Math.Abs(Model.MaSach) % covers.Length];
+    var book = Model.Book;
+    var cover = covers[Math.Abs(book.MaSach) % covers.Length];
+    var maxQuantity = Math.Max(1, Math.Min(3, book.SoLuong));
+    var returnUrl = $"/sach/{book.MaSach}";
 }
 <section class="page-heading">
     <div>
@@ -16,32 +19,40 @@
     </div>
 </section>
 
+@if (TempData["BorrowMessage"] is string borrowMessage)
+{
+    var messageClass = TempData["BorrowMessageType"]?.ToString() == "success"
+        ? "alert-success"
+        : "alert-error";
+    <div class="alert @messageClass">@borrowMessage</div>
+}
+
 <div class="detail-layout">
     <div class="detail-cover-wrap">
         <div class="book-cover detail-cover @cover">
-            <small>@Model.TenTacGiaHienThi.ToUpperInvariant()</small>
-            <b>@Model.TenSach</b>
-            <em>@Model.TenTheLoai</em>
+            <small>@book.TenTacGiaHienThi.ToUpperInvariant()</small>
+            <b>@book.TenSach</b>
+            <em>@book.TenTheLoai</em>
         </div>
     </div>
 
     <section class="panel detail-panel">
-        <span class="pill blue">@Model.TenTheLoai</span>
-        <h2>@Model.TenSach</h2>
-        <p class="detail-authors">@Model.TenTacGiaHienThi</p>
+        <span class="pill blue">@book.TenTheLoai</span>
+        <h2>@book.TenSach</h2>
+        <p class="detail-authors">@book.TenTacGiaHienThi</p>
 
         <dl class="detail-meta">
-            <div><dt>ISBN</dt><dd>@(string.IsNullOrWhiteSpace(Model.ISBN) ? "—" : Model.ISBN)</dd></div>
-            <div><dt>Nhà xuất bản</dt><dd>@(string.IsNullOrWhiteSpace(Model.NhaXB) ? "—" : Model.NhaXB)</dd></div>
-            <div><dt>Năm xuất bản</dt><dd>@Model.NamXB</dd></div>
-            <div><dt>Thể loại</dt><dd>@Model.TenTheLoai</dd></div>
-            <div><dt>Số lượng</dt><dd>@Model.SoLuong bản</dd></div>
+            <div><dt>ISBN</dt><dd>@(string.IsNullOrWhiteSpace(book.ISBN) ? "—" : book.ISBN)</dd></div>
+            <div><dt>Nhà xuất bản</dt><dd>@(string.IsNullOrWhiteSpace(book.NhaXB) ? "—" : book.NhaXB)</dd></div>
+            <div><dt>Năm xuất bản</dt><dd>@book.NamXB</dd></div>
+            <div><dt>Thể loại</dt><dd>@book.TenTheLoai</dd></div>
+            <div><dt>Số lượng</dt><dd>@book.SoLuong bản</dd></div>
             <div>
                 <dt>Tình trạng</dt>
                 <dd>
-                    @if (Model.ConHang)
+                    @if (book.ConHang)
                     {
-                        <span class="stock stock-in">Còn @Model.SoLuongCon bản</span>
+                        <span class="stock stock-in">Còn @book.SoLuongCon bản</span>
                     }
                     else
                     {
@@ -52,24 +63,87 @@
         </dl>
 
         <h3 class="detail-desc-title">Giới thiệu</h3>
-        <p class="detail-desc">@(string.IsNullOrWhiteSpace(Model.MoTa) ? "Chưa có mô tả cho cuốn sách này." : Model.MoTa)</p>
+        <p class="detail-desc">@(string.IsNullOrWhiteSpace(book.MoTa) ? "Chưa có mô tả cho cuốn sách này." : book.MoTa)</p>
 
-        <div class="info-callout">
-            <span>♙</span>
-            <span>
-                <b>Muốn mượn cuốn sách này?</b>
-                <small>
-                    Vui lòng mang thẻ độc giả đến quầy thư viện để được lập phiếu mượn.
-                    @if (!Model.ConHang)
-                    {
-                        <text>Sách hiện đã được mượn hết.</text>
-                    }
-                </small>
-            </span>
-        </div>
+        @if (!Model.IsAuthenticated)
+        {
+            <div class="info-callout">
+                <span>♙</span>
+                <span>
+                    <b>Muốn mượn cuốn sách này?</b>
+                    <small>Đăng nhập bằng tài khoản độc giả để gửi yêu cầu mượn trực tuyến.</small>
+                </span>
+            </div>
+            <div class="detail-actions">
+                <a class="btn-primary" asp-controller="TaiKhoan" asp-action="Login" asp-route-returnUrl="@returnUrl">Đăng nhập để đặt mượn</a>
+                <a class="btn-secondary" asp-action="Index">← Về danh mục</a>
+            </div>
+        }
+        else if (Model.ActiveLoan is not null)
+        {
+            <div class="alert alert-warning">
+                Bạn đang mượn cuốn sách này trong phiếu <b>@Model.ActiveLoan.SoPhieu</b>,
+                hạn trả <b>@Model.ActiveLoan.HanTra.ToString("dd/MM/yyyy")</b>.
+                Hãy trả sách trước khi gửi yêu cầu mới.
+            </div>
+            <div class="detail-actions">
+                <a class="btn-secondary" asp-controller="TaiKhoan" asp-action="ChiTietMuon"
+                   asp-route-id="@Model.ActiveLoan.MaPhieu">Xem phiếu mượn</a>
+                <a class="btn-secondary" asp-action="Index">← Về danh mục</a>
+            </div>
+        }
+        else if (Model.PendingRequest is not null)
+        {
+            <div class="alert alert-warning">
+                Bạn đã gửi yêu cầu <b>@Model.PendingRequest.SoYeuCau</b> cho cuốn sách này
+                (@Model.PendingRequest.SoLuong bản, ngày @Model.PendingRequest.NgayTao.ToString("dd/MM/yyyy")).
+                Vui lòng chờ thủ thư duyệt.
+            </div>
+            <div class="detail-actions">
+                <form method="post" asp-controller="YeuCauMuon" asp-action="Cancel"
+                      asp-route-id="@Model.PendingRequest.MaYeuCau" asp-route-returnUrl="@returnUrl">
+                    @Html.AntiForgeryToken()
+                    <button class="btn-secondary" type="submit">Hủy yêu cầu</button>
+                </form>
+                <a class="btn-secondary" asp-controller="YeuCauMuon" asp-action="Index">Xem yêu cầu của tôi</a>
+            </div>
+        }
+        else
+        {
+            <div class="info-callout">
+                <span>♙</span>
+                <span>
+                    <b>Gửi yêu cầu mượn trực tuyến</b>
+                    <small>
+                        Thủ thư sẽ duyệt và lập phiếu mượn 14 ngày cho bạn.
+                        @if (!book.ConHang)
+                        {
+                            <text>Sách hiện đã hết bản; yêu cầu của bạn sẽ được xếp vào danh sách chờ.</text>
+                        }
+                    </small>
+                </span>
+            </div>
 
-        <div class="detail-actions">
-            <a class="btn-secondary" asp-action="Index">← Về danh mục</a>
-        </div>
+            <form class="borrow-form" method="post" asp-controller="YeuCauMuon" asp-action="Create"
+                  asp-route-maSach="@book.MaSach">
+                @Html.AntiForgeryToken()
+                <label>
+                    <span>Số lượng</span>
+                    <input type="number" name="SoLuong" value="1" min="1" max="@maxQuantity" />
+                </label>
+                <label class="borrow-note">
+                    <span>Ghi chú cho thủ thư (không bắt buộc)</span>
+                    <input type="text" name="GhiChu" maxlength="500"
+                           placeholder="Ví dụ: cần cho buổi học tối thứ Ba" />
+                </label>
+                <button class="btn-primary" type="submit">
+                    @(book.ConHang ? "Gửi yêu cầu mượn" : "Đặt trước cuốn này")
+                </button>
+            </form>
+
+            <div class="detail-actions">
+                <a class="btn-secondary" asp-action="Index">← Về danh mục</a>
+            </div>
+        }
     </section>
 </div>

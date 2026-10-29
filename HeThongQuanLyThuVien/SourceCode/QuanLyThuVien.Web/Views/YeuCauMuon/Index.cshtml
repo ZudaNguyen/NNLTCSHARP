@@ -1,0 +1,174 @@
+@model BorrowRequestListViewModel
+@{
+    ViewData["Title"] = "Yêu cầu mượn sách";
+    ViewData["Role"] = "reader";
+
+    var isAll = Model.Filter is null;
+    var isPending = Model.Filter == "cho-duyet";
+    var isApproved = Model.Filter == "da-duyet";
+    var isRejected = Model.Filter == "tu-choi";
+    var isCancelled = Model.Filter == "da-huy";
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+<section class="page-heading">
+    <div>
+        <h1>Yêu cầu mượn sách</h1>
+        <p>Theo dõi yêu cầu bạn đã gửi và trạng thái duyệt của thủ thư.</p>
+    </div>
+    <div class="date-chip">@Model.AllRequests.Count yêu cầu</div>
+</section>
+
+@if (TempData["BorrowMessage"] is string borrowMessage)
+{
+    var messageClass = TempData["BorrowMessageType"]?.ToString() == "success"
+        ? "alert-success"
+        : "alert-error";
+    <div class="alert @messageClass">@borrowMessage</div>
+}
+
+@if (Model.ApiError is not null)
+{
+    <div class="alert alert-error">@Model.ApiError</div>
+}
+
+<section class="panel">
+    <div class="panel-title">
+        <div class="tabs">
+            <a class="tab @(isAll ? "active" : string.Empty)" asp-action="Index">Tất cả (@Model.AllRequests.Count)</a>
+            <a class="tab @(isPending ? "active" : string.Empty)" asp-action="Index" asp-route-trangThai="cho-duyet">
+                Chờ duyệt (@Model.PendingCount)
+            </a>
+            <a class="tab @(isApproved ? "active" : string.Empty)" asp-action="Index" asp-route-trangThai="da-duyet">
+                Đã duyệt (@Model.ApprovedCount)
+            </a>
+            <a class="tab @(isRejected ? "active" : string.Empty)" asp-action="Index" asp-route-trangThai="tu-choi">
+                Từ chối (@Model.RejectedCount)
+            </a>
+            <a class="tab @(isCancelled ? "active" : string.Empty)" asp-action="Index" asp-route-trangThai="da-huy">
+                Đã hủy (@Model.CancelledCount)
+            </a>
+        </div>
+        @if (Model.PendingCount > 0)
+        {
+            <span class="legend warning">@Model.PendingCount yêu cầu đang chờ duyệt</span>
+        }
+    </div>
+
+    @if (Model.ApiError is not null)
+    {
+        <div class="empty-state">
+            <b>Chưa tải được yêu cầu mượn</b>
+            <small>Kiểm tra API thư viện rồi thử tải lại trang.</small>
+        </div>
+    }
+    else if (Model.Requests.Count == 0)
+    {
+        <div class="empty-state">
+            <b>Không có yêu cầu nào</b>
+            <small>
+                @(isAll
+                    ? "Bạn chưa gửi yêu cầu mượn sách nào."
+                    : "Không có yêu cầu ở trạng thái này.")
+            </small>
+            <a class="empty-cta" asp-controller="Sach" asp-action="Index">Khám phá danh mục sách</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <th>Số yêu cầu</th>
+                        <th>Sách</th>
+                        <th>SL</th>
+                        <th>Ngày gửi</th>
+                        <th>Trạng thái</th>
+                        <th>Ghi chú</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var request in Model.Requests)
+                    {
+                        <tr>
+                            <td><b>@request.SoYeuCau</b></td>
+                            <td>
+                                <span class="request-book">
+                                    <a asp-controller="Sach" asp-action="Details" asp-route-id="@request.MaSach">@request.TenSach</a>
+                                    @if (!string.IsNullOrWhiteSpace(request.ISBN))
+                                    {
+                                        <small>ISBN @request.ISBN</small>
+                                    }
+                                </span>
+                            </td>
+                            <td>@request.SoLuong</td>
+                            <td>@request.NgayTao.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @switch (request.TrangThai)
+                                {
+                                    case "Chờ duyệt":
+                                        <span class="pill orange">@request.TrangThai</span>
+                                        break;
+                                    case "Đã duyệt":
+                                        <span class="pill green">@request.TrangThai</span>
+                                        break;
+                                    case "Từ chối":
+                                        <span class="pill red">@request.TrangThai</span>
+                                        break;
+                                    default:
+                                        <span class="pill gray">@request.TrangThai</span>
+                                        break;
+                                }
+                                @if (request.TrangThai == "Đã duyệt" && request.SoPhieu is not null)
+                                {
+                                    <small class="request-note">Phiếu @request.SoPhieu</small>
+                                }
+                                else if (request.TrangThai == "Đã duyệt" || request.TrangThai == "Từ chối")
+                                {
+                                    <small class="request-note">
+                                        @(request.NguoiDuyet ?? "Thủ thư")
+                                        @if (request.NgayDuyet is not null)
+                                        {
+                                            <text>• @request.NgayDuyet.Value.ToString("dd/MM/yyyy HH:mm")</text>
+                                        }
+                                    </small>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(request.GhiChu))
+                                {
+                                    <span class="request-note">@request.GhiChu</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(request.LyDoTuChoi))
+                                {
+                                    <span class="request-reason">Lý do: @request.LyDoTuChoi</span>
+                                }
+                                @if (string.IsNullOrWhiteSpace(request.GhiChu) && string.IsNullOrWhiteSpace(request.LyDoTuChoi))
+                                {
+                                    <span class="request-note">—</span>
+                                }
+                            </td>
+                            <td class="cell-action">
+                                @if (request.CoTheHuy)
+                                {
+                                    <form method="post" asp-action="Cancel" asp-route-id="@request.MaYeuCau"
+                                          asp-route-returnUrl="@returnUrl">
+                                        @Html.AntiForgeryToken()
+                                        <button class="link-button" type="submit">Hủy</button>
+                                    </form>
+                                }
+                                else if (request.MaPhieu is not null)
+                                {
+                                    <a asp-controller="TaiKhoan" asp-action="ChiTietMuon" asp-route-id="@request.MaPhieu">
+                                        Xem phiếu →
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

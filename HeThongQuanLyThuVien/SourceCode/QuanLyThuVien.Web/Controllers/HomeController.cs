@@ -18,6 +18,7 @@ public class HomeController(LibraryApiClient api, ReaderSession session) : Contr
         var notices = new List<HomeNotice>();
         var overdueCount = 0;
         var badgeCount = 0;
+        var pendingRequestCount = 0;
         var isAuthenticated = session.IsAuthenticated;
 
         try
@@ -93,6 +94,25 @@ public class HomeController(LibraryApiClient api, ReaderSession session) : Contr
                         }
                     }
 
+                    var requests = await api.GetMyBorrowRequestsAsync(token, ct: ct);
+                    if (requests is not null)
+                    {
+                        var pending = requests.Where(r => r.CoTheHuy)
+                            .OrderBy(r => r.NgayTao)
+                            .ToList();
+                        pendingRequestCount = pending.Count;
+                        foreach (var request in pending.Take(2))
+                        {
+                            notices.Add(new HomeNotice
+                            {
+                                Tone = "sky",
+                                Icon = "▣",
+                                Message = $"Yêu cầu mượn {request.SoYeuCau} đang chờ duyệt",
+                                Detail = $"{request.TenSach} • gửi ngày {request.NgayTao:dd/MM/yyyy}"
+                            });
+                        }
+                    }
+
                     badgeCount = notices.Count;
                 }
             }
@@ -127,6 +147,7 @@ public class HomeController(LibraryApiClient api, ReaderSession session) : Contr
         }
 
         ViewData["NotificationCount"] = badgeCount;
+        ViewData["PendingRequestCount"] = pendingRequestCount;
         ViewData["Role"] = "reader";
 
         return View(new HomeViewModel
