@@ -52,6 +52,93 @@ opencode --version
 
 Nếu `dotnet --version` ra 8.x hoặc 9.x, cài thêm .NET 10 SDK và mở PowerShell mới.
 
+### 2.1 Cài OpenCode trên Windows
+
+Windows **không** cài qua package manager (winget/choco/scoop/npm) — dùng file zip chính thức.
+
+**Bước 1 — xác định kiến trúc CPU:**
+
+```powershell
+$env:PROCESSOR_ARCHITECTURE   # AMD64 = x64, ARM64 = ARM
+```
+
+**Bước 2 — tải và giải nén:**
+
+```powershell
+New-Item -ItemType Directory -Force C:\Tools\opencode | Out-Null
+Invoke-WebRequest `
+  https://opencode.ai/update/api/latest/cli/opencode/opencode-windows-x64.zip `
+  -OutFile "$env:TEMP\opencode.zip"
+Expand-Archive "$env:TEMP\opencode.zip" -DestinationPath C:\Tools\opencode -Force
+Unblock-File C:\Tools\opencode\opencode.exe
+```
+
+Máy ARM64 đổi URL thành `opencode-windows-arm64.zip`. Nếu máy x64 đời cũ chạy bản thường bị lỗi "illegal instruction", dùng `opencode-windows-x64-baseline.zip`.
+
+Nếu file `.exe` nằm trong thư mục con sau khi giải nén, di chuyển nó lên `C:\Tools\opencode`:
+
+```powershell
+Get-ChildItem C:\Tools\opencode -Recurse -Filter opencode.exe |
+  Move-Item -Destination C:\Tools\opencode\opencode.exe -Force
+```
+
+**Bước 3 — thêm vào PATH (chỉ cần làm một lần):**
+
+```powershell
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($userPath -notlike "*C:\Tools\opencode*") {
+  [Environment]::SetEnvironmentVariable("Path", "$userPath;C:\Tools\opencode", "User")
+}
+```
+
+Đóng cửa sổ PowerShell, mở cửa sổ mới rồi kiểm tra:
+
+```powershell
+opencode --version
+opencode debug paths db
+```
+
+**Bước 4 — đăng nhập provider:**
+
+```powershell
+opencode auth login
+```
+
+Hoặc mở OpenCode rồi dùng lệnh `/connect` trong giao diện.
+
+**Bước 5 — mang thông tin đăng nhập từ Mac sang (tùy chọn):**
+
+Trên Mac:
+
+```bash
+opencode auth export > auth.json
+```
+
+Chép `auth.json` sang PC (kênh riêng tư — file này chứa secret), rồi:
+
+```powershell
+opencode auth import .\auth.json
+Remove-Item .\auth.json
+```
+
+Nếu không muốn chép secret, bỏ qua bước này và đăng nhập lại bằng `/connect`.
+
+**Bước 6 — chạy trong repo:**
+
+```powershell
+cd $HOME\Code\NNLTCSHARP
+opencode
+```
+
+Có thể dùng **OpenCode Desktop** bản Windows (`.exe` trong mục Desktop của https://opencode.ai/v2/docs/) nếu thích giao diện, nhưng CLI là đủ cho công việc trong repo này.
+
+Cập nhật phiên bản sau này:
+
+```powershell
+opencode upgrade
+```
+
+
 ---
 
 ## 3. Lấy mã nguồn
