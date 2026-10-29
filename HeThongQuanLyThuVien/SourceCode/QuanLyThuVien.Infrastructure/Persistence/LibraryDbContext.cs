@@ -22,6 +22,7 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
     public DbSet<ThuTienPhat> ThuTienPhat => Set<ThuTienPhat>();
     public DbSet<CauHinhTienPhat> CauHinhTienPhat => Set<CauHinhTienPhat>();
     public DbSet<YeuCauMuon> YeuCauMuon => Set<YeuCauMuon>();
+    public DbSet<YeuCauKhoaTaiKhoan> YeuCauKhoaTaiKhoan => Set<YeuCauKhoaTaiKhoan>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -151,8 +152,8 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
             entity.HasIndex(account => new { account.VaiTro, account.TrangThai });
             entity.HasIndex(account => account.MaNhanVien).IsUnique().HasFilter("[MaNhanVien] IS NOT NULL");
             entity.HasIndex(account => account.MaDocGia).IsUnique().HasFilter("[MaDocGia] IS NOT NULL");
-            entity.HasOne<NhanVien>().WithMany().HasForeignKey(account => account.MaNhanVien).OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<DocGia>().WithMany().HasForeignKey(account => account.MaDocGia).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(account => account.NhanVien).WithMany().HasForeignKey(account => account.MaNhanVien).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(account => account.DocGia).WithMany().HasForeignKey(account => account.MaDocGia).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<TaiKhoanSession>(entity =>
@@ -238,6 +239,32 @@ public sealed class LibraryDbContext(DbContextOptions<LibraryDbContext> options)
             entity.HasOne(x => x.DocGia).WithMany().HasForeignKey(x => x.MaDocGia).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.Sach).WithMany().HasForeignKey(x => x.MaSach).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.PhieuMuon).WithMany().HasForeignKey(x => x.MaPhieu).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<YeuCauKhoaTaiKhoan>(entity =>
+        {
+            entity.ToTable("YeuCauKhoaTaiKhoan", table =>
+            {
+                table.HasCheckConstraint("CK_YeuCauKhoaTaiKhoan_TrangThai",
+                    "[TrangThai] IN (N'Chờ duyệt', N'Đã duyệt', N'Từ chối', N'Đã hủy')");
+                table.HasCheckConstraint("CK_YeuCauKhoaTaiKhoan_ThoiHan",
+                    "[ThoiHanKhoaNgay] IS NULL OR [ThoiHanKhoaNgay] BETWEEN 1 AND 365");
+            });
+            entity.HasKey(x => x.MaYeuCau);
+            entity.Property(x => x.MaYeuCau).ValueGeneratedOnAdd();
+            entity.Property(x => x.LyDo).HasMaxLength(500).IsRequired();
+            entity.Property(x => x.TrangThai).HasMaxLength(20).HasDefaultValue(YeuCauKhoaTaiKhoanTrangThai.ChoDuyet).IsRequired();
+            entity.Property(x => x.NguoiDuyet).HasMaxLength(100);
+            entity.Property(x => x.NgayTao).HasColumnType("datetime2").HasDefaultValueSql("SYSDATETIME()");
+            entity.Property(x => x.NgayDuyet).HasColumnType("datetime2");
+            entity.Property(x => x.LyDoTuChoi).HasMaxLength(500);
+            entity.HasIndex(x => x.IdempotencyKey).IsUnique();
+            entity.HasIndex(x => new { x.MaNhanVien, x.TrangThai });
+            entity.HasIndex(x => new { x.TrangThai, x.NgayTao });
+            entity.HasIndex(x => x.MaTaiKhoan).IsUnique()
+                .HasFilter("[TrangThai] = N'Chờ duyệt'")
+                .HasDatabaseName("UX_YeuCauKhoaTaiKhoan_DangCho");
+            entity.HasOne(x => x.TaiKhoan).WithMany().HasForeignKey(x => x.MaTaiKhoan).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.NhanVien).WithMany().HasForeignKey(x => x.MaNhanVien).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

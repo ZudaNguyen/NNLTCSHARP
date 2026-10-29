@@ -17,4 +17,7 @@ public sealed class TaiKhoan
     public DateTime? KhoaDenUtc { get; set; }
     public DateTime NgayTaoUtc { get; set; }
     public DateTime? CapNhatLucUtc { get; set; }
+
+    public NhanVien? NhanVien { get; set; }
+    public DocGia? DocGia { get; set; }
 }
