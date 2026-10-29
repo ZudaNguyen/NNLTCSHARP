@@ -43,7 +43,7 @@ Các file schema nằm trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/`
 
 ### 2.1 Database demo trống — đường nhanh nhất
 
-Chạy lần lượt 7 file theo đúng thứ tự phụ thuộc. Script không tạo database, nên tạo trước:
+Chạy lần lượt 8 file theo đúng thứ tự phụ thuộc. Script không tạo database, nên tạo trước:
 
 ```bash
 docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
@@ -52,14 +52,14 @@ docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
 
 for f in BooksSchema.sql CatalogModuleSchema.sql ReaderModuleSchema.sql \
          EmployeeModuleSchema.sql AuthenticationModuleSchema.sql BorrowingModuleSchema.sql \
-         BorrowRequestModuleSchema.sql; do
+         BorrowRequestModuleSchema.sql AccountLockRequestModuleSchema.sql; do
   docker cp "SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/$f" qltv-sqlserver:/tmp/"$f"
   docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
     -S localhost -U sa -P '<MAT_KHAU_SA>' -C -d QuanLyThuVienDB -b -i /tmp/"$f"
 done
 ```
 
-Kiểm tra kết quả — phải có **15 bảng**:
+Kiểm tra kết quả — phải có **16 bảng**:
 
 ```bash
 docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
@@ -215,7 +215,7 @@ dotnet build QuanLyThuVien.slnx
 dotnet test Tests/QuanLyThuVien.UnitTests/QuanLyThuVien.UnitTests.csproj
 ```
 
-Build thành công **không** xác nhận kết nối database, đăng nhập, CRUD runtime hay hiển thị giao diện. Hai project test hiện chưa có test case nào.
+Build thành công **không** xác nhận kết nối database, đăng nhập, CRUD runtime hay hiển thị giao diện. Bộ `Tests/QuanLyThuVien.UnitTests` hiện có **30 test** cho `YeuCauMuonService`, `YeuCauKhoaTaiKhoanService` và `AccountService`.
 
 ## 8. Kết quả kiểm chứng gần nhất
 
@@ -230,3 +230,10 @@ Ngày 2026-10-29, trên macOS (Intel i7-8569U), đã chạy thật và đạt:
 - Web chạy ở `http://localhost:5109`: `/`, `/sach`, `/sach/1`, `/dang-nhap` trả 200; đăng nhập `DOC_GIA` tạo cookie và mở được `/lich-su-muon`, `/tai-khoan`; đăng nhập Admin bị từ chối; `/sach/999` trả 404; `/lich-su-muon` khi chưa đăng nhập chuyển về `/dang-nhap`.
 
 Chưa kiểm chứng: giao diện WinForms (cần Windows), seeder (cần backup hợp lệ).
+
+Bổ sung ngày 2026-10-29 trên PC Windows 11:
+
+- `dotnet build QuanLyThuVien.slnx` → 0 error; `dotnet test` → 30/30 pass.
+- SQL Server 2022 trong Docker, database `QuanLyThuVienDB` có **16 bảng** sau khi chạy 8 script schema.
+- Luồng yêu cầu khóa tài khoản đã chạy thật: Manager tạo/hủy, Admin duyệt/từ chối; duyệt xong tài khoản `Bị khóa`, thẻ `Khóa thẻ`, phiên bị thu hồi, token cũ trả `401`.
+- Phân quyền: Manager gọi duyệt → `403`; Admin gọi hủy yêu cầu → `403`; tạo trùng yêu cầu đang chờ → `409`.

@@ -18,7 +18,7 @@ Mục tiêu sau khi làm xong:
 - Nhánh: `NgDang_user`
 - Remote: `https://github.com/ZudaNguyen/NNLTCSHARP.git`
 - Đã xong: API, Desktop Admin/Manager, Web độc giả, gửi/duyệt yêu cầu mượn, đăng ký độc giả, gợi ý tìm kiếm, giới hạn số lượng mượn theo số bản còn lại.
-- Chưa làm: quy trình Manager gửi yêu cầu khóa tài khoản User lên Admin duyệt (bảng `YeuCauKhoaTaiKhoan`, API, màn hình Desktop, test, docs).
+- Đã xong: quy trình Manager gửi yêu cầu khóa tài khoản User lên Admin duyệt (bảng `YeuCauKhoaTaiKhoan`, API `api/yeucau-khoa`, màn hình Desktop, test, docs). Xem mục 10.
 
 Chi tiết nghiệp vụ đã chốt:
 
@@ -205,7 +205,7 @@ docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd `
   -Q "SELECT COUNT(*) AS SoBang FROM sys.tables;"
 ```
 
-Mong đợi: `15`.
+Mong đợi: `16`.
 
 ### Cách B — Mang nguyên dữ liệu đang có trên Mac sang (giữ tài khoản, phiếu mượn, phạt)
 
@@ -377,13 +377,23 @@ Cần đăng nhập lại provider trong OpenCode trên PC (`/connect` hoặc `o
 
 ---
 
-## 10. Việc tiếp theo sau khi môi trường PC chạy ổn
+## 10. Yêu cầu khóa tài khoản — đã triển khai
 
-1. Thêm bảng `YeuCauKhoaTaiKhoan` (16 bảng) + cập nhật `LibraryDbContext`.
-2. API: tạo/xem/hủy yêu cầu cho Manager; duyệt/từ chối cho Admin.
-3. Desktop: form gửi yêu cầu cho Manager; màn hình duyệt cho Admin.
-4. Khi duyệt: khóa `TaiKhoan.TrangThai`, thu hồi phiên, và khóa `DocGia.TrangThai` (hoặc bổ sung kiểm tra trạng thái tài khoản khi lập phiếu).
-5. Bổ sung lý do/thời hạn cho khóa thẻ.
-6. Test phân quyền: Manager gọi API quản trị → `403`; Manager không duyệt được; Admin duyệt xong User không đăng nhập được.
-7. Cập nhật `docs/MODULE_MAP.md`, `README.md`, `docs/SETUP_GUIDE.md` (15 → 16 bảng).
-8. Commit theo tầng: `db`, `api`, `desktop`, `test`, `docs`; push `origin/NgDang_user`.
+Đã hoàn tất theo đúng thứ tự tầng:
+
+1. **DB**: bảng `YeuCauKhoaTaiKhoan` (16 bảng), script `AccountLockRequestModuleSchema.sql`, đã gộp vào `Database/AllTablesAndDemoData.sql`, map trong `LibraryDbContext`.
+2. **API**: `api/yeucau-khoa` gồm xem tài khoản độc giả, tìm kiếm, xem chi tiết, tạo, hủy, duyệt, từ chối. Chỉ `THU_THU` tạo/hủy; chỉ `ADMIN` duyệt/từ chối.
+3. **Desktop**: `YeuCauKhoaTaiKhoanControl` dùng chung cho hai chế độ. Manager thấy mục **Yêu cầu khóa tài khoản** (NGHIỆP VỤ); Admin thấy **Duyệt khóa tài khoản** (QUẢN TRỊ).
+4. **Test**: `YeuCauKhoaTaiKhoanServiceTests` phủ tạo trùng, thời hạn sai, duyệt khóa tài khoản + thẻ + thu hồi phiên, duyệt lặp idempotent, từ chối, hủy sai người gửi và phạm vi xem của Manager/Admin.
+5. **Docs**: `MODULE_MAP.md`, `SETUP_GUIDE.md`, `README.md`, file này.
+
+Đã kiểm chứng runtime trên PC ngày 2026-10-29:
+
+- Manager tạo yêu cầu → `201`; tạo trùng → `409`; hủy yêu cầu của mình → `200`.
+- Manager gọi duyệt → `403`; Admin gọi hủy yêu cầu của Manager → `403`.
+- Admin duyệt → `200`: `TaiKhoan.TrangThai = Bị khóa`, `DocGia.TrangThai = Khóa thẻ`, toàn bộ `TaiKhoan_Session` của tài khoản bị thu hồi.
+- Token độc giả cũ gọi `/api/auth/me` → `401`; đăng nhập lại → `401`.
+- Admin từ chối → `200`, tài khoản và thẻ giữ nguyên `Hoạt động`.
+- `dotnet build QuanLyThuVien.slnx` → 0 error; `dotnet test` → 30/30 pass.
+
+Việc còn lại (không bắt buộc): commit/push theo tầng `db`, `api`, `desktop`, `test`, `docs` khi được yêu cầu.

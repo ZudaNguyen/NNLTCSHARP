@@ -16,7 +16,7 @@ Hệ thống gồm một **REST API dùng chung**, một **ứng dụng Desktop 
 | Web | ASP.NET Core MVC |
 | ORM / CSDL | EF Core 10, SQL Server 2022 Developer |
 | Môi trường CSDL | Docker Compose |
-| Test | xUnit (chưa có test case) |
+| Test | xUnit (30 test) |
 
 ## 2. Cấu trúc
 
@@ -33,7 +33,7 @@ HeThongQuanLyThuVien/
 │   ├── QuanLyThuVien.Domain        # entity, AccountRoles
 │   ├── QuanLyThuVien.Application   # DTO, interface, service nghiệp vụ
 │   ├── QuanLyThuVien.Infrastructure# DbContext, repository, SQL schema
-│   ├── QuanLyThuVien.Api           # 56 endpoint, opaque bearer auth
+│   ├── QuanLyThuVien.Api           # 77 endpoint, opaque bearer auth
 │   ├── QuanLyThuVien.Desktop       # WinForms cho Admin + Thủ thư
 │   └── QuanLyThuVien.Web           # MVC cho độc giả, gọi REST API
 └── Tests/                          # UnitTests, IntegrationTests
@@ -50,6 +50,7 @@ Thư mục `_archive/` ở gốc repo chứa bản Desktop cũ và script SQL ba
 | Web độc giả: trang chủ, danh mục, tìm kiếm (kèm gợi ý), chi tiết, đăng nhập, lịch sử mượn, phạt | **user** | Xong, đã kiểm chứng runtime với API + SQL Server thật |
 | Gửi yêu cầu mượn/đặt sách trực tuyến (`YeuCauMuon`) | **user** | Xong: độc giả gửi/hủy, thủ thư duyệt/từ chối |
 | Tự đăng ký độc giả trên Web (`/dang-ky`) | **user** | Xong: tạo thẻ + tài khoản `Hoạt động` ngay, tự đăng nhập |
+| Yêu cầu khóa tài khoản độc giả (`YeuCauKhoaTaiKhoan`) | nhóm | Xong: thủ thư gửi/hủy, Admin duyệt/từ chối; duyệt sẽ khóa tài khoản, khóa thẻ và thu hồi phiên |
 
 Bộ dữ liệu demo trong `Database/AllTablesAndDemoData.sql` có **35 đầu sách hiển thị**,
 chia đều **5 đầu sách cho mỗi thể loại** (7 thể loại); trong mỗi thể loại, số bản của 5
@@ -114,7 +115,7 @@ Ghi thông tin đăng nhập demo vào `docs/DEMO_ACCOUNTS.local.md` (đã gitig
 
 ## 6. Dữ liệu mẫu
 
-- Schema: 7 file trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/`, chạy theo thứ tự trong SETUP_GUIDE.
+- Schema: 8 file trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/`, chạy theo thứ tự trong SETUP_GUIDE.
 - Gộp schema + dữ liệu mẫu cho database trống: [`Database/AllTablesAndDemoData.sql`](Database/AllTablesAndDemoData.sql), chạy ở **SQLCMD Mode**.
 - Seeder C# có kiểm tra backup: [`Database/seeds/README.md`](Database/seeds/README.md).
 

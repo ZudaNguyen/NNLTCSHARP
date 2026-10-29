@@ -28,6 +28,7 @@ Chưa gom thành hằng số; khi sửa phải giữ đúng nguyên văn vì có
 | `DocGia.TrangThai` | `Hoạt động`, `Khóa thẻ` |
 | `NhanVien.TrangThai` | `Hoạt động`, `Ngừng hoạt động` |
 | `YeuCauMuon.TrangThai` | `Chờ duyệt`, `Đã duyệt`, `Từ chối`, `Đã hủy` |
+| `YeuCauKhoaTaiKhoan.TrangThai` | `Chờ duyệt`, `Đã duyệt`, `Từ chối`, `Đã hủy` |
 
 ## 3. Trách nhiệm từng project
 
@@ -36,10 +37,10 @@ Chưa gom thành hằng số; khi sửa phải giữ đúng nguyên văn vì có
 | `Domain` | Entity, enum (`AccountRoles`), exception nghiệp vụ | Xong |
 | `Application` | DTO, interface, service nghiệp vụ, validate | Xong cho các module quản trị |
 | `Infrastructure` | EF Core `LibraryDbContext`, repository, SQL schema | Xong cho các module quản trị |
-| `Api` | REST API dùng chung cho Desktop và Web | Xong 64 endpoint |
+| `Api` | REST API dùng chung cho Desktop và Web | Xong 77 endpoint |
 | `Desktop` | WinForms cho Admin + Thủ thư, có cả màn hình độc giả | Xong phần quản trị |
 | `Web` | ASP.NET Core MVC cho độc giả | Xong: tra cứu, mượn/đặt sách, đăng ký, lịch sử, hồ sơ |
-| `Tests` | xUnit cho nghiệp vụ `YeuCauMuonService` và `AccountService` | 14 test |
+| `Tests` | xUnit cho nghiệp vụ `YeuCauMuonService`, `YeuCauKhoaTaiKhoanService` và `AccountService` | 30 test |
 
 ## 4. Ma trận API
 
@@ -123,7 +124,31 @@ Quy tắc nghiệp vụ:
 - Duyệt lại yêu cầu `Đã duyệt` là idempotent: trả về phiếu cũ, không sinh phiếu thứ hai (dùng `IdempotencyKey` của yêu cầu).
 - Từ chối mặc định lý do `Thủ thư từ chối yêu cầu.` nếu để trống.
 
-### 4.6 Quản trị — chỉ Desktop
+### 4.6 Yêu cầu khóa tài khoản — `api/yeucau-khoa`
+
+Chỉ áp dụng cho tài khoản vai trò `DOC_GIA`. Thủ thư gửi/hủy yêu cầu của mình; **chỉ Admin** duyệt hoặc từ chối.
+
+| Method | Route | Quyền | Ghi chú |
+|---|---|---|---|
+| GET | `/api/yeucau-khoa/tai-khoan` | Staff | Danh sách tài khoản độc giả để chọn; query `search` |
+| GET | `/api/yeucau-khoa` | Staff | Admin xem tất cả; thủ thư chỉ thấy yêu cầu của mình; query `trangThai`, `search` |
+| GET | `/api/yeucau-khoa/{id}` | Staff | Kiểm tra phạm vi sở hữu với thủ thư |
+| POST | `/api/yeucau-khoa` | Thủ thư | Body `TaoYeuCauKhoaTaiKhoanDto`: `maTaiKhoan`, `lyDo` (10–500 ký tự), `thoiHanKhoaNgay` (1–365, tùy chọn) |
+| POST | `/api/yeucau-khoa/{id}/huy` | Thủ thư | Chỉ hủy yêu cầu `Chờ duyệt` do chính mình gửi |
+| POST | `/api/yeucau-khoa/{id}/duyet` | Admin | Khóa tài khoản + thẻ độc giả và thu hồi mọi phiên đăng nhập |
+| POST | `/api/yeucau-khoa/{id}/tu-choi` | Admin | Body `TuChoiYeuCauKhoaTaiKhoanDto` (`lyDo` tùy chọn, tối đa 500 ký tự) |
+
+Quy tắc nghiệp vụ:
+
+- Thủ thư **không** được đổi `TaiKhoan.TrangThai`; chỉ gửi yêu cầu kèm lý do để Admin quyết định.
+- Mỗi tài khoản chỉ có **một** yêu cầu `Chờ duyệt` (filtered unique index `UX_YeuCauKhoaTaiKhoan_DangCho`); `IdempotencyKey` cũng unique.
+- Không gửi được nếu tài khoản không phải `DOC_GIA`, tài khoản đã `Bị khóa`, hoặc thẻ đã `Khóa thẻ`.
+- Duyệt yêu cầu: `TaiKhoan.TrangThai = Bị khóa`, `DocGia.TrangThai = Khóa thẻ`, thu hồi tất cả phiên còn hiệu lực. Duyệt lại yêu cầu `Đã duyệt` là idempotent.
+- `ThoiHanKhoaNgay` chỉ là thông tin nghiệp vụ để Admin tham khảo; **không** tự mở khóa khi hết hạn. Mở khóa vẫn thực hiện thủ công ở màn hình Tài khoản/Độc giả.
+- Từ chối mặc định lý do `Admin từ chối yêu cầu khóa tài khoản.` nếu để trống.
+- Desktop: Manager dùng mục **Yêu cầu khóa tài khoản** (NGHIỆP VỤ), Admin dùng **Duyệt khóa tài khoản** (QUẢN TRỊ). Cùng một control `YeuCauKhoaTaiKhoanControl` với cờ `isAdmin`.
+
+### 4.7 Quản trị — chỉ Desktop
 
 | Nhóm | Route gốc | Quyền |
 |---|---|---|
@@ -132,7 +157,7 @@ Quy tắc nghiệp vụ:
 | Dashboard | `/api/dashboard` | Staff |
 | Báo cáo | `/api/baocao` | Staff |
 
-### 4.7 Dev only (chỉ `Development`)
+### 4.8 Dev only (chỉ `Development`)
 
 | Method | Route | Quyền |
 |---|---|---|
