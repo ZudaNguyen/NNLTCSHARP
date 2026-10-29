@@ -24,7 +24,9 @@ namespace QuanLyThuVien.Desktop.UserControls
         {
             InitializeComponent();
             SetupSplitUI();
+            ApDungGioiHanNhap();
             LoadMockData();
+            UI.ScrollableView.Configure(this, new Size(1060, 560));
         }
 
         private void SetupSplitUI()
@@ -60,7 +62,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblTLTitle = new Label
             {
                 Text = "🔖 Danh Mục Thể Loại (Bảng TheLoai)",
-                Font = new Font("Georgia", 11, FontStyle.Bold),
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
                 ForeColor = Burgundy,
                 Location = new Point(5, 5),
                 AutoSize = true
@@ -97,7 +99,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             btnThemTL.Click += BtnThemTL_Click;
             btnSuaTL.Click += BtnSuaTL_Click;
             btnXoaTL.Click += BtnXoaTL_Click;
-            btnMoiTL.Click += (s, e) => { txtMaTheLoai.Clear(); txtTenTheLoai.Clear(); txtMoTaTL.Clear(); };
+            btnMoiTL.Click += (s, e) => { UI.GridSelection.Clear(dgvTheLoai); txtMaTheLoai.Clear(); txtTenTheLoai.Clear(); txtMoTaTL.Clear(); };
 
             flpTLBtns.Controls.AddRange(new Control[] { btnThemTL, btnSuaTL, btnXoaTL, btnMoiTL });
             pnlTLTop.Controls.Add(flpTLBtns);
@@ -111,14 +113,12 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvTheLoai.Columns["MoTa"].FillWeight = 150;
             dgvTheLoai.Columns.Add("TrangThai", "Trạng Thái");
             dgvTheLoai.Columns["TrangThai"].FillWeight = 70;
-            dgvTheLoai.CellClick += (s, e) =>
+            UI.GridSelection.Bind(dgvTheLoai, row =>
             {
-                if (e.RowIndex < 0) return;
-                var row = dgvTheLoai.Rows[e.RowIndex];
                 txtMaTheLoai.Text = row.Cells["MaTL"].Value?.ToString();
                 txtTenTheLoai.Text = row.Cells["TenTL"].Value?.ToString();
                 txtMoTaTL.Text = row.Cells["MoTa"].Value?.ToString();
-            };
+            }, () => txtMaTheLoai.Clear(), btnSuaTL, btnXoaTL);
 
             pnlTheLoai.Controls.Add(dgvTheLoai);
             pnlTheLoai.Controls.Add(pnlTLTop);
@@ -139,7 +139,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblTGTitle = new Label
             {
                 Text = "✒️ Hồ Sơ Tác Giả (Bảng TacGia)",
-                Font = new Font("Georgia", 11, FontStyle.Bold),
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
                 ForeColor = Burgundy,
                 Location = new Point(5, 5),
                 AutoSize = true
@@ -179,7 +179,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             btnThemTG.Click += BtnThemTG_Click;
             btnSuaTG.Click += BtnSuaTG_Click;
             btnXoaTG.Click += BtnXoaTG_Click;
-            btnMoiTG.Click += (s, e) => { txtMaTacGia.Clear(); txtTenTacGia.Clear(); txtQuocTich.Clear(); txtGioiThieuTG.Clear(); };
+            btnMoiTG.Click += (s, e) => { UI.GridSelection.Clear(dgvTacGia); txtMaTacGia.Clear(); txtTenTacGia.Clear(); txtQuocTich.Clear(); txtGioiThieuTG.Clear(); };
 
             flpTGBtns.Controls.AddRange(new Control[] { btnThemTG, btnSuaTG, btnXoaTG, btnMoiTG });
             pnlTGTop.Controls.Add(flpTGBtns);
@@ -195,15 +195,13 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvTacGia.Columns["GioiThieu"].FillWeight = 140;
             dgvTacGia.Columns.Add("TrangThai", "Trạng Thái");
             dgvTacGia.Columns["TrangThai"].FillWeight = 70;
-            dgvTacGia.CellClick += (s, e) =>
+            UI.GridSelection.Bind(dgvTacGia, row =>
             {
-                if (e.RowIndex < 0) return;
-                var row = dgvTacGia.Rows[e.RowIndex];
                 txtMaTacGia.Text = row.Cells["MaTG"].Value?.ToString();
                 txtTenTacGia.Text = row.Cells["TenTG"].Value?.ToString();
                 txtQuocTich.Text = row.Cells["QuocTich"].Value?.ToString();
                 txtGioiThieuTG.Text = row.Cells["GioiThieu"].Value?.ToString();
-            };
+            }, () => txtMaTacGia.Clear(), btnSuaTG, btnXoaTG);
 
             pnlTacGia.Controls.Add(dgvTacGia);
             pnlTacGia.Controls.Add(pnlTGTop);
@@ -236,7 +234,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
-            dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9, FontStyle.Bold);
+            dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9, FontStyle.Bold);
 
             dgv.DefaultCellStyle.BackColor = CardBg;
             dgv.DefaultCellStyle.ForeColor = WoodDark;
@@ -278,7 +276,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Text = text,
                 Size = new Size(92, 32),
                 Margin = new Padding(0, 0, 8, 0),
-                Font = new Font("Georgia", 8.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
                 BackColor = bg,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -288,70 +286,168 @@ namespace QuanLyThuVien.Desktop.UserControls
             return btn;
         }
 
+        // Giới hạn độ dài khớp cột trong DB
+        private void ApDungGioiHanNhap()
+        {
+            txtTenTheLoai.MaxLength = 100;   // TheLoai.TenTheLoai nvarchar(100)
+            txtMoTaTL.MaxLength = 500;       // TheLoai.MoTa nvarchar(500)
+            txtTenTacGia.MaxLength = 150;    // TacGia.TenTacGia nvarchar(150)
+            txtQuocTich.MaxLength = 100;     // TacGia.QuocTich nvarchar(100)
+            txtGioiThieuTG.MaxLength = 500;  // TacGia.GioiThieu nvarchar(500)
+        }
+
+        private static int MaTiepTheo(DataGridView dgv, string cot)
+        {
+            int max = 0;
+            foreach (DataGridViewRow r in dgv.Rows)
+            {
+                if (int.TryParse(r.Cells[cot].Value?.ToString(), out int v) && v > max) max = v;
+            }
+            return max + 1;
+        }
+
+        // Kiểm tra trùng tên (không phân biệt hoa/thường), tính cả dòng đã ẩn
+        private static bool TrungTen(DataGridView dgv, string cotMa, string cotTen, string ten, string maHienTai)
+        {
+            foreach (DataGridViewRow r in dgv.Rows)
+            {
+                string ma = r.Cells[cotMa].Value?.ToString() ?? "";
+                if (ma == maHienTai) continue;
+                if (string.Equals(r.Cells[cotTen].Value?.ToString()?.Trim(), ten, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
         private void LoadMockData()
         {
             dgvTheLoai.Rows.Add("1", "Công nghệ thông tin", "Sách lập trình, CSDL, mạng máy tính", "Hoạt động");
             dgvTheLoai.Rows.Add("2", "Văn học kinh điển", "Tiểu thuyết, tác phẩm văn học nổi tiếng", "Hoạt động");
             dgvTheLoai.Rows.Add("3", "Kinh tế - Quản trị", "Kiến thức quản lý, tài chính doanh nghiệp", "Hoạt động");
+            dgvTheLoai.Rows.Add("4", "Kỹ năng sống", "Phát triển bản thân, giao tiếp", "Hoạt động");
 
             dgvTacGia.Rows.Add("1", "Robert C. Martin", "Mỹ", "Chuyên gia kỹ nghệ phần mềm (Uncle Bob)", "Hoạt động");
             dgvTacGia.Rows.Add("2", "Đỗ Như Tài", "Việt Nam", "Giảng viên CNTT, tác giả giáo trình C#", "Hoạt động");
             dgvTacGia.Rows.Add("3", "Paulo Coelho", "Brazil", "Tiểu thuyết gia nổi tiếng với Nhà Giả Kim", "Hoạt động");
+            dgvTacGia.Rows.Add("4", "Dale Carnegie", "Mỹ", "Tác giả Đắc Nhân Tâm", "Hoạt động");
+            dgvTacGia.Rows.Add("5", "Nguyễn Nhật Ánh", "Việt Nam", "Nhà văn Việt Nam", "Hoạt động");
         }
 
         // --- SỰ KIỆN THỂ LOẠI ---
-        private void BtnThemTL_Click(object sender, EventArgs e)
+        private void BtnThemTL_Click(object? sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtTenTheLoai.Text))
+            string ten = txtTenTheLoai.Text.Trim();
+            if (string.IsNullOrWhiteSpace(ten))
             {
                 MessageBox.Show("Tên thể loại không được để trống!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            int id = dgvTheLoai.Rows.Count + 1;
-            dgvTheLoai.Rows.Add(id.ToString(), txtTenTheLoai.Text.Trim(), txtMoTaTL.Text.Trim(), "Hoạt động");
+            if (TrungTen(dgvTheLoai, "MaTL", "TenTL", ten, ""))
+            {
+                MessageBox.Show("Thể loại này đã tồn tại!", "Trùng dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            dgvTheLoai.Rows.Add(MaTiepTheo(dgvTheLoai, "MaTL").ToString(), ten, txtMoTaTL.Text.Trim(), "Hoạt động");
+            UI.GridSelection.Clear(dgvTheLoai);
             txtMaTheLoai.Clear(); txtTenTheLoai.Clear(); txtMoTaTL.Clear();
+            MessageBox.Show("Đã thêm Thể loại!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void BtnSuaTL_Click(object sender, EventArgs e)
+        private void BtnSuaTL_Click(object? sender, EventArgs e)
         {
-            if (dgvTheLoai.CurrentRow == null || string.IsNullOrEmpty(txtMaTheLoai.Text)) return;
-            dgvTheLoai.CurrentRow.Cells["TenTL"].Value = txtTenTheLoai.Text.Trim();
+            if (dgvTheLoai.CurrentRow == null || string.IsNullOrEmpty(txtMaTheLoai.Text))
+            {
+                MessageBox.Show("Vui lòng chọn một thể loại dưới bảng để cập nhật!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            string ten = txtTenTheLoai.Text.Trim();
+            if (string.IsNullOrWhiteSpace(ten))
+            {
+                MessageBox.Show("Tên thể loại không được để trống!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (TrungTen(dgvTheLoai, "MaTL", "TenTL", ten, txtMaTheLoai.Text))
+            {
+                MessageBox.Show("Tên thể loại này đã tồn tại!", "Trùng dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            dgvTheLoai.CurrentRow.Cells["TenTL"].Value = ten;
             dgvTheLoai.CurrentRow.Cells["MoTa"].Value = txtMoTaTL.Text.Trim();
             MessageBox.Show("Đã cập nhật Thể loại!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void BtnXoaTL_Click(object sender, EventArgs e)
+        private void BtnXoaTL_Click(object? sender, EventArgs e)
         {
-            if (dgvTheLoai.CurrentRow == null) return;
+            if (dgvTheLoai.CurrentRow == null || string.IsNullOrEmpty(txtMaTheLoai.Text))
+            {
+                MessageBox.Show("Vui lòng chọn một thể loại dưới bảng trước khi ẩn!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            string ten = dgvTheLoai.CurrentRow.Cells["TenTL"].Value?.ToString() ?? "";
+            // TODO(API): chặn ẩn nếu vẫn còn sách đang dùng thể loại này
+            if (MessageBox.Show($"Chuyển thể loại [{ten}] sang trạng thái Ẩn (xóa mềm)?", "Xác nhận xóa mềm",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
             dgvTheLoai.CurrentRow.Cells["TrangThai"].Value = "Đã ẩn";
             MessageBox.Show("Đã chuyển Thể loại sang trạng thái Ẩn (IsDeleted = 1)!", "Xóa mềm", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         // --- SỰ KIỆN TÁC GIẢ ---
-        private void BtnThemTG_Click(object sender, EventArgs e)
+        private void BtnThemTG_Click(object? sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtTenTacGia.Text))
+            string ten = txtTenTacGia.Text.Trim();
+            if (string.IsNullOrWhiteSpace(ten))
             {
                 MessageBox.Show("Tên tác giả không được để trống!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            int id = dgvTacGia.Rows.Count + 1;
-            dgvTacGia.Rows.Add(id.ToString(), txtTenTacGia.Text.Trim(), txtQuocTich.Text.Trim(), txtGioiThieuTG.Text.Trim(), "Hoạt động");
+            if (TrungTen(dgvTacGia, "MaTG", "TenTG", ten, ""))
+            {
+                MessageBox.Show("Tác giả này đã tồn tại!", "Trùng dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            dgvTacGia.Rows.Add(MaTiepTheo(dgvTacGia, "MaTG").ToString(), ten, txtQuocTich.Text.Trim(), txtGioiThieuTG.Text.Trim(), "Hoạt động");
+            UI.GridSelection.Clear(dgvTacGia);
             txtMaTacGia.Clear(); txtTenTacGia.Clear(); txtQuocTich.Clear(); txtGioiThieuTG.Clear();
+            MessageBox.Show("Đã thêm Tác giả!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void BtnSuaTG_Click(object sender, EventArgs e)
+        private void BtnSuaTG_Click(object? sender, EventArgs e)
         {
-            if (dgvTacGia.CurrentRow == null || string.IsNullOrEmpty(txtMaTacGia.Text)) return;
-            dgvTacGia.CurrentRow.Cells["TenTG"].Value = txtTenTacGia.Text.Trim();
+            if (dgvTacGia.CurrentRow == null || string.IsNullOrEmpty(txtMaTacGia.Text))
+            {
+                MessageBox.Show("Vui lòng chọn một tác giả dưới bảng để cập nhật!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            string ten = txtTenTacGia.Text.Trim();
+            if (string.IsNullOrWhiteSpace(ten))
+            {
+                MessageBox.Show("Tên tác giả không được để trống!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (TrungTen(dgvTacGia, "MaTG", "TenTG", ten, txtMaTacGia.Text))
+            {
+                MessageBox.Show("Tên tác giả này đã tồn tại!", "Trùng dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            dgvTacGia.CurrentRow.Cells["TenTG"].Value = ten;
             dgvTacGia.CurrentRow.Cells["QuocTich"].Value = txtQuocTich.Text.Trim();
             dgvTacGia.CurrentRow.Cells["GioiThieu"].Value = txtGioiThieuTG.Text.Trim();
             MessageBox.Show("Đã cập nhật Tác giả!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void BtnXoaTG_Click(object sender, EventArgs e)
+        private void BtnXoaTG_Click(object? sender, EventArgs e)
         {
-            if (dgvTacGia.CurrentRow == null) return;
+            if (dgvTacGia.CurrentRow == null || string.IsNullOrEmpty(txtMaTacGia.Text))
+            {
+                MessageBox.Show("Vui lòng chọn một tác giả dưới bảng trước khi ẩn!", "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            string ten = dgvTacGia.CurrentRow.Cells["TenTG"].Value?.ToString() ?? "";
+            // TODO(API): chặn ẩn nếu vẫn còn sách đang dùng tác giả này
+            if (MessageBox.Show($"Chuyển tác giả [{ten}] sang trạng thái Ẩn (xóa mềm)?", "Xác nhận xóa mềm",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
             dgvTacGia.CurrentRow.Cells["TrangThai"].Value = "Đã ẩn";
             MessageBox.Show("Đã chuyển Tác giả sang trạng thái Ẩn (IsDeleted = 1)!", "Xóa mềm", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }

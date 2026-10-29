@@ -34,6 +34,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             InitializeComponent();
             SetupDocGiaUI();
             LoadMockData();
+            UI.ScrollableView.Configure(this, new Size(1000, 550));
         }
 
         private void SetupDocGiaUI()
@@ -56,7 +57,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblTitle = new Label
             {
                 Text = "🪪 Hồ sơ Đăng ký & Quản lý Thẻ Độc Giả (Bảng DocGia)",
-                Font = new Font("Georgia", 11.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 11.5f, FontStyle.Bold),
                 ForeColor = Burgundy,
                 Location = new Point(15, 10),
                 AutoSize = true
@@ -84,6 +85,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             AddLabel(pnlForm, "Họ và tên (*):", 15, 85);
             txtHoTen = AddTextBox(pnlForm, 105, 82, 285);
+            txtHoTen.MaxLength = 150;      // DocGia.HoTen nvarchar(150)
 
             AddLabel(pnlForm, "Ngày sinh:", 15, 125);
             dtpNgaySinh = new DateTimePicker
@@ -99,6 +101,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             // Cột 2: SĐT, Email, Địa chỉ, Ngày ĐK, Trạng thái
             AddLabel(pnlForm, "Điện thoại (*):", 420, 45);
             txtSoDienThoai = AddTextBox(pnlForm, 520, 42, 150);
+            txtSoDienThoai.MaxLength = 15; // DocGia.SoDienThoai varchar(15)
 
             AddLabel(pnlForm, "Ngày cấp thẻ:", 685, 45);
             dtpNgayDangKy = new DateTimePicker
@@ -114,6 +117,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             AddLabel(pnlForm, "Email (Unique):", 420, 85);
             txtEmail = AddTextBox(pnlForm, 520, 82, 200);
+            txtEmail.MaxLength = 150;      // DocGia.Email varchar(150)
 
             AddLabel(pnlForm, "Trạng thái:", 730, 85);
             cboTrangThai = new ComboBox
@@ -129,6 +133,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             AddLabel(pnlForm, "Địa chỉ:", 420, 125);
             txtDiaChi = AddTextBox(pnlForm, 520, 122, 395);
+            txtDiaChi.MaxLength = 250;     // DocGia.DiaChi nvarchar(250)
 
             // Các nút chức năng
             FlowLayoutPanel flpButtons = new FlowLayoutPanel
@@ -164,7 +169,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblTim = new Label
             {
                 Text = "🔍 Tìm độc giả (Họ tên / SĐT / Email):",
-                Font = new Font("Georgia", 10, FontStyle.Bold),
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 ForeColor = WoodDark,
                 Location = new Point(5, 16),
                 AutoSize = true
@@ -231,7 +236,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             dgvDocGia.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgvDocGia.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
-            dgvDocGia.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
+            dgvDocGia.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
 
             dgvDocGia.DefaultCellStyle.BackColor = CardBg;
             dgvDocGia.DefaultCellStyle.ForeColor = WoodDark;
@@ -257,7 +262,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvDocGia.Columns.Add("TrangThai", "Trạng Thái");
             dgvDocGia.Columns["TrangThai"].FillWeight = 75;
 
-            dgvDocGia.CellClick += DgvDocGia_CellClick;
+            UI.GridSelection.Bind(dgvDocGia, LoadSelectedDocGia, () => txtMaDocGia.Clear(), btnSua, btnKhoaMo);
             pnlGrid.Controls.Add(dgvDocGia);
 
             this.Controls.Add(pnlGrid);
@@ -298,7 +303,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Text = text,
                 Size = new Size(195, 36),
                 Margin = new Padding(0, 0, 12, 0),
-                Font = new Font("Georgia", 9.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 BackColor = bg,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -321,6 +326,13 @@ namespace QuanLyThuVien.Desktop.UserControls
             {
                 MessageBox.Show("Họ và tên độc giả không được để trống!", "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtHoTen.Focus();
+                return false;
+            }
+
+            if (dtpNgaySinh.Value.Date >= DateTime.Today)
+            {
+                MessageBox.Show("Ngày sinh phải nhỏ hơn ngày hiện tại!", "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                dtpNgaySinh.Focus();
                 return false;
             }
 
@@ -404,20 +416,24 @@ namespace QuanLyThuVien.Desktop.UserControls
         {
             if (dgvDocGia.CurrentRow == null) return;
 
-            string currentStatus = dgvDocGia.CurrentRow.Cells["TrangThai"].Value.ToString();
+            string currentStatus = dgvDocGia.CurrentRow.Cells["TrangThai"].Value?.ToString() ?? "";
             string newStatus = currentStatus == "Hoạt động" ? "Khóa thẻ" : "Hoạt động";
+            string tenDG = dgvDocGia.CurrentRow.Cells["HoTen"].Value?.ToString() ?? "";
+
+            if (MessageBox.Show($"Chuyển thẻ của độc giả [{tenDG}] sang trạng thái [{newStatus}]?",
+                    "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
 
             // Quy tắc: Không xóa cứng dữ liệu đã phát sinh phiếu, chỉ khóa thẻ
             dgvDocGia.CurrentRow.Cells["TrangThai"].Value = newStatus;
             cboTrangThai.SelectedItem = newStatus;
 
+            FilterGrid(); // áp lại bộ lọc để danh sách khớp với trạng thái mới
             MessageBox.Show($"Đã chuyển trạng thái thẻ của độc giả sang [{newStatus}]!", "Phân quyền thẻ", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void DgvDocGia_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void LoadSelectedDocGia(DataGridViewRow row)
         {
-            if (e.RowIndex < 0) return;
-            DataGridViewRow row = dgvDocGia.Rows[e.RowIndex];
 
             txtMaDocGia.Text = row.Cells["MaDocGia"].Value?.ToString();
             txtHoTen.Text = row.Cells["HoTen"].Value?.ToString();
@@ -436,7 +452,10 @@ namespace QuanLyThuVien.Desktop.UserControls
         private void FilterGrid()
         {
             string kw = txtTimKiem.Text.Trim().ToLower();
-            string st = cboLocTrangThai.SelectedIndex > 0 ? cboLocTrangThai.SelectedItem.ToString() : "";
+            string st = cboLocTrangThai.SelectedIndex > 0 ? cboLocTrangThai.SelectedItem?.ToString() ?? "" : "";
+
+            // Không thể ẩn dòng đang là dòng hiện hành (ném InvalidOperationException) -> bỏ chọn trước
+            dgvDocGia.CurrentCell = null;
 
             foreach (DataGridViewRow row in dgvDocGia.Rows)
             {
@@ -454,6 +473,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
         private void ClearForm()
         {
+            UI.GridSelection.Clear(dgvDocGia);
             txtMaDocGia.Clear();
             txtHoTen.Clear();
             txtSoDienThoai.Clear();

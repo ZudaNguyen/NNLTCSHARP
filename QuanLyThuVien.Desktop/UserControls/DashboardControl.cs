@@ -10,6 +10,7 @@ namespace QuanLyThuVien.Desktop.UserControls
         {
             InitializeComponent();
             SetupLibraryDashboardUI();
+            UI.ScrollableView.Configure(this, new Size(1030, 480));
         }
 
         private void SetupLibraryDashboardUI()
@@ -48,7 +49,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblLedgerTitle = new Label
             {
                 Text = "✒️ Sổ theo dõi các phiếu mượn cần lưu ý (Sắp đến hạn & Quá hạn)",
-                Font = new Font("Georgia", 12, FontStyle.Bold),
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = woodDark,
                 Dock = DockStyle.Top,
                 Height = 38
@@ -74,7 +75,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             // Trang trí Header của bảng giống sổ sách
             dgvRecent.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgvRecent.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
-            dgvRecent.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 10, FontStyle.Bold);
+            dgvRecent.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Bold);
 
             // Màu dòng khi click chọn
             dgvRecent.DefaultCellStyle.BackColor = cardBg;
@@ -89,9 +90,20 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvRecent.Columns.Add("HanTra", "Hạn Hoàn Trả");
             dgvRecent.Columns.Add("TrangThai", "Tình Trạng");
 
-            dgvRecent.Rows.Add("PM-001", "Nguyễn Văn A", "Lập trình C# Toàn tập", "01/10/2026", "15/10/2026", "⚠️ Quá hạn 6 ngày");
-            dgvRecent.Rows.Add("PM-002", "Trần Thị B", "Cơ sở dữ liệu SQL Server", "10/10/2026", "24/10/2026", "📖 Đang đọc");
-            dgvRecent.Rows.Add("PM-003", "Lê Hoàng C", "Thiết kế Kiến trúc Phần mềm", "05/10/2026", "19/10/2026", "⚠️ Quá hạn 2 ngày");
+            // TODO(API): thay dữ liệu mẫu (và 4 số liệu ở trên) bằng dữ liệu từ API.
+            // Tình trạng được TÍNH từ hạn trả, không ghi cứng chữ "Quá hạn N ngày".
+            var phieuMau = new (string Ma, string DG, string Sach, DateTime Muon, DateTime Han)[]
+            {
+                ("PM-001", "Nguyễn Văn A", "Lập trình C# Toàn tập", new DateTime(2026, 10, 1), new DateTime(2026, 10, 15)),
+                ("PM-002", "Trần Thị B", "Cơ sở dữ liệu SQL Server", new DateTime(2026, 10, 10), new DateTime(2026, 10, 24)),
+                ("PM-003", "Lê Hoàng C", "Thiết kế Kiến trúc Phần mềm", new DateTime(2026, 10, 5), new DateTime(2026, 10, 19))
+            };
+            foreach (var p in phieuMau)
+            {
+                int ngayTre = (DateTime.Today - p.Han.Date).Days;
+                string tinhTrang = ngayTre > 0 ? $"⚠️ Quá hạn {ngayTre} ngày" : "📖 Đang đọc";
+                dgvRecent.Rows.Add(p.Ma, p.DG, p.Sach, p.Muon.ToString("dd/MM/yyyy"), p.Han.ToString("dd/MM/yyyy"), tinhTrang);
+            }
 
             pnlLedger.Controls.Add(dgvRecent);
             pnlLedger.Controls.Add(lblLedgerTitle);
@@ -121,7 +133,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblTitle = new Label
             {
                 Text = title,
-                Font = new Font("Georgia", 9.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 ForeColor = Color.FromArgb(90, 70, 55),
                 Location = new Point(18, 14),
                 AutoSize = true
@@ -130,7 +142,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblValue = new Label
             {
                 Text = value,
-                Font = new Font("Georgia", 21, FontStyle.Bold),
+                Font = new Font("Segoe UI", 21, FontStyle.Bold),
                 ForeColor = spineColor,
                 Location = new Point(16, 40),
                 AutoSize = true

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
+using QuanLyThuVien.Desktop.Models;
 
 namespace QuanLyThuVien.Desktop.UserControls
 {
@@ -45,11 +47,32 @@ namespace QuanLyThuVien.Desktop.UserControls
         }
         private Dictionary<string, List<ChiTietItem>> mockChiTietData = new Dictionary<string, List<ChiTietItem>>();
 
-        public MuonTraControl()
+        // Thông tin phiếu gắn vào Tag của dòng (không phải đọc/ghép lại từ chuỗi hiển thị)
+        private class PhieuItem
         {
+            public string Ma { get; set; } = "";
+            public DateTime HanTra { get; set; }
+        }
+
+        private const string ChuaTra = "Chưa trả";
+
+        private readonly string _currentUser;      // thủ thư đang đăng nhập (ghi vào phiếu)
+        private ChiTietItem? _selectedChiTiet;
+        private bool _loadingChiTiet;
+        private string? _loadedMaPhieu;
+        private int _soPhieuTiepTheo = 1;
+        private List<SachItem> _kho = new List<SachItem>();
+        private List<DocGiaItem> _docGias = new List<DocGiaItem>();
+
+        public MuonTraControl() : this(string.Empty) { }
+
+        public MuonTraControl(string currentUser)
+        {
+            _currentUser = currentUser;
             InitializeComponent();
             SetupMuonTraUI();
             LoadMockData();
+            UI.ScrollableView.Configure(this, new Size(1040, 700));
         }
 
         private void SetupMuonTraUI()
@@ -72,7 +95,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblTitleCreate = new Label
             {
                 Text = "✒️ Lập Phiếu Mượn Sách Mới (Ghi Sổ Mượn)",
-                Font = new Font("Georgia", 11, FontStyle.Bold),
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
                 ForeColor = Burgundy,
                 Location = new Point(15, 10),
                 AutoSize = true
@@ -80,7 +103,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             pnlCreateLoan.Controls.Add(lblTitleCreate);
 
             // Cột trái: Độc giả, Ngày mượn, Hạn trả
-            AddLabel(pnlCreateLoan, "Thẻ Độc giả (*):", 15, 42);
+            AddLabel(pnlCreateLoan, "Độc giả (*):", 15, 42);
             cboDocGia = new ComboBox
             {
                 Location = new Point(130, 39),
@@ -97,7 +120,8 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Width = 125,
                 Font = new Font("Segoe UI", 9.5f),
                 Format = DateTimePickerFormat.Short,
-                Value = DateTime.Now
+                Value = DateTime.Today,
+                Enabled = false // Ngày mượn = ngày hiện tại (khi có API sẽ do server quyết định)
             };
             pnlCreateLoan.Controls.Add(dtpNgayMuon);
 
@@ -108,7 +132,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Width = 125,
                 Font = new Font("Segoe UI", 9.5f),
                 Format = DateTimePickerFormat.Short,
-                Value = DateTime.Now.AddDays(14) // Mặc định cho mượn 14 ngày
+                Value = DateTime.Today.AddDays(BusinessRules.SoNgayMuonMacDinh)
             };
             pnlCreateLoan.Controls.Add(dtpHanTra);
 
@@ -117,7 +141,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Text = "📜 Lập Phiếu Mượn",
                 Location = new Point(265, 77),
                 Size = new Size(135, 65),
-                Font = new Font("Georgia", 9.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 BackColor = ForestGreen,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
@@ -164,7 +188,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblMasterTitle = new Label
             {
                 Text = "📚 Danh sách Sổ Phiếu Mượn",
-                Font = new Font("Georgia", 10.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 10.5f, FontStyle.Bold),
                 ForeColor = WoodDark,
                 Location = new Point(0, 6),
                 AutoSize = true
@@ -191,7 +215,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvPhieuMuon.Columns.Add("NgayMuon", "Ngày Mượn");
             dgvPhieuMuon.Columns.Add("HanTra", "Hạn Trả");
             dgvPhieuMuon.Columns.Add("TrangThai", "Trạng Thái Phiếu");
-            dgvPhieuMuon.SelectionChanged += DgvPhieuMuon_SelectionChanged;
+            dgvPhieuMuon.CurrentCellChanged += DgvPhieuMuon_CurrentCellChanged;
 
             pnlMasterBox.Controls.Add(dgvPhieuMuon);
             pnlMasterBox.Controls.Add(pnlMasterTop);
@@ -221,7 +245,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblReturnTitle = new Label
             {
                 Text = "⚖️ Nghiệp vụ Nhận Trả & Tính Phạt",
-                Font = new Font("Georgia", 10, FontStyle.Bold),
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 ForeColor = Burgundy,
                 Location = new Point(10, 8),
                 AutoSize = true
@@ -244,9 +268,9 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Width = 185,
                 Font = new Font("Segoe UI", 9),
                 Format = DateTimePickerFormat.Short,
-                Value = DateTime.Now
+                Value = DateTime.Today,
+                Enabled = false // Ngày trả = hôm nay, không cho chỉnh tay để tránh lùi ngày né phạt
             };
-            dtpNgayTra.ValueChanged += (s, e) => TinhTienPhatTuDong();
 
             AddLabel(pnlReturnAction, "Tình trạng:", 10, 95);
             cboTinhTrangTra = new ComboBox
@@ -256,7 +280,11 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Font = new Font("Segoe UI", 9),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
-            cboTinhTrangTra.Items.AddRange(new object[] { "Nguyên vẹn (Tốt)", "Rách / Bẩn nhẹ (+20.000đ)", "Hư hỏng nặng / Mất (+100.000đ)" });
+            cboTinhTrangTra.Items.AddRange(new object[] {
+                "Nguyên vẹn (Tốt)",
+                $"Rách / Bẩn nhẹ (+{BusinessRules.PhiSachRach:N0}đ)",
+                $"Hư hỏng nặng / Mất (+{BusinessRules.PhiSachHuHong:N0}đ)"
+            });
             cboTinhTrangTra.SelectedIndex = 0;
             cboTinhTrangTra.SelectedIndexChanged += (s, e) => TinhTienPhatTuDong();
 
@@ -267,9 +295,9 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Width = 185,
                 Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 ForeColor = Burgundy,
-                Maximum = 5000000,
-                Increment = 5000,
-                ThousandsSeparator = true
+                Maximum = BusinessRules.TienPhatToiDa,
+                ThousandsSeparator = true,
+                Enabled = false // Tiền phạt do hệ thống tính; không cho sửa tay
             };
 
             btnXacNhanTra = new Button
@@ -277,11 +305,12 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Text = "✔️ Xác Nhận Trả Sách & Cộng Kho",
                 Location = new Point(10, 158),
                 Size = new Size(280, 36),
-                Font = new Font("Georgia", 9.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 BackColor = Burgundy,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Enabled = false // chỉ bật sau khi chọn một ấn phẩm chưa trả
             };
             btnXacNhanTra.FlatAppearance.BorderSize = 0;
             btnXacNhanTra.Click += BtnXacNhanTra_Click;
@@ -295,7 +324,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblDetailTitle = new Label
             {
                 Text = "📖 Chi tiết các ấn phẩm trong phiếu đang chọn (Bảng ChiTiet_PhieuMuon)",
-                Font = new Font("Georgia", 10.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 10.5f, FontStyle.Bold),
                 ForeColor = WoodDark,
                 Dock = DockStyle.Top,
                 Height = 28
@@ -311,7 +340,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvChiTiet.Columns.Add("NgayTra", "Ngày Trả Thực Tế");
             dgvChiTiet.Columns.Add("TienPhat", "Tiền Phạt (VNĐ)");
             dgvChiTiet.Columns.Add("TinhTrang", "Tình Trạng Sách");
-            dgvChiTiet.CellClick += DgvChiTiet_CellClick;
+            dgvChiTiet.CurrentCellChanged += DgvChiTiet_CurrentCellChanged;
 
             pnlDetailLeft.Controls.Add(dgvChiTiet);
             pnlDetailLeft.Controls.Add(lblDetailTitle);
@@ -350,7 +379,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
-            dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9, FontStyle.Bold);
+            dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9, FontStyle.Bold);
 
             dgv.DefaultCellStyle.BackColor = CardBg;
             dgv.DefaultCellStyle.ForeColor = WoodDark;
@@ -373,211 +402,325 @@ namespace QuanLyThuVien.Desktop.UserControls
 
         private void LoadMockData()
         {
-            // Danh sách độc giả (Có người hoạt động, có người bị khóa để test quy tắc nghiệp vụ)
-            cboDocGia.Items.AddRange(new object[] {
-                "DG001 - Nguyễn Văn A (Hoạt động)",
-                "DG002 - Trần Thị B (Hoạt động)",
-                "DG003 - Lê Hoàng C (Đang khóa thẻ)"
-            });
-            cboDocGia.SelectedIndex = 0;
+            // Độc giả (mô phỏng dữ liệu từ API). Chỉ độc giả đang hoạt động mới xuất hiện để lập phiếu.
+            _docGias = new List<DocGiaItem>
+            {
+                new DocGiaItem { MaDocGia = "DG001", HoTen = "Nguyễn Văn A", HoatDong = true },
+                new DocGiaItem { MaDocGia = "DG002", HoTen = "Trần Thị B", HoatDong = true },
+                new DocGiaItem { MaDocGia = "DG003", HoTen = "Lê Hoàng C", HoatDong = false }
+            };
+            cboDocGia.Items.Clear();
+            foreach (var dg in _docGias)
+            {
+                if (dg.HoatDong) cboDocGia.Items.Add(dg);
+            }
+            if (cboDocGia.Items.Count > 0) cboDocGia.SelectedIndex = 0;
 
-            // Danh sách sách còn trong kho
-            clbSachMuon.Items.AddRange(new object[] {
-                "S01 - Clean Code - Mã Sạch (Còn: 15)",
-                "S02 - Giáo trình Lập trình C# .NET (Còn: 42)",
-                "S04 - Thiết kế Cơ sở dữ liệu SQL Server (Còn: 8)",
-                "S05 - Kiến trúc Phần mềm Hiện đại (Còn: 5)"
-            });
+            // Kho sách (mô phỏng). Số lượng còn được trừ/cộng khi mượn/trả.
+            _kho = new List<SachItem>
+            {
+                new SachItem { MaSach = "S01", TenSach = "Clean Code - Mã Sạch", SoLuongCon = 15 },
+                new SachItem { MaSach = "S02", TenSach = "Giáo trình Lập trình C# .NET", SoLuongCon = 42 },
+                new SachItem { MaSach = "S04", TenSach = "Thiết kế Cơ sở dữ liệu SQL Server", SoLuongCon = 8 },
+                new SachItem { MaSach = "S05", TenSach = "Kiến trúc Phần mềm Hiện đại", SoLuongCon = 5 }
+            };
+            RefreshSachList();
 
-            // Dữ liệu mẫu Bảng Master (PhieuMuon)
-            dgvPhieuMuon.Rows.Add("PM-001", "Nguyễn Văn A", "thuthu01", "01/10/2026", "15/10/2026", "Quá hạn");
-            dgvPhieuMuon.Rows.Add("PM-002", "Trần Thị B", "admin", "12/10/2026", "26/10/2026", "Đang mượn");
-
-            // Dữ liệu mẫu Bảng Detail (ChiTiet_PhieuMuon)
+            // Chi tiết phiếu trước, rồi mới thêm dòng phiếu (CurrentCellChanged sẽ đọc chi tiết)
             mockChiTietData["PM-001"] = new List<ChiTietItem>
             {
-                new ChiTietItem { MaSach = "S01", TenSach = "Clean Code - Mã Sạch", SoLuong = 1, NgayTra = "Chưa trả", TienPhat = 0, TinhTrang = "Đang mượn" },
+                new ChiTietItem { MaSach = "S01", TenSach = "Clean Code - Mã Sạch", SoLuong = 1, NgayTra = ChuaTra, TienPhat = 0, TinhTrang = "Đang mượn" },
                 new ChiTietItem { MaSach = "S02", TenSach = "Giáo trình Lập trình C# .NET", SoLuong = 1, NgayTra = "14/10/2026", TienPhat = 0, TinhTrang = "Nguyên vẹn (Tốt)" }
             };
-
             mockChiTietData["PM-002"] = new List<ChiTietItem>
             {
-                new ChiTietItem { MaSach = "S04", TenSach = "Thiết kế Cơ sở dữ liệu SQL Server", SoLuong = 1, NgayTra = "Chưa trả", TienPhat = 0, TinhTrang = "Đang mượn" }
+                new ChiTietItem { MaSach = "S04", TenSach = "Thiết kế Cơ sở dữ liệu SQL Server", SoLuong = 1, NgayTra = ChuaTra, TienPhat = 0, TinhTrang = "Đang mượn" }
             };
 
+            ThemDongPhieu("PM-001", "Nguyễn Văn A", "thuthu01", new DateTime(2026, 10, 1), new DateTime(2026, 10, 15));
+            ThemDongPhieu("PM-002", "Trần Thị B", "admin", new DateTime(2026, 10, 12), new DateTime(2026, 10, 26));
+            _soPhieuTiepTheo = 3;
+
+            CapNhatTrangThaiTatCa();
+
             if (dgvPhieuMuon.Rows.Count > 0)
+            {
+                dgvPhieuMuon.CurrentCell = dgvPhieuMuon.Rows[0].Cells[0];
                 LoadChiTietByMaPhieu("PM-001");
+            }
         }
 
-        private void DgvPhieuMuon_SelectionChanged(object sender, EventArgs e)
+        private DataGridViewRow ThemDongPhieu(string ma, string docGia, string nhanVien, DateTime ngayMuon, DateTime hanTra)
         {
-            if (dgvPhieuMuon.CurrentRow == null) return;
-            string maPhieu = dgvPhieuMuon.CurrentRow.Cells["MaPhieu"].Value?.ToString();
-            if (!string.IsNullOrEmpty(maPhieu))
+            int idx = dgvPhieuMuon.Rows.Add(ma, docGia, nhanVien,
+                ngayMuon.ToString("dd/MM/yyyy"), hanTra.ToString("dd/MM/yyyy"), "Đang mượn");
+            var row = dgvPhieuMuon.Rows[idx];
+            row.Tag = new PhieuItem { Ma = ma, HanTra = hanTra }; // dữ liệu thật nằm ở Tag, không phải parse từ chữ hiển thị
+            return row;
+        }
+
+        private void RefreshSachList()
+        {
+            clbSachMuon.Items.Clear();
+            foreach (var s in _kho)
+            {
+                if (s.SoLuongCon > 0) clbSachMuon.Items.Add(s);
+            }
+        }
+
+        // Trạng thái phiếu được TÍNH từ chi tiết + hạn trả, không lưu cứng nên không bị lỗi thời
+        private string TinhTrangPhieu(string ma, DateTime hanTra)
+        {
+            if (mockChiTietData.TryGetValue(ma, out var ds) && ds.Count > 0 && ds.TrueForAll(ct => ct.NgayTra != ChuaTra))
+                return "Đã hoàn tất";
+            return hanTra.Date < DateTime.Today ? "Quá hạn" : "Đang mượn";
+        }
+
+        private void CapNhatTrangThai(DataGridViewRow row)
+        {
+            if (row.Tag is PhieuItem p)
+                row.Cells["TrangThai"].Value = TinhTrangPhieu(p.Ma, p.HanTra);
+        }
+
+        private void CapNhatTrangThaiTatCa()
+        {
+            foreach (DataGridViewRow row in dgvPhieuMuon.Rows)
+                CapNhatTrangThai(row);
+        }
+
+        private void DgvPhieuMuon_CurrentCellChanged(object? sender, EventArgs e)
+        {
+            string maPhieu = dgvPhieuMuon.CurrentRow?.Cells["MaPhieu"].Value?.ToString() ?? "";
+            if (maPhieu != _loadedMaPhieu)
                 LoadChiTietByMaPhieu(maPhieu);
         }
 
         private void LoadChiTietByMaPhieu(string maPhieu)
         {
-            dgvChiTiet.Rows.Clear();
-            if (!mockChiTietData.ContainsKey(maPhieu)) return;
-
-            foreach (var item in mockChiTietData[maPhieu])
+            _loadingChiTiet = true;
+            try
             {
-                dgvChiTiet.Rows.Add(item.MaSach, item.TenSach, item.SoLuong, item.NgayTra, item.TienPhat.ToString("N0"), item.TinhTrang);
+                _loadedMaPhieu = maPhieu;
+                dgvChiTiet.Rows.Clear();
+                ResetReturnSelection();
+                if (mockChiTietData.TryGetValue(maPhieu, out var items))
+                {
+                    foreach (var item in items)
+                        dgvChiTiet.Rows.Add(item.MaSach, item.TenSach, item.SoLuong, item.NgayTra, item.TienPhat.ToString("N0"), item.TinhTrang);
+                }
+                UI.GridSelection.Clear(dgvChiTiet);
             }
+            finally { _loadingChiTiet = false; }
+        }
+
+        private void ResetReturnSelection()
+        {
+            _selectedChiTiet = null;
+            btnXacNhanTra.Enabled = false;
+            cboTinhTrangTra.Enabled = false;
+            cboTinhTrangTra.SelectedIndex = 0;
             lblSachDangChon.Text = "Ấn phẩm: (Chọn 1 dòng bên trái)";
+            dtpNgayTra.Value = DateTime.Today;
             numTienPhat.Value = 0;
         }
 
-        private void DgvChiTiet_CellClick(object sender, DataGridViewCellEventArgs e)
+        // Lấy chi tiết theo Mã sách (không dùng chỉ số dòng, vì lưới có thể bị sắp xếp lại khi bấm tiêu đề cột)
+        private ChiTietItem? LayChiTietDangChon(int rowIndex)
         {
-            if (e.RowIndex < 0 || dgvChiTiet.CurrentRow == null) return;
-            string tenSach = dgvChiTiet.CurrentRow.Cells["TenSach"].Value?.ToString();
-            string ngayTra = dgvChiTiet.CurrentRow.Cells["NgayTra"].Value?.ToString();
-
-            lblSachDangChon.Text = $"Ấn phẩm: {tenSach}";
-            btnXacNhanTra.Enabled = (ngayTra == "Chưa trả");
-
-            TinhTienPhatTuDong();
+            if (dgvPhieuMuon.CurrentRow == null || rowIndex < 0 || rowIndex >= dgvChiTiet.Rows.Count) return null;
+            string maPhieu = dgvPhieuMuon.CurrentRow.Cells["MaPhieu"].Value?.ToString() ?? "";
+            string maSach = dgvChiTiet.Rows[rowIndex].Cells["MaSach"].Value?.ToString() ?? "";
+            if (!mockChiTietData.TryGetValue(maPhieu, out var ds)) return null;
+            return ds.Find(c => c.MaSach == maSach);
         }
 
-        // Quy tắc nghiệp vụ: Tự động tính phạt theo số ngày quá hạn (5.000đ/ngày) + phí hư hỏng
+        private void DgvChiTiet_CurrentCellChanged(object? sender, EventArgs e)
+        {
+            if (_loadingChiTiet) return;
+            var item = LayChiTietDangChon(dgvChiTiet.CurrentRow?.Index ?? -1);
+            if (item == null)
+            {
+                ResetReturnSelection();
+                return;
+            }
+            if (ReferenceEquals(item, _selectedChiTiet)) return;
+
+            _selectedChiTiet = item;
+            lblSachDangChon.Text = $"Ấn phẩm: {item.TenSach}";
+
+            bool chuaTra = item.NgayTra == ChuaTra;
+            btnXacNhanTra.Enabled = chuaTra;
+            cboTinhTrangTra.Enabled = chuaTra;
+
+            if (chuaTra)
+            {
+                cboTinhTrangTra.SelectedIndex = 0;
+                TinhTienPhatTuDong();
+            }
+            else
+            {
+                cboTinhTrangTra.SelectedItem = item.TinhTrang;
+                numTienPhat.Value = Math.Min(BusinessRules.TienPhatToiDa, item.TienPhat);
+            }
+        }
+
+        // Quy tắc: phạt = số ngày quá hạn x mức phạt/ngày + phí hư hỏng. Các mức lấy từ BusinessRules (sau này từ API cấu hình).
         private void TinhTienPhatTuDong()
         {
-            if (dgvPhieuMuon.CurrentRow == null || dgvChiTiet.CurrentRow == null) return;
+            if (_selectedChiTiet == null || _selectedChiTiet.NgayTra != ChuaTra
+                || dgvPhieuMuon.CurrentRow?.Tag is not PhieuItem p) return;
+            dtpNgayTra.Value = DateTime.Today;
 
-            string hanTraStr = dgvPhieuMuon.CurrentRow.Cells["HanTra"].Value?.ToString();
             decimal phatQuaHan = 0;
-
-            if (DateTime.TryParseExact(hanTraStr, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out DateTime hanTra))
-            {
-                int soNgayTre = (dtpNgayTra.Value.Date - hanTra.Date).Days;
-                if (soNgayTre > 0)
-                    phatQuaHan = soNgayTre * 5000; // Cấu hình mẫu: 5.000 VNĐ / ngày trễ
-            }
+            int soNgayTre = (DateTime.Today - p.HanTra.Date).Days;
+            if (soNgayTre > 0)
+                phatQuaHan = soNgayTre * BusinessRules.MucPhatMoiNgay;
 
             decimal phatHuHong = 0;
-            if (cboTinhTrangTra.SelectedIndex == 1) phatHuHong = 20000;
-            else if (cboTinhTrangTra.SelectedIndex == 2) phatHuHong = 100000;
+            if (cboTinhTrangTra.SelectedIndex == 1) phatHuHong = BusinessRules.PhiSachRach;
+            else if (cboTinhTrangTra.SelectedIndex == 2) phatHuHong = BusinessRules.PhiSachHuHong;
 
-            numTienPhat.Value = phatQuaHan + phatHuHong;
+            // Chặn trần để không bao giờ vượt Maximum của NumericUpDown (tránh ArgumentOutOfRangeException)
+            numTienPhat.Value = Math.Min(BusinessRules.TienPhatToiDa, phatQuaHan + phatHuHong);
         }
 
-        private void BtnLapPhieu_Click(object sender, EventArgs e)
+        private void BtnLapPhieu_Click(object? sender, EventArgs e)
         {
-            // 1. Kiểm tra độc giả có đang hoạt động không
-            string docGiaInfo = cboDocGia.SelectedItem?.ToString() ?? "";
-            if (docGiaInfo.Contains("Đang khóa thẻ"))
+            // 1. Độc giả phải được chọn và đang hoạt động
+            if (cboDocGia.SelectedItem is not DocGiaItem docGia)
+            {
+                MessageBox.Show("Vui lòng chọn độc giả!", "Thiếu thông tin", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!docGia.HoatDong)
             {
                 MessageBox.Show("Độc giả này đang bị khóa thẻ! Chỉ độc giả trạng thái Hoạt động mới được mượn sách.",
                                 "Từ chối lập phiếu", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            // 2. Kiểm tra Hạn trả không được trước Ngày mượn
-            if (dtpHanTra.Value.Date < dtpNgayMuon.Value.Date)
+            // 2. Kiểm tra ngày
+            DateTime ngayMuon = dtpNgayMuon.Value.Date;
+            DateTime hanTra = dtpHanTra.Value.Date;
+            if (hanTra < ngayMuon)
             {
                 MessageBox.Show("Ngày hẹn trả không được nhỏ hơn ngày mượn sách!",
                                 "Lỗi ngày tháng", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if ((hanTra - ngayMuon).Days > BusinessRules.SoNgayMuonToiDa)
+            {
+                MessageBox.Show($"Thời hạn mượn tối đa là {BusinessRules.SoNgayMuonToiDa} ngày!",
+                                "Vượt thời hạn mượn", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-            // 3. Kiểm tra đã chọn sách chưa
+            // 3. Kiểm tra số sách
             if (clbSachMuon.CheckedItems.Count == 0)
             {
                 MessageBox.Show("Vui lòng tích chọn ít nhất 1 ấn phẩm để mượn!",
                                 "Thiếu thông tin", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if (clbSachMuon.CheckedItems.Count > BusinessRules.SoSachToiDaMoiPhieu)
+            {
+                MessageBox.Show($"Mỗi phiếu chỉ được mượn tối đa {BusinessRules.SoSachToiDaMoiPhieu} ấn phẩm!",
+                                "Vượt số sách tối đa", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-            // Tạo mã phiếu mới
-            string newMaPhieu = $"PM-00{dgvPhieuMuon.Rows.Count + 1}";
-            string tenDocGia = docGiaInfo.Split('-')[1].Replace("(Hoạt động)", "").Trim();
+            var chon = clbSachMuon.CheckedItems.Cast<SachItem>().ToList();
+            foreach (var s in chon)
+            {
+                if (s.SoLuongCon <= 0)
+                {
+                    MessageBox.Show($"Ấn phẩm [{s.TenSach}] đã hết trong kho!", "Hết sách", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    RefreshSachList();
+                    return;
+                }
+            }
+
+            // 4. Ghi phiếu + trừ tồn kho (khi có API: cùng một transaction ở server)
+            string maPhieu = $"PM-{_soPhieuTiepTheo:000}";
+            _soPhieuTiepTheo++;
 
             var chiTietList = new List<ChiTietItem>();
-            foreach (var item in clbSachMuon.CheckedItems)
+            foreach (var s in chon)
             {
-                string[] parts = item.ToString().Split('-');
-                string maSach = parts[0].Trim();
-                string tenSach = parts[1].Trim();
-
                 chiTietList.Add(new ChiTietItem
                 {
-                    MaSach = maSach,
-                    TenSach = tenSach,
+                    MaSach = s.MaSach,
+                    TenSach = s.TenSach,
                     SoLuong = 1,
-                    NgayTra = "Chưa trả",
+                    NgayTra = ChuaTra,
                     TienPhat = 0,
                     TinhTrang = "Đang mượn"
                 });
+                s.SoLuongCon -= 1;
             }
+            mockChiTietData[maPhieu] = chiTietList;
 
-            mockChiTietData[newMaPhieu] = chiTietList;
+            string nguoiLap = string.IsNullOrEmpty(_currentUser) ? "(không rõ)" : _currentUser;
+            var row = ThemDongPhieu(maPhieu, docGia.HoTen, nguoiLap, ngayMuon, hanTra);
+            CapNhatTrangThai(row);
 
-            dgvPhieuMuon.Rows.Add(
-                newMaPhieu,
-                tenDocGia,
-                "admin",
-                dtpNgayMuon.Value.ToString("dd/MM/yyyy"),
-                dtpHanTra.Value.ToString("dd/MM/yyyy"),
-                "Đang mượn"
-            );
+            RefreshSachList(); // làm mới danh sách (đồng thời bỏ tích chọn)
 
-            // Bỏ tích chọn sau khi lập xong
-            for (int i = 0; i < clbSachMuon.Items.Count; i++)
-                clbSachMuon.SetItemChecked(i, false);
-
-            MessageBox.Show($"Đã lập phiếu mượn [{newMaPhieu}] thành công và trừ tồn kho tương ứng!",
+            MessageBox.Show($"Đã lập phiếu mượn [{maPhieu}] và trừ tồn kho {chon.Count} ấn phẩm.",
                             "Ghi sổ thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void BtnXacNhanTra_Click(object sender, EventArgs e)
+        private void BtnXacNhanTra_Click(object? sender, EventArgs e)
         {
-            if (dgvPhieuMuon.CurrentRow == null || dgvChiTiet.CurrentRow == null)
+            if (_selectedChiTiet == null || dgvPhieuMuon.CurrentRow == null || dgvChiTiet.CurrentRow == null)
             {
                 MessageBox.Show("Vui lòng chọn một cuốn sách trong bảng Chi tiết bên trái để xác nhận trả!",
                                 "Nhắc nhở", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            string maPhieu = dgvPhieuMuon.CurrentRow.Cells["MaPhieu"].Value.ToString();
-            int detailIndex = dgvChiTiet.CurrentRow.Index;
-            var item = mockChiTietData[maPhieu][detailIndex];
+            string maPhieu = dgvPhieuMuon.CurrentRow.Cells["MaPhieu"].Value?.ToString() ?? "";
+            var item = LayChiTietDangChon(dgvChiTiet.CurrentRow.Index);
+            if (item == null || !ReferenceEquals(item, _selectedChiTiet)) return;
 
-            if (item.NgayTra != "Chưa trả")
+            if (item.NgayTra != ChuaTra)
             {
                 MessageBox.Show("Ấn phẩm này đã được trả trước đó rồi!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            // Cập nhật chi tiết trả sách
-            item.NgayTra = dtpNgayTra.Value.ToString("dd/MM/yyyy");
+            TinhTienPhatTuDong();
+            if (MessageBox.Show($"Xác nhận nhận trả ấn phẩm [{item.TenSach}] với tiền phạt {numTienPhat.Value:N0}đ?",
+                    "Xác nhận trả sách", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            bool matHuNang = cboTinhTrangTra.SelectedIndex == 2;
+
+            // Cập nhật chi tiết trả sách (ngày trả = hôm nay)
+            item.NgayTra = DateTime.Today.ToString("dd/MM/yyyy");
             item.TienPhat = numTienPhat.Value;
-            item.TinhTrang = cboTinhTrangTra.SelectedItem.ToString();
+            item.TinhTrang = cboTinhTrangTra.SelectedItem?.ToString() ?? "";
 
-            LoadChiTietByMaPhieu(maPhieu);
-
-            // Quy tắc nghiệp vụ: Một phiếu chỉ hoàn tất khi MỌI chi tiết đều đã trả
-            bool tatCaDaTra = true;
-            foreach (var ct in mockChiTietData[maPhieu])
+            // Cộng lại kho, trừ trường hợp hư hỏng nặng / mất (không nhập lại kho)
+            if (!matHuNang)
             {
-                if (ct.NgayTra == "Chưa trả")
-                {
-                    tatCaDaTra = false;
-                    break;
-                }
+                var s = _kho.Find(x => x.MaSach == item.MaSach);
+                if (s != null) s.SoLuongCon += item.SoLuong;
+                RefreshSachList();
             }
 
-            if (tatCaDaTra)
+            LoadChiTietByMaPhieu(maPhieu);
+            CapNhatTrangThai(dgvPhieuMuon.CurrentRow);
+
+            string ghiChuKho = matHuNang ? "Sách hư hỏng nặng/mất nên không nhập lại kho." : "Đã cộng lại số lượng tồn kho.";
+            if (dgvPhieuMuon.CurrentRow.Cells["TrangThai"].Value?.ToString() == "Đã hoàn tất")
             {
-                dgvPhieuMuon.CurrentRow.Cells["TrangThai"].Value = "Đã hoàn tất";
-                MessageBox.Show($"Đã nhận trả sách! Toàn bộ sách trong phiếu [{maPhieu}] đã được trả đủ -> Phiếu chuyển sang [Đã hoàn tất].",
+                MessageBox.Show($"Đã nhận trả sách! Toàn bộ sách trong phiếu [{maPhieu}] đã được trả đủ -> Phiếu chuyển sang [Đã hoàn tất].\n{ghiChuKho}",
                                 "Hoàn tất phiếu mượn", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
-                MessageBox.Show("Đã ghi nhận trả cuốn sách này và cộng lại số lượng tồn kho!",
+                MessageBox.Show($"Đã ghi nhận trả cuốn sách này. {ghiChuKho}",
                                 "Trả sách thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
@@ -585,12 +728,17 @@ namespace QuanLyThuVien.Desktop.UserControls
         private void FilterMasterGrid()
         {
             string kw = txtTimPhieu.Text.Trim().ToLower();
-            string status = cboLocTrangThai.SelectedIndex > 0 ? cboLocTrangThai.SelectedItem.ToString() : "";
+            string status = cboLocTrangThai.SelectedIndex > 0 ? cboLocTrangThai.SelectedItem?.ToString() ?? "" : "";
+
+            CapNhatTrangThaiTatCa();
+
+            // Không thể ẩn dòng đang là dòng hiện hành (ném InvalidOperationException) -> bỏ chọn trước
+            dgvPhieuMuon.CurrentCell = null;
 
             foreach (DataGridViewRow row in dgvPhieuMuon.Rows)
             {
-                string ma = row.Cells["MaPhieu"].Value?.ToString().ToLower() ?? "";
-                string dg = row.Cells["DocGia"].Value?.ToString().ToLower() ?? "";
+                string ma = row.Cells["MaPhieu"].Value?.ToString()?.ToLower() ?? "";
+                string dg = row.Cells["DocGia"].Value?.ToString()?.ToLower() ?? "";
                 string tt = row.Cells["TrangThai"].Value?.ToString() ?? "";
 
                 bool matchKw = string.IsNullOrEmpty(kw) || ma.Contains(kw) || dg.Contains(kw);
@@ -598,6 +746,13 @@ namespace QuanLyThuVien.Desktop.UserControls
 
                 row.Visible = matchKw && matchSt;
             }
+
+            // Chọn lại dòng hiển thị đầu tiên để bảng chi tiết khớp với bảng phiếu
+            var first = dgvPhieuMuon.Rows.Cast<DataGridViewRow>().FirstOrDefault(r => r.Visible);
+            if (first != null)
+                dgvPhieuMuon.CurrentCell = first.Cells[0];
+            else
+                LoadChiTietByMaPhieu("");
         }
     }
 }

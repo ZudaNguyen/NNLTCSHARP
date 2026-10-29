@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace QuanLyThuVien.Desktop.UserControls
@@ -28,6 +31,14 @@ namespace QuanLyThuVien.Desktop.UserControls
         private PictureBox picBiaSach;
         private string currentImagePath = "";
 
+        // Dữ liệu chưa có cột trong lưới (mô tả, ảnh bìa) gắn vào Tag của dòng để không bị mất khi chọn/sửa
+        private class SachExtra
+        {
+            public string MoTa { get; set; } = "";
+            public string AnhPath { get; set; } = "";
+        }
+        private const long AnhToiDaBytes = 2 * 1024 * 1024;
+
         // Các Control Tìm kiếm & Danh sách
         private TextBox txtTimKiem;
         private ComboBox cboLocTheLoai;
@@ -39,6 +50,8 @@ namespace QuanLyThuVien.Desktop.UserControls
             InitializeComponent();
             SetupSachUI();
             LoadMockData();
+            FilterGrid();
+            UI.ScrollableView.Configure(this, new Size(1040, 600));
         }
 
         private void SetupSachUI()
@@ -61,7 +74,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblFormTitle = new Label
             {
                 Text = "✒️ Thông tin Ấn phẩm & Biên mục Sách",
-                Font = new Font("Georgia", 11.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 11.5f, FontStyle.Bold),
                 ForeColor = Burgundy,
                 Location = new Point(15, 10),
                 AutoSize = true
@@ -77,9 +90,11 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             AddLabel(pnlForm, "ISBN (*):", 205, 42);
             txtISBN = AddTextBox(pnlForm, 270, 39, 130);
+            txtISBN.MaxLength = 20;   // Sach.ISBN varchar(20)
 
             AddLabel(pnlForm, "Tên sách (*):", 15, 80);
             txtTenSach = AddTextBox(pnlForm, 105, 77, 295);
+            txtTenSach.MaxLength = 200;   // Sach.TenSach nvarchar(200)
 
             AddLabel(pnlForm, "Thể loại (*):", 15, 118);
             cboTheLoai = new ComboBox
@@ -94,6 +109,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             AddLabel(pnlForm, "Nhà XB:", 15, 156);
             txtNhaXB = AddTextBox(pnlForm, 105, 153, 165);
+            txtNhaXB.MaxLength = 150;   // Sach.NhaXuatBan nvarchar(150)
 
             AddLabel(pnlForm, "Năm XB:", 280, 156);
             numNamXB = new NumericUpDown
@@ -158,6 +174,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Size = new Size(230, 42),
                 Font = new Font("Segoe UI", 9.5f),
                 Multiline = true,
+                MaxLength = 4000,
                 ScrollBars = ScrollBars.Vertical,
                 BackColor = Color.FromArgb(255, 253, 248),
                 BorderStyle = BorderStyle.FixedSingle
@@ -229,7 +246,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             Label lblTim = new Label
             {
                 Text = "🔍 Tra cứu (Tên / ISBN / Tác giả):",
-                Font = new Font("Georgia", 10, FontStyle.Bold),
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 ForeColor = WoodDark,
                 Location = new Point(5, 18),
                 AutoSize = true
@@ -309,7 +326,7 @@ namespace QuanLyThuVien.Desktop.UserControls
 
             dgvSach.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(74, 53, 37);
             dgvSach.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(245, 235, 215);
-            dgvSach.ColumnHeadersDefaultCellStyle.Font = new Font("Georgia", 9.5f, FontStyle.Bold);
+            dgvSach.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
 
             dgvSach.DefaultCellStyle.BackColor = CardBg;
             dgvSach.DefaultCellStyle.ForeColor = WoodDark;
@@ -334,7 +351,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvSach.Columns.Add("TrangThai", "Trạng Thái");
             dgvSach.Columns["TrangThai"].FillWeight = 70;
 
-            dgvSach.CellClick += DgvSach_CellClick;
+            UI.GridSelection.Bind(dgvSach, LoadSelectedSach, () => txtMaSach.Clear(), btnSua, btnXoa);
 
             pnlGrid.Controls.Add(dgvSach);
 
@@ -381,7 +398,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 Text = text,
                 Size = new Size(180, 35),
                 Margin = new Padding(0, 0, 12, 0),
-                Font = new Font("Georgia", 9.5f, FontStyle.Bold),
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
                 BackColor = bgColor,
                 ForeColor = Color.FromArgb(255, 248, 231),
                 FlatStyle = FlatStyle.Flat,
@@ -418,7 +435,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             dgvSach.Rows.Add("4", "978-6041001122", "Đắc Nhân Tâm (Bản cũ)", "Kỹ năng sống", "Dale Carnegie", "2015", "NXB Tổng Hợp", "5", "5", "Đã ẩn");
         }
 
-        private bool ValidateInput(out string selectedAuthors)
+        private bool ValidateInput(out string selectedAuthors, string currentId = "")
         {
             selectedAuthors = "";
             List<string> authors = new List<string>();
@@ -441,6 +458,34 @@ namespace QuanLyThuVien.Desktop.UserControls
                 return false;
             }
 
+            // ISBN: 10 hoặc 13 ký tự (cho phép dấu gạch ngang/khoảng trắng), 10 ký tự có thể kết thúc bằng X
+            string isbnSach = txtISBN.Text.Trim().Replace("-", "").Replace(" ", "");
+            if (!Regex.IsMatch(isbnSach, @"^(\d{13}|\d{9}[\dXx])$"))
+            {
+                MessageBox.Show("ISBN không hợp lệ! ISBN phải gồm 10 hoặc 13 chữ số (có thể có dấu gạch ngang).", "Kiểm tra dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtISBN.Focus();
+                return false;
+            }
+
+            // ISBN không được trùng (kể cả với sách đã ẩn)
+            foreach (DataGridViewRow r in dgvSach.Rows)
+            {
+                string rowId = r.Cells["MaSach"].Value?.ToString() ?? "";
+                string rowIsbn = (r.Cells["ISBN"].Value?.ToString() ?? "").Replace("-", "").Replace(" ", "");
+                if (rowId != currentId && string.Equals(rowIsbn, isbnSach, StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show("ISBN này đã tồn tại cho một ấn phẩm khác!", "Trùng dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txtISBN.Focus();
+                    return false;
+                }
+            }
+
+            if (cboTheLoai.SelectedItem == null)
+            {
+                MessageBox.Show("Vui lòng chọn thể loại!", "Kiểm tra dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
             if (authors.Count == 0)
             {
                 MessageBox.Show("Vui lòng tích chọn ít nhất 1 Tác giả cho ấn phẩm này!", "Kiểm tra dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -455,7 +500,7 @@ namespace QuanLyThuVien.Desktop.UserControls
             if (!ValidateInput(out string tacGiaStr)) return;
 
             int newId = dgvSach.Rows.Count + 1;
-            dgvSach.Rows.Add(
+            int newIdx = dgvSach.Rows.Add(
                 newId.ToString(),
                 txtISBN.Text.Trim(),
                 txtTenSach.Text.Trim(),
@@ -467,6 +512,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 numSoLuong.Value.ToString(),
                 "Hoạt động"
             );
+            dgvSach.Rows[newIdx].Tag = new SachExtra { MoTa = txtMoTa.Text.Trim(), AnhPath = currentImagePath };
 
             MessageBox.Show("Đã ghi sổ ấn phẩm mới thành công!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
             ClearForm();
@@ -480,7 +526,7 @@ namespace QuanLyThuVien.Desktop.UserControls
                 return;
             }
 
-            if (!ValidateInput(out string tacGiaStr)) return;
+            if (!ValidateInput(out string tacGiaStr, txtMaSach.Text)) return;
 
             DataGridViewRow row = dgvSach.CurrentRow;
             int slDangMuon = int.Parse(row.Cells["SoLuong"].Value.ToString()) - int.Parse(row.Cells["SoLuongCon"].Value.ToString());
@@ -500,6 +546,8 @@ namespace QuanLyThuVien.Desktop.UserControls
             row.Cells["NhaXB"].Value = txtNhaXB.Text.Trim();
             row.Cells["SoLuong"].Value = numSoLuong.Value.ToString();
             row.Cells["SoLuongCon"].Value = (numSoLuong.Value - slDangMuon).ToString();
+            row.Tag = new SachExtra { MoTa = txtMoTa.Text.Trim(), AnhPath = currentImagePath };
+            numSoLuongCon.Value = numSoLuong.Value - slDangMuon;
 
             MessageBox.Show("Cập nhật thông tin ấn phẩm thành công!", "Thư viện", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -512,8 +560,12 @@ namespace QuanLyThuVien.Desktop.UserControls
                 return;
             }
 
+            int slMuon = int.Parse(dgvSach.CurrentRow.Cells["SoLuong"].Value?.ToString() ?? "0")
+                       - int.Parse(dgvSach.CurrentRow.Cells["SoLuongCon"].Value?.ToString() ?? "0");
+            string canhBao = slMuon > 0 ? $"\n\nLƯU Ý: đang có {slMuon} cuốn được độc giả mượn chưa trả." : "";
+
             DialogResult confirm = MessageBox.Show(
-                $"Bạn có chắc muốn chuyển sách [{txtTenSach.Text}] sang trạng thái Lưu kho ẩn (Soft Delete)?\nDữ liệu phiếu mượn cũ vẫn sẽ được bảo toàn.",
+                $"Bạn có chắc muốn chuyển sách [{txtTenSach.Text}] sang trạng thái Lưu kho ẩn (Soft Delete)?\nDữ liệu phiếu mượn cũ vẫn sẽ được bảo toàn.{canhBao}",
                 "Xác nhận xóa mềm", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
             if (confirm == DialogResult.Yes)
@@ -524,26 +576,31 @@ namespace QuanLyThuVien.Desktop.UserControls
             }
         }
 
-        private void DgvSach_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void LoadSelectedSach(DataGridViewRow row)
         {
-            if (e.RowIndex < 0) return;
-
-            DataGridViewRow row = dgvSach.Rows[e.RowIndex];
             txtMaSach.Text = row.Cells["MaSach"].Value?.ToString();
             txtISBN.Text = row.Cells["ISBN"].Value?.ToString();
             txtTenSach.Text = row.Cells["TenSach"].Value?.ToString();
             cboTheLoai.SelectedItem = row.Cells["TheLoai"].Value?.ToString();
-            numNamXB.Value = decimal.TryParse(row.Cells["NamXB"].Value?.ToString(), out decimal nam) ? nam : 2026;
+            // Giá trị từ dữ liệu có thể nằm ngoài khoảng cho phép của NumericUpDown -> kẹp lại để không ném lỗi
+            SetNumeric(numNamXB, decimal.TryParse(row.Cells["NamXB"].Value?.ToString(), out decimal nam) ? nam : 2026);
             txtNhaXB.Text = row.Cells["NhaXB"].Value?.ToString();
-            numSoLuong.Value = decimal.TryParse(row.Cells["SoLuong"].Value?.ToString(), out decimal sl) ? sl : 0;
-            numSoLuongCon.Value = decimal.TryParse(row.Cells["SoLuongCon"].Value?.ToString(), out decimal slCon) ? slCon : 0;
+            SetNumeric(numSoLuong, decimal.TryParse(row.Cells["SoLuong"].Value?.ToString(), out decimal sl) ? sl : 0);
+            SetNumeric(numSoLuongCon, decimal.TryParse(row.Cells["SoLuongCon"].Value?.ToString(), out decimal slCon) ? slCon : 0);
 
-            // Tích chọn lại các tác giả tương ứng
+            // Nạp lại mô tả + ảnh bìa của ĐÚNG sách đang chọn (trước đây giữ lại dữ liệu của sách trước)
+            var extra = row.Tag as SachExtra;
+            txtMoTa.Text = extra?.MoTa ?? "";
+            currentImagePath = extra?.AnhPath ?? "";
+            SetCoverImage(currentImagePath);
+
+            // Tích chọn lại các tác giả: so khớp CHÍNH XÁC từng tên (không dùng Contains trên chuỗi dài)
             string tacGiaCell = row.Cells["TacGia"].Value?.ToString() ?? "";
+            var dsTacGia = tacGiaCell.Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < clbTacGia.Items.Count; i++)
             {
-                string itemText = clbTacGia.Items[i].ToString();
-                clbTacGia.SetItemChecked(i, tacGiaCell.Contains(itemText));
+                string itemText = clbTacGia.Items[i]?.ToString() ?? "";
+                clbTacGia.SetItemChecked(i, dsTacGia.Contains(itemText));
             }
         }
 
@@ -552,6 +609,9 @@ namespace QuanLyThuVien.Desktop.UserControls
             string keyword = txtTimKiem.Text.Trim().ToLower();
             string selectedCategory = cboLocTheLoai.SelectedIndex > 0 ? cboLocTheLoai.SelectedItem.ToString() : "";
             bool showDeleted = chkHienThiDaXoa.Checked;
+
+            // Không thể ẩn dòng đang là dòng hiện hành (ném InvalidOperationException) -> bỏ chọn trước
+            dgvSach.CurrentCell = null;
 
             foreach (DataGridViewRow row in dgvSach.Rows)
             {
@@ -576,14 +636,47 @@ namespace QuanLyThuVien.Desktop.UserControls
                 ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
+                    if (new FileInfo(ofd.FileName).Length > AnhToiDaBytes)
+                    {
+                        MessageBox.Show("Ảnh bìa tối đa 2 MB. Vui lòng chọn ảnh nhỏ hơn!", "Ảnh quá lớn", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    // TODO(API): upload ảnh lên server, nhận về URL tương đối để lưu vào Sach.HinhAnh.
+                    // Đường dẫn trên máy Admin (C:\...) không dùng được cho Web.
                     currentImagePath = ofd.FileName;
-                    picBiaSach.Image = Image.FromFile(currentImagePath);
+                    SetCoverImage(currentImagePath);
                 }
             }
         }
 
+        // Nạp ảnh qua stream rồi sao chép: không khóa file gốc và giải phóng ảnh cũ
+        private void SetCoverImage(string? path)
+        {
+            var old = picBiaSach.Image;
+            picBiaSach.Image = null;
+            old?.Dispose();
+
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+            try
+            {
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var img = Image.FromStream(fs);
+                picBiaSach.Image = new Bitmap(img);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Không đọc được file ảnh bìa. Vui lòng chọn file ảnh hợp lệ (jpg, png, bmp).", "Lỗi ảnh", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private static void SetNumeric(NumericUpDown num, decimal value)
+        {
+            num.Value = Math.Min(num.Maximum, Math.Max(num.Minimum, value));
+        }
+
         private void ClearForm()
         {
+            UI.GridSelection.Clear(dgvSach);
             txtMaSach.Clear();
             txtISBN.Clear();
             txtTenSach.Clear();
@@ -592,7 +685,8 @@ namespace QuanLyThuVien.Desktop.UserControls
             numNamXB.Value = 2026;
             numSoLuong.Value = 10;
             numSoLuongCon.Value = 10;
-            picBiaSach.Image = null;
+            currentImagePath = "";
+            SetCoverImage(null);
             for (int i = 0; i < clbTacGia.Items.Count; i++)
                 clbTacGia.SetItemChecked(i, false);
             txtTenSach.Focus();

@@ -6,9 +6,9 @@ namespace QuanLyThuVien.Desktop.Forms
 {
     public partial class LoginForm : Form
     {
-        private TextBox txtTaiKhoan;
-        private TextBox txtMatKhau;
-        private Button btnLogin;
+        private TextBox txtTaiKhoan = null!;
+        private TextBox txtMatKhau = null!;
+        private Button btnLogin = null!;
 
         public LoginForm()
         {
@@ -43,7 +43,7 @@ namespace QuanLyThuVien.Desktop.Forms
             Label lblTitle = new Label
             {
                 Text = "📚 THƯ VIỆN TRI THỨC",
-                Font = new Font("Georgia", 16, FontStyle.Bold),
+                Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = woodDark,
                 AutoSize = false,
                 TextAlign = ContentAlignment.BottomCenter,
@@ -54,7 +54,7 @@ namespace QuanLyThuVien.Desktop.Forms
             Label lblSubTitle = new Label
             {
                 Text = "✒️ Sổ đăng ký phiên làm việc của Thủ thư & Quản trị",
-                Font = new Font("Georgia", 9.5f, FontStyle.Italic),
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Italic),
                 ForeColor = Color.FromArgb(110, 85, 70),
                 AutoSize = false,
                 TextAlign = ContentAlignment.TopCenter,
@@ -78,7 +78,8 @@ namespace QuanLyThuVien.Desktop.Forms
                 Width = 325,
                 Font = new Font("Segoe UI", 11),
                 BackColor = Color.FromArgb(255, 253, 248),
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.FixedSingle,
+                MaxLength = 100
             };
 
             // Nhãn & Ô nhập Mật khẩu
@@ -98,7 +99,8 @@ namespace QuanLyThuVien.Desktop.Forms
                 Font = new Font("Segoe UI", 11),
                 BackColor = Color.FromArgb(255, 253, 248),
                 BorderStyle = BorderStyle.FixedSingle,
-                PasswordChar = '●'
+                PasswordChar = '●',
+                MaxLength = 255
             };
 
             // Nút Đăng nhập màu đỏ đô bìa sách
@@ -108,7 +110,7 @@ namespace QuanLyThuVien.Desktop.Forms
                 Location = new Point(50, 265),
                 Width = 325,
                 Height = 42,
-                Font = new Font("Georgia", 11, FontStyle.Bold),
+                Font = new Font("Segoe UI", 11, FontStyle.Bold),
                 BackColor = burgundy,
                 ForeColor = Color.FromArgb(255, 248, 231),
                 FlatStyle = FlatStyle.Flat,
@@ -130,10 +132,10 @@ namespace QuanLyThuVien.Desktop.Forms
             this.Controls.Add(pnlTopBar);
         }
 
-        private void BtnLogin_Click(object sender, EventArgs e)
+        private void BtnLogin_Click(object? sender, EventArgs e)
         {
             string taiKhoan = txtTaiKhoan.Text.Trim();
-            string matKhau = txtMatKhau.Text.Trim();
+            string matKhau = txtMatKhau.Text; // Không Trim mật khẩu: khoảng trắng đầu/cuối là ký tự hợp lệ
 
             if (string.IsNullOrEmpty(taiKhoan) || string.IsNullOrEmpty(matKhau))
             {
@@ -143,7 +145,9 @@ namespace QuanLyThuVien.Desktop.Forms
                 return;
             }
 
-            string roleGiaLap = taiKhoan.ToLower() == "admin" ? "Admin" : "ThuThu";
+            // TODO(API): thay bằng gọi API đăng nhập; vai trò lấy từ claim của JWT.
+            // Hiện chỉ là bản giả lập để dựng giao diện: mọi tài khoản đều vào được.
+            string roleGiaLap = taiKhoan.Equals("admin", StringComparison.OrdinalIgnoreCase) ? Models.Roles.Admin : Models.Roles.ThuThu;
 
             MainForm mainForm = new MainForm(roleGiaLap, taiKhoan);
             mainForm.FormClosed += (s, args) => this.Close();
