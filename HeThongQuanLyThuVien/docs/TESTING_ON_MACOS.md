@@ -194,6 +194,36 @@ SQL Server vẫn chạy Docker trên Mac (cổng `14333`); API giữ nguyên con
 
 Sau mỗi bước, **F5** trang Web tương ứng. Không cần đăng xuất/đăng nhập lại.
 
+### 3.1 Đăng ký độc giả mới trên Web
+
+1. Mở `http://localhost:5109/dang-ky` (hoặc bấm **Đăng ký** ở góc phải topbar).
+2. Điền tên đăng nhập, mật khẩu ≥ 12 ký tự đủ 4 nhóm, họ tên, ngày sinh, giới tính,
+   số điện thoại bắt đầu bằng `0`, email. Địa chỉ không bắt buộc.
+3. Bấm **Tạo tài khoản** → chuyển về `/`, topbar hiện tên độc giả và menu đầy đủ.
+   Không cần thủ thư duyệt: `DocGia.TrangThai` và `TaiKhoan.TrangThai` đều là `Hoạt động`.
+4. Vào `/sach/16`, gửi yêu cầu mượn → `/yeu-cau` có dòng **Chờ duyệt**.
+5. Kiểm tra lỗi: trùng tên đăng nhập hoặc email → thông báo ngay trên form; mật khẩu yếu
+   hoặc xác nhận lệch → form giữ dữ liệu và báo lỗi, không tạo bản ghi.
+6. API đăng ký giới hạn **5 lần/phút/IP**; gửi quá sẽ nhận thông báo chờ một phút.
+
+Dọn dữ liệu test (đổi email/tên đăng nhập cho đúng):
+
+```sql
+SET QUOTED_IDENTIFIER ON;
+BEGIN TRANSACTION;
+DELETE s FROM dbo.TaiKhoan_Session s
+JOIN dbo.TaiKhoan t ON t.MaTaiKhoan = s.MaTaiKhoan
+WHERE t.TenDangNhap = N'docgia.web';
+DELETE y FROM dbo.YeuCauMuon y
+JOIN dbo.DocGia d ON d.MaDocGia = y.MaDocGia
+WHERE d.Email = N'docgia.web@example.invalid';
+DELETE t FROM dbo.TaiKhoan t
+JOIN dbo.DocGia d ON d.MaDocGia = t.MaDocGia
+WHERE d.Email = N'docgia.web@example.invalid';
+DELETE FROM dbo.DocGia WHERE Email = N'docgia.web@example.invalid';
+COMMIT TRANSACTION;
+```
+
 ---
 
 ## 4. Dữ liệu test và dọn dẹp

@@ -38,8 +38,8 @@ Chưa gom thành hằng số; khi sửa phải giữ đúng nguyên văn vì có
 | `Infrastructure` | EF Core `LibraryDbContext`, repository, SQL schema | Xong cho các module quản trị |
 | `Api` | REST API dùng chung cho Desktop và Web | Xong 64 endpoint |
 | `Desktop` | WinForms cho Admin + Thủ thư, có cả màn hình độc giả | Xong phần quản trị |
-| `Web` | ASP.NET Core MVC cho độc giả | Xong: tra cứu, mượn/đặt sách, lịch sử, hồ sơ |
-| `Tests` | xUnit cho nghiệp vụ `YeuCauMuonService` | 10 test |
+| `Web` | ASP.NET Core MVC cho độc giả | Xong: tra cứu, mượn/đặt sách, đăng ký, lịch sử, hồ sơ |
+| `Tests` | xUnit cho nghiệp vụ `YeuCauMuonService` và `AccountService` | 14 test |
 
 ## 4. Ma trận API
 
@@ -50,6 +50,7 @@ Chưa gom thành hằng số; khi sửa phải giữ đúng nguyên văn vì có
 | Method | Route | Quyền | Ghi chú |
 |---|---|---|---|
 | POST | `/api/auth/login` | ANON | Body `LoginRequestDto`; rate limit 10 lần/phút/IP |
+| POST | `/api/auth/register` | ANON | Body `RegisterReaderRequestDto`; tạo `DocGia` + `TaiKhoan` `Hoạt động` trong một transaction, trả `LoginResponseDto`; rate limit 5 lần/phút/IP |
 | GET | `/api/auth/me` | Đã đăng nhập | Trả `AuthUserDto` |
 | POST | `/api/auth/logout` | Đã đăng nhập | Thu hồi session |
 | POST | `/api/auth/change-password` | Đã đăng nhập | Mật khẩu mới ≥ 12 ký tự, đủ 4 nhóm |
@@ -143,6 +144,7 @@ Quy tắc nghiệp vụ:
 Đã xong và **đã kiểm chứng runtime** (API cổng 5058 + Web cổng 5109 + SQL Server thật):
 
 - Đăng nhập bằng tài khoản `DOC_GIA`; Web dùng cookie authentication, token API nằm trong claim `api_token` của cookie HttpOnly. Tài khoản không phải `DOC_GIA` bị từ chối ngay trên form đăng nhập.
+- `POST /api/auth/register` → `/dang-ky`: độc giả tự đăng ký, hệ thống tạo thẻ và tài khoản `Hoạt động` ngay trong một transaction. API trả luôn token như đăng nhập nên Web tự đăng nhập và chuyển về trang chủ; kiểm tra trùng tên đăng nhập/email và chính sách mật khẩu (≥ 12 ký tự, đủ 4 nhóm).
 - `GET /api/docgia/me` → `/tai-khoan` (hồ sơ + 5 phiếu gần nhất).
 - `GET /api/muontra/me` và `/me/{id}` → `/lich-su-muon`, `/lich-su-muon/{id}`.
 - `GET /api/muontra/me/{id}/tien-phat` → bảng tiền phạt từng lần trả (phải thu / đã thu / còn nợ).
@@ -165,7 +167,7 @@ SourceCode/QuanLyThuVien.Web/
 │   ├── HomeController.cs        trang chủ + mockup Manager/Admin
 │   ├── SachController.cs        /sach (tìm kiếm, lọc thể loại) + /sach/{id}
 │   ├── YeuCauMuonController.cs  /yeu-cau, gửi yêu cầu, hủy yêu cầu
-│   └── TaiKhoanController.cs    đăng nhập/đăng xuất/lịch sử mượn/hồ sơ
+│   └── TaiKhoanController.cs    đăng nhập/đăng ký/đăng xuất/lịch sử mượn/hồ sơ
 ├── Services/
 │   ├── LibraryApiClient.cs      cửa ngõ duy nhất gọi REST API, gắn Bearer token
 │   └── ReaderSession.cs         đọc/ghi claim cookie, đăng nhập/đăng xuất
@@ -202,7 +204,9 @@ Nếu cần thêm nghiệp vụ mới, thứ tự thêm để không phá phần
 | `POST /yeu-cau/{id}/huy` | `YeuCauMuon/Cancel` | Hủy yêu cầu đang chờ |
 | `GET /lich-su-muon`, `/lich-su-muon/{id}` | `TaiKhoan/LichSuMuon`, `ChiTietMuon` | Phiếu mượn, tiền phạt |
 | `GET /tai-khoan` | `TaiKhoan/HoSo` | Hồ sơ độc giả |
-| `GET/POST /dang-nhap`, `POST /dang-xuat` | `TaiKhoan/Login`, `Logout` | Cookie auth |
+| `GET/POST /dang-nhap` | `TaiKhoan/Login` | Cookie auth |
+| `GET/POST /dang-ky` | `TaiKhoan/Register` | Tự đăng ký, tạo tài khoản hoạt động ngay, tự đăng nhập |
+| `POST /dang-xuat` | `TaiKhoan/Logout` | Xóa cookie |
 
 ## 6. Quy ước chung
 

@@ -11,6 +11,10 @@
 #   ADMIN_PASS=<mật khẩu admin>
 #   READER_USER=docgia.dev
 #   READER_PASS=<mật khẩu độc giả>
+#
+# Khối đăng ký độc giả (#25) dùng thêm 2 biến tùy chọn (không bắt buộc):
+#   NEW_READER_USER=docgia.api
+#   NEW_READER_PASS=<mật khẩu mạnh cho tài khoản đăng ký thử>
 ##############################################################################
 
 @host = http://localhost:5058
@@ -19,6 +23,9 @@
 
 @readerUser = {{$dotenv READER_USER}}
 @readerPass = {{$dotenv READER_PASS}}
+
+@newReaderUser = {{$dotenv NEW_READER_USER}}
+@newReaderPass = {{$dotenv NEW_READER_PASS}}
 
 ### 0. Kiểm tra API còn sống
 GET {{host}}/api/dev/ping
@@ -189,3 +196,27 @@ Content-Type: application/json
 ### 24. Độc giả hủy yêu cầu đang chờ
 POST {{host}}/api/yeucau/me/1/huy
 Authorization: Bearer {{readerToken}}
+
+### 25. Đăng ký độc giả mới (public, tự kích hoạt ngay)
+# Trả về cùng cấu trúc với đăng nhập: accessToken + user (vaiTro = DOC_GIA).
+# Rate limit: 5 lần/phút/IP. Đổi username/email nếu đã chạy khối này trước đó.
+# @name registerReader
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "tenDangNhap": "{{newReaderUser}}",
+  "matKhau": "{{newReaderPass}}",
+  "hoTen": "Độc Giả Đăng Ký API",
+  "ngaySinh": "2001-05-12",
+  "gioiTinh": "Nam",
+  "soDienThoai": "0912345678",
+  "email": "docgia.api@example.invalid",
+  "diaChi": "Hà Nội"
+}
+
+@newReaderToken = {{registerReader.response.body.$.accessToken}}
+
+### 26. Dùng ngay token vừa đăng ký để xem hồ sơ
+GET {{host}}/api/docgia/me
+Authorization: Bearer {{newReaderToken}}
