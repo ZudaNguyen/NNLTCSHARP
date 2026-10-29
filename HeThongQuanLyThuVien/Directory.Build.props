@@ -1,0 +1,10 @@
+<Project>
+  <!--
+    Desktop là WinForms (net10.0-windows). Trên macOS/Linux vẫn build/compile-check được
+    khi bật EnableWindowsTargeting, nhưng không chạy được giao diện.
+    Chỉ bật ngoài Windows để Windows không bị ảnh hưởng.
+  -->
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+</Project>

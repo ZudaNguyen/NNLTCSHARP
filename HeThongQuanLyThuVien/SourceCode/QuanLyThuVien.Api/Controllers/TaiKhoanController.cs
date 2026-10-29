@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Application.Interfaces;
 using QuanLyThuVien.Application.Services;
+using QuanLyThuVien.Domain.Enums;
 
 namespace QuanLyThuVien.Api.Controllers;
 

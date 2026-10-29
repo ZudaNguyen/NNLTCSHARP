@@ -1,6 +1,7 @@
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Application.Interfaces;
 using QuanLyThuVien.Domain.Entities;
+using QuanLyThuVien.Domain.Enums;
 
 namespace QuanLyThuVien.Application.Services;
 

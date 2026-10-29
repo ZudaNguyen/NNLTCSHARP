@@ -1,22 +1,3 @@
-<<<<<<< HEAD
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
-builder.Services.AddControllers();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-=======
-
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -135,5 +116,4 @@ if (app.Environment.IsDevelopment())
 }
 
 // Chạy ứng dụng
->>>>>>> origin/feat/desktop-ui-theme
 app.Run();

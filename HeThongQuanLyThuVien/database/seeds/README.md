@@ -1,6 +1,6 @@
 # Dữ liệu demo thư viện
 
-Seeder một lần có kiểm soát nằm tại `database/seeds/QuanLyThuVien.DemoSeeder.csproj`. API không tự seed khi khởi động.
+Seeder một lần có kiểm soát nằm tại `Database/seeds/QuanLyThuVien.DemoSeeder.csproj`. API không tự seed khi khởi động.
 
 ## An toàn và cách chạy
 
@@ -11,7 +11,7 @@ Seeder một lần có kiểm soát nằm tại `database/seeds/QuanLyThuVien.De
 
 ```powershell
 $env:DOTNET_ENVIRONMENT = "Development"
-dotnet run --project database/seeds/QuanLyThuVien.DemoSeeder.csproj
+dotnet run --project Database/seeds/QuanLyThuVien.DemoSeeder.csproj
 ```
 
 Seeder tái sử dụng `ITheLoaiService`, `ITacGiaService`, `ISachService`, `IDocGiaService`, `INhanVienService` và `IMuonTraService`. Tạo phiếu, xác nhận trả, tính phạt và ghi nhận tiền thu đi qua nghiệp vụ Application hiện có để cập nhật tồn kho/lịch sử đúng cách.

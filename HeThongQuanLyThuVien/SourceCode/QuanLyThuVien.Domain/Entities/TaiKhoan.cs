@@ -1,3 +1,5 @@
+using QuanLyThuVien.Domain.Enums;
+
 namespace QuanLyThuVien.Domain.Entities;
 
 public sealed class TaiKhoan
@@ -7,7 +9,7 @@ public sealed class TaiKhoan
     public string TenDangNhapChuanHoa { get; set; } = string.Empty;
     public string MatKhauHash { get; set; } = string.Empty;
     public string TenHienThi { get; set; } = string.Empty;
-    public string VaiTro { get; set; } = "THU_THU";
+    public string VaiTro { get; set; } = AccountRoles.Librarian;
     public string TrangThai { get; set; } = "Hoạt động";
     public int? MaNhanVien { get; set; }
     public int? MaDocGia { get; set; }

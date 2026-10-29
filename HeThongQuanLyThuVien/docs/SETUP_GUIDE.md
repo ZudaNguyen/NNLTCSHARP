@@ -1,117 +1,202 @@
 # Hướng dẫn cài đặt và chạy
 
-Hướng dẫn này dành cho Windows 10/11, PowerShell, Docker Desktop, .NET 10 SDK và SSMS. Lệnh schema có thể thay đổi dữ liệu; hãy sao lưu trước và chỉ chạy trên database bạn đã chọn.
+Áp dụng cho **macOS**, **Windows 10/11** và **Linux**. Cần .NET 10 SDK và Docker Desktop (hoặc Docker Engine + Compose).
+
+> Lệnh schema và seeder **thay đổi dữ liệu**. Chỉ chạy trên database demo đã được phép, và sao lưu trước nếu database đang có dữ liệu cần giữ.
 
 ## 1. Chuẩn bị
 
-Mở PowerShell tại thư mục gốc repo:
-
-```powershell
-Set-Location .\HeThongQuanLyThuVien
+```bash
+cd HeThongQuanLyThuVien
 dotnet --info
 docker version
 ```
 
-Khởi động Docker Desktop. `.env.example` chỉ chứa placeholder. Tạo file cấu hình cục bộ và thay bằng một mật khẩu SA riêng, mạnh:
+Mở Docker Desktop và chờ engine sẵn sàng. `.env.example` chỉ chứa placeholder:
 
-```powershell
-Copy-Item .env.example .env
-notepad .env
+```bash
+cp .env.example .env     # Windows PowerShell: Copy-Item .env.example .env
+# Sửa .env, đặt MSSQL_SA_PASSWORD thành mật khẩu mạnh, riêng cho máy bạn.
 docker compose up -d sqlserver
 docker compose ps
 docker compose logs --tail 80 sqlserver
 ```
 
-Compose ánh xame cổng host `127.0.0.1:14333` tới SQL Server `1433`; database lưu trong volume `qltv_sql_data`. Trong SSMS, kết nối `127.0.0.1,14333` bằng SQL Login `sa` và mật khẩu trong `.env`. Không dùng `localhost\SQLEXPRESS` cho container này. Không chạy `docker compose down -v`, `docker volume rm` hoặc thao tác xóa volume.
+Compose ánh xạ `127.0.0.1:14333` (host) → `1433` (container), dữ liệu nằm trong volume `qltv_sql_data`.
+
+**Không** chạy `docker compose down -v`, `docker volume rm` hay xóa volume để "sửa lỗi". Volume đã khởi tạo sẽ giữ mật khẩu SA cũ; đổi `MSSQL_SA_PASSWORD` trong `.env` không làm đổi mật khẩu của volume đó.
+
+### Kiểm tra container đã lên
+
+```bash
+docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P '<MAT_KHAU_SA>' -C -Q "SELECT @@VERSION"
+```
+
+Kết quả mong đợi có dòng `Microsoft SQL Server 2022 ... on Linux (Ubuntu 22.04)`.
+
+> Trên macOS **không có** bản SQL Server native và không có SSMS. SQL Server chỉ chạy trong Docker (image Linux); trên Mac Intel container chạy native amd64, trên Apple Silicon chạy qua Rosetta. Công cụ quản lý: extension **mssql** của VS Code hoặc **DBeaver**, kết nối `127.0.0.1,14333`, SQL Login `sa`.
 
 ## 2. Database và schema
 
-Mặc định dự án trông đợi database `QuanLyThuVienDB`, nhưng các file schema nằm trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql` và không phải EF migrations. Chúng tạo/cập nhật bảng; `BooksSchema.sql` có cập nhật các dòng sách legacy và thay đổi ràng buộc. Vì vậy, không chạy mù toàn bộ scripts trên database cần giữ.
+Các file schema nằm trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/` và **không phải EF migrations**. Chúng tạo/cập nhật bảng nên không được chạy mù trên database đang có dữ liệu.
 
-Trước khi áp dụng:
+### 2.1 Database demo trống — đường nhanh nhất
 
-1. Xác nhận trong SSMS đang kết nối đúng server/database; xem `SELECT @@SERVERNAME, DB_NAME();`.
-2. Tạo và kiểm tra full backup theo quy trình vận hành của bạn. Không dựa vào volume Docker như bản backup.
-3. Đối chiếu bảng/cột/FK hiện có với từng script và `LibraryDbContext`; ghi nhận schema khác nhau trước khi áp dụng.
-4. Chỉ trên môi trường demo/kiểm thử đã duyệt, tạo database `QuanLyThuVienDB` nếu chưa tồn tại; mở từng file trong SSMS, xác nhận database context rồi thực thi theo phụ thuộc: `BooksSchema.sql`, `CatalogModuleSchema.sql`, `ReaderModuleSchema.sql`, `EmployeeModuleSchema.sql`, `AuthenticationModuleSchema.sql`, `BorrowingModuleSchema.sql`. Dừng nếu có lỗi hoặc dữ liệu legacy không khớp; không chạy lại tùy tiện.
-5. Kiểm tra bảng và foreign key sau khi chạy. Những file SQL không tạo database; việc tạo database mới cần người vận hành thực hiện rõ ràng trong môi trường đã xác nhận.
+Chạy lần lượt 6 file theo đúng thứ tự phụ thuộc. Script không tạo database, nên tạo trước:
 
-Schema scripts không được chạy trong lượt bàn giao này. Nếu database đã có dữ liệu, nên khôi phục backup vào database test riêng và kiểm thử schema tại đó trước.
+```bash
+docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P '<MAT_KHAU_SA>' -C \
+  -Q "IF DB_ID('QuanLyThuVienDB') IS NULL CREATE DATABASE QuanLyThuVienDB;"
 
-Nếu cần một file tổng hợp cho database demo trống, dùng [`database/AllTablesAndDemoData.sql`](../database/AllTablesAndDemoData.sql). Trong SSMS bật **Query → SQLCMD Mode** trước khi chạy (script dùng `:ON ERROR EXIT` để dừng khi preflight/schema có lỗi). File có thể tạo `QuanLyThuVienDB` nếu chưa có, không xóa bảng/database, và từ chối chạy nếu phát hiện bảng nghiệp vụ đã tồn tại. Nó thêm bộ mẫu nhỏ gồm một phiếu mượn quá hạn; SQL ghi trực tiếp nên chỉ dùng ở database demo. Với database hiện có, không chạy file tổng hợp; dùng C# DemoSeeder theo hướng dẫn bên dưới sau khi thỏa điều kiện backup.
+for f in BooksSchema.sql CatalogModuleSchema.sql ReaderModuleSchema.sql \
+         EmployeeModuleSchema.sql AuthenticationModuleSchema.sql BorrowingModuleSchema.sql; do
+  docker cp "SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/$f" qltv-sqlserver:/tmp/"$f"
+  docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+    -S localhost -U sa -P '<MAT_KHAU_SA>' -C -d QuanLyThuVienDB -b -i /tmp/"$f"
+done
+```
+
+Kiểm tra kết quả — phải có **14 bảng**:
+
+```bash
+docker exec qltv-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P '<MAT_KHAU_SA>' -C -d QuanLyThuVienDB \
+  -Q "SELECT COUNT(*) FROM sys.tables;"
+```
+
+Trên Windows có thể thay bằng SSMS: mở từng file, chọn đúng database `QuanLyThuVienDB`, bật **Query → SQLCMD Mode**, chạy theo thứ tự trên.
+
+### 2.2 Một file gộp cho database demo trống
+
+[`Database/AllTablesAndDemoData.sql`](../Database/AllTablesAndDemoData.sql) gộp schema + dữ liệu mẫu. File có thể tạo database, không xóa bảng, và **từ chối chạy** nếu đã có bảng nghiệp vụ. Bắt buộc bật **SQLCMD Mode** vì script dùng `:ON ERROR EXIT`. Không dùng cho database đang có dữ liệu.
+
+### 2.3 Database đang có dữ liệu
+
+1. Xác nhận đúng server/database: `SELECT @@SERVERNAME, DB_NAME();`
+2. Tạo full backup và kiểm tra `RESTORE VERIFYONLY`. Volume Docker **không phải** bản backup.
+3. Đối chiếu bảng/cột/FK hiện có với `LibraryDbContext.cs` và từng script.
+4. Khôi phục backup vào một database test riêng, chạy thử schema ở đó trước.
+5. Dừng ngay nếu có lỗi hoặc dữ liệu legacy không khớp; không chạy script sửa/xóa tùy tiện.
 
 ## 3. Cấu hình API và Admin khởi tạo
 
-Connection string được lấy từ User Secrets hoặc biến môi trường, không từ `appsettings.json`. Cấu hình User Secrets cho project API:
+Connection string lấy từ User Secrets hoặc biến môi trường, **không** từ `appsettings.json`:
 
-```powershell
-$api = ".\SourceCode\QuanLyThuVien.Api\QuanLyThuVien.Api.csproj"
-dotnet user-secrets set "ConnectionStrings:LibraryDb" "Server=127.0.0.1,14333;Database=QuanLyThuVienDB;User Id=sa;Password=<MAT_KHAU_SA>;Encrypt=True;TrustServerCertificate=True" --project $api
+```bash
+dotnet user-secrets set "ConnectionStrings:LibraryDb" \
+  "Server=127.0.0.1,14333;Database=QuanLyThuVienDB;User Id=sa;Password=<MAT_KHAU_SA>;Encrypt=True;TrustServerCertificate=True" \
+  --project SourceCode/QuanLyThuVien.Api/QuanLyThuVien.Api.csproj
 ```
 
-Thay `<MAT_KHAU_SA>` bằng giá trị cục bộ trong `.env`; không lưu lệnh chứa mật khẩu vào script/log/repository. Có thể thay User Secrets bằng biến `ConnectionStrings__LibraryDb` trong phiên PowerShell riêng.
+Cách khác: đặt biến `ConnectionStrings__LibraryDb` trong phiên terminal hiện tại. Không lưu lệnh chứa mật khẩu vào script, log hay repo.
 
-Khi database chưa có bất kỳ Admin nào, API có thể tạo một tài khoản bootstrap nếu cấu hình đủ:
+Khi database **chưa có Admin nào**, API tạo một tài khoản bootstrap nếu đủ ba cấu hình:
 
-```powershell
-dotnet user-secrets set "Authentication:BootstrapAdmin:UserName" "<TEN_DANG_NHAP_ADMIN>" --project $api
-dotnet user-secrets set "Authentication:BootstrapAdmin:DisplayName" "<TEN_HIEN_THI>" --project $api
-dotnet user-secrets set "Authentication:BootstrapAdmin:Password" "<MAT_KHAU_MẠNH>" --project $api
+```bash
+dotnet user-secrets set "Authentication:BootstrapAdmin:UserName"    "<TEN_DANG_NHAP_ADMIN>" --project SourceCode/QuanLyThuVien.Api/QuanLyThuVien.Api.csproj
+dotnet user-secrets set "Authentication:BootstrapAdmin:DisplayName" "<TEN_HIEN_THI>"        --project SourceCode/QuanLyThuVien.Api/QuanLyThuVien.Api.csproj
+dotnet user-secrets set "Authentication:BootstrapAdmin:Password"    "<MAT_KHAU_MANH>"       --project SourceCode/QuanLyThuVien.Api/QuanLyThuVien.Api.csproj
 ```
 
-Chọn mật khẩu dài, ngẫu nhiên và riêng cho môi trường demo. Bootstrap không đặt lại mật khẩu hoặc thay đổi tài khoản Admin hiện có. Sau khi đăng nhập kiểm chứng, ghi nhận thông tin vào file cục bộ được gitignore theo [mẫu](DEMO_ACCOUNTS.example.md); nếu không kiểm chứng được thì để trạng thái chưa xác minh. Không tự tạo tài khoản Thủ thư/Độc giả bằng SQL.
+Mật khẩu phải ≥ 12 ký tự và có chữ hoa, chữ thường, chữ số, ký tự đặc biệt. Bootstrap không đặt lại mật khẩu và không sửa Admin đã tồn tại.
+
+Tài khoản Thủ thư/Độc giả: tạo qua API (`POST /api/docgia` rồi `POST /api/taikhoan` bằng token Admin), **không** chèn SQL trực tiếp. Xem [MODULE_MAP](MODULE_MAP.md).
 
 ## 4. Chạy API, Web và Desktop
 
-API terminal:
+### API — cổng 5058
 
-```powershell
-$env:DOTNET_ENVIRONMENT = "Development"
-dotnet run --project .\SourceCode\QuanLyThuVien.Api\QuanLyThuVien.Api.csproj --launch-profile http
+```bash
+ASPNETCORE_ENVIRONMENT=Development \
+dotnet run --project SourceCode/QuanLyThuVien.Api/QuanLyThuVien.Api.csproj --launch-profile http
 ```
 
-Profile `http` nghe tại `http://localhost:5058`. Trong Development, kiểm tra ping bằng `Invoke-RestMethod http://localhost:5058/api/dev/ping`. `/api/dev/db-check` yêu cầu Bearer auth. Chỉ dùng endpoint dev trên máy local.
+Windows PowerShell: `$env:DOTNET_ENVIRONMENT = "Development"` rồi chạy lệnh `dotnet run` tương ứng.
 
-Web hiện là khung ASP.NET Core MVC tại cổng HTTP `5109`; chưa xác nhận các trang nghiệp vụ tích hợp với API. Chạy bằng:
+Kiểm tra:
 
-```powershell
-dotnet run --project .\SourceCode\QuanLyThuVien.Web\QuanLyThuVien.Web.csproj --launch-profile http
+```bash
+curl http://localhost:5058/api/dev/ping
+# {"message":"API dang hoat dong"}
+
+TOKEN=$(curl -s -X POST http://localhost:5058/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"tenDangNhap":"<ADMIN_USER>","matKhau":"<ADMIN_PASSWORD>"}')
+curl http://localhost:5058/api/dev/db-check -H "Authorization: Bearer $TOKEN"
 ```
 
-Desktop cần API đang chạy và endpoint API theo cấu hình app. Chạy trong terminal khác:
+`/api/dev/db-check` yêu cầu Bearer token; `/api/dev/ping` thì không. Hai endpoint này chỉ tồn tại ở môi trường `Development`.
 
-```powershell
-dotnet run --project .\SourceCode\QuanLyThuVien.Desktop\QuanLyThuVien.Desktop.csproj
+Nếu chưa cấu hình connection string, API vẫn khởi động và các route nghiệp vụ trả `503` — đây là hành vi có chủ đích để dev UI không cần DB.
+
+### Web — cổng 5109
+
+```bash
+dotnet run --project SourceCode/QuanLyThuVien.Web/QuanLyThuVien.Web.csproj --launch-profile http
 ```
 
-## 5. Seed demo
+Web hiện là khung MVC: chỉ có trang Home mặc định, chưa gọi API. Đây là phần đang phát triển (vai trò độc giả).
 
-Seeder chỉ chạy trong Development, giới hạn SQL Server ở `127.0.0.1,14333` và DB `QuanLyThuVienDB`, yêu cầu cấu hình phạt cùng full backup không quá 7 ngày và `RESTORE VERIFYONLY` thành công. Chạy:
+### Desktop — chỉ Windows
+
+Cần API đang chạy. Trong terminal khác:
 
 ```powershell
-$env:DOTNET_ENVIRONMENT = "Development"
-dotnet run --project .\database\seeds\QuanLyThuVien.DemoSeeder.csproj
+dotnet run --project SourceCode\QuanLyThuVien.Desktop\QuanLyThuVien.Desktop.csproj
 ```
 
-Seeder idempotent theo khóa demo, không xóa dữ liệu, không tự khôi phục bản ghi đã ẩn và không tạo thông tin đăng nhập. Xem [chi tiết seed](../database/seeds/README.md). Không bỏ qua kiểm tra backup để seed vào dữ liệu cần giữ.
+Trên macOS/Linux chỉ build được (compile-check), không mở được giao diện:
+
+```bash
+dotnet build QuanLyThuVien.slnx
+```
+
+## 5. Seed dữ liệu demo
+
+Seeder **opt-in**, chạy riêng, không tự chạy cùng API. Nó chỉ chấp nhận `Development`, host `127.0.0.1,14333`, database `QuanLyThuVienDB`, và **yêu cầu full backup không quá 7 ngày đã qua `RESTORE VERIFYONLY`**. Trên database mới tạo chưa có backup, seeder sẽ từ chối — đó là hành vi đúng, không tắt guard.
+
+```bash
+ASPNETCORE_ENVIRONMENT=Development \
+dotnet run --project Database/seeds/QuanLyThuVien.DemoSeeder.csproj
+```
+
+Seeder idempotent theo khóa demo, không xóa dữ liệu, không tạo thông tin đăng nhập. Chi tiết: [`Database/seeds/README.md`](../Database/seeds/README.md).
 
 ## 6. Xử lý lỗi thường gặp
 
 | Triệu chứng | Kiểm tra |
 |---|---|
-| Docker pipe/engine permission denied | Mở Docker Desktop, chờ engine sẵn sàng, rồi chạy `docker version` và `docker compose ps`. |
-| Cổng 14333 bị chiếm | Kiểm tra tiến trình/listener Windows; không đổi cổng nếu chưa cập nhật đồng bộ connection string và SSMS. |
-| Login SQL thất bại | Đảm bảo `.env` có mật khẩu mạnh hợp lệ và khớp connection string; Compose không tự sửa mật khẩu cho volume đã khởi tạo. Không xóa volume để thử lại. |
-| API chạy nhưng nghiệp vụ 503 | Kiểm tra User Secrets project API có `ConnectionStrings:LibraryDb`; kiểm tra SSMS server/database và trạng thái SQL. |
-| `db-check` 401 | Endpoint yêu cầu Bearer token đăng nhập hợp lệ; ping không kiểm tra DB. |
-| Seeder từ chối chạy | Kiểm tra Development, host/DB giới hạn, `CauHinhTienPhat`, backup gần nhất và quyền `RESTORE VERIFYONLY`; không tắt guard. |
-| Schema lỗi / constraint | Dừng thực thi, lưu thông báo lỗi, so sánh schema và khôi phục quy trình từ backup. Không chạy script sửa/xóa tùy tiện. |
+| `Cannot connect to the Docker daemon` | Mở Docker Desktop, chờ engine xanh, rồi `docker version` |
+| `docker compose up` báo thiếu `MSSQL_SA_PASSWORD` | Chưa có `.env`; copy từ `.env.example` và điền mật khẩu |
+| Login SQL thất bại sau khi đổi `.env` | Volume đã giữ mật khẩu cũ; dùng mật khẩu lúc tạo volume, **không** xóa volume |
+| Cổng 14333 bị chiếm | Tìm tiến trình đang giữ cổng; đổi cổng phải sửa đồng thời `docker-compose.yml` và connection string |
+| `error MSB4025` / `NETSDK1100` | Thiếu `Directory.Build.props` hoặc build sai project; build bằng `dotnet build QuanLyThuVien.slnx` |
+| API chạy nhưng nghiệp vụ trả `503` | Chưa có `ConnectionStrings:LibraryDb` trong User Secrets |
+| `db-check` trả `401` | Cần Bearer token từ `/api/auth/login`; ping không kiểm tra DB |
+| Gọi API quản trị bằng tài khoản độc giả | Trả `403` là đúng — xem ma trận quyền trong [MODULE_MAP](MODULE_MAP.md) |
+| Seeder từ chối chạy | Thiếu Development, sai host/DB, thiếu `CauHinhTienPhat`, hoặc chưa có backup ≤ 7 ngày verify được |
+| Schema lỗi constraint | Dừng lại, lưu thông báo lỗi, so sánh schema, khôi phục từ backup |
 
-## 7. Lệnh build
+## 7. Build và test
 
-```powershell
-dotnet build .\QuanLyThuVien.slnx
-dotnet build .\database\seeds\QuanLyThuVien.DemoSeeder.csproj
+```bash
+dotnet build QuanLyThuVien.slnx
+dotnet test Tests/QuanLyThuVien.UnitTests/QuanLyThuVien.UnitTests.csproj
 ```
 
-Build không xác nhận kết nối database, đăng nhập, CRUD runtime hay hiển thị giao diện. Kết quả bàn giao hiện tại nằm trong [báo cáo kiểm thử](FINAL_TEST_REPORT.md).
+Build thành công **không** xác nhận kết nối database, đăng nhập, CRUD runtime hay hiển thị giao diện. Hai project test hiện chưa có test case nào.
+
+## 8. Kết quả kiểm chứng gần nhất
+
+Ngày 2026-10-29, trên macOS (Intel i7-8569U), đã chạy thật và đạt:
+
+- `dotnet build QuanLyThuVien.slnx` → 0 error.
+- SQL Server 2022 Developer (`16.0.4236.2`) trong Docker, database `QuanLyThuVienDB` với 14 bảng và 8 foreign key sau khi chạy 6 script schema.
+- API khởi động ở `http://localhost:5058`, `GET /api/dev/ping` trả 200.
+- Bootstrap Admin thành công, `POST /api/auth/login` trả token, `GET /api/auth/me` và `GET /api/dev/db-check` trả 200.
+- Tạo độc giả + tài khoản `DOC_GIA` qua API; `GET /api/docgia/me`, `GET /api/muontra/me` trả 200.
+- Phân quyền đúng: độc giả gọi `/api/nhanvien` → 403; admin gọi `/api/muontra/me` → 403.
+
+Chưa kiểm chứng: giao diện WinForms (cần Windows), các trang Web (chưa có), seeder (cần backup hợp lệ).

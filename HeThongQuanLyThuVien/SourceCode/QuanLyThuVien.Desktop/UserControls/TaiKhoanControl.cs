@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Desktop.Services;
 using QuanLyThuVien.Desktop.Theme;
+using QuanLyThuVien.Domain.Enums;
 
 namespace QuanLyThuVien.Desktop.UserControls
 {

@@ -7,4 +7,8 @@
     <Project Path="SourceCode/QuanLyThuVien.Infrastructure/QuanLyThuVien.Infrastructure.csproj" />
     <Project Path="SourceCode/QuanLyThuVien.Web/QuanLyThuVien.Web.csproj" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/QuanLyThuVien.UnitTests/QuanLyThuVien.UnitTests.csproj" />
+    <Project Path="Tests/QuanLyThuVien.IntegrationTests/QuanLyThuVien.IntegrationTests.csproj" />
+  </Folder>
 </Solution>

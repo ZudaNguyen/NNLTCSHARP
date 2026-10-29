@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Application.Interfaces;
+using QuanLyThuVien.Domain.Enums;
 
 namespace QuanLyThuVien.Api.Controllers;
 
 [ApiController]
 [Route("api/dashboard")]
-[Authorize(Roles = "ADMIN,THU_THU")]
+[Authorize(Roles = AccountRoles.Staff)]
 public sealed class DashboardController(IThongKeService service) : ControllerBase
 {
     [HttpGet("tong-quan")]

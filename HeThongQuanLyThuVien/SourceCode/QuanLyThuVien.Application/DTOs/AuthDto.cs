@@ -2,13 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace QuanLyThuVien.Application.DTOs;
 
-public static class AccountRoles
-{
-    public const string Admin = "ADMIN";
-    public const string Librarian = "THU_THU";
-    public const string Reader = "DOC_GIA";
-}
-
 public sealed class LoginRequestDto
 {
     [Required, StringLength(64, MinimumLength = 3)]

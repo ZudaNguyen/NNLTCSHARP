@@ -3,12 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Application.Interfaces;
 using QuanLyThuVien.Application.Services;
+using QuanLyThuVien.Domain.Enums;
 
 namespace QuanLyThuVien.Api.Controllers;
 
 [ApiController]
 [Route("api/sach")]
-[Authorize(Roles = "ADMIN,THU_THU")]
+[Authorize(Roles = AccountRoles.Staff)]
 public sealed class SachController(ISachService sachService) : ControllerBase
 {
     [AllowAnonymous]

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using QuanLyThuVien.Application.DTOs;
 using QuanLyThuVien.Application.Interfaces;
 using QuanLyThuVien.Application.Services;
+using QuanLyThuVien.Domain.Enums;
 
 namespace QuanLyThuVien.Api.Controllers;
 
@@ -22,7 +23,7 @@ public sealed class DocGiaController(IDocGiaService service) : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "ADMIN,THU_THU")]
+    [Authorize(Roles = AccountRoles.Staff)]
     public async Task<ActionResult<IReadOnlyList<DocGiaDto>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] string? trangThai,
@@ -30,7 +31,7 @@ public sealed class DocGiaController(IDocGiaService service) : ControllerBase
         Ok(await service.SearchAsync(search, trangThai, cancellationToken));
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "ADMIN,THU_THU")]
+    [Authorize(Roles = AccountRoles.Staff)]
     public async Task<ActionResult<DocGiaDto>> GetById(int id, CancellationToken cancellationToken)
     {
         if (id <= 0) return BadRequest(new ProblemDetails { Title = "Mã độc giả phải lớn hơn 0.", Status = StatusCodes.Status400BadRequest });
@@ -39,7 +40,7 @@ public sealed class DocGiaController(IDocGiaService service) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "ADMIN,THU_THU")]
+    [Authorize(Roles = AccountRoles.Staff)]
     public async Task<ActionResult<DocGiaDto>> Create(CreateDocGiaDto request, CancellationToken cancellationToken)
     {
         try
@@ -51,7 +52,7 @@ public sealed class DocGiaController(IDocGiaService service) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "ADMIN,THU_THU")]
+    [Authorize(Roles = AccountRoles.Staff)]
     public async Task<ActionResult<DocGiaDto>> Update(int id, UpdateDocGiaDto request, CancellationToken cancellationToken)
     {
         if (id <= 0) return BadRequest(new ProblemDetails { Title = "Mã độc giả phải lớn hơn 0.", Status = StatusCodes.Status400BadRequest });
@@ -64,7 +65,7 @@ public sealed class DocGiaController(IDocGiaService service) : ControllerBase
     }
 
     [HttpPatch("{id:int}/trang-thai")]
-    [Authorize(Roles = "ADMIN,THU_THU")]
+    [Authorize(Roles = AccountRoles.Staff)]
     public async Task<ActionResult<DocGiaDto>> UpdateTrangThai(
         int id, UpdateDocGiaTrangThaiDto request, CancellationToken cancellationToken)
     {

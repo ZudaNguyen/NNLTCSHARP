@@ -1,42 +1,10 @@
-<<<<<<< HEAD
-# Quản Lý Thư Viện
-
-Hệ thống quản lý thư viện gồm Web người dùng, Web API và ứng dụng quản trị Windows Forms, sử dụng chung dữ liệu SQL Server.
-
-## Cấu trúc thư mục
-
-- `SourceCode`: toàn bộ mã nguồn chính của hệ thống.
-- `Tests`: các project kiểm thử tự động.
-- `Database`: script, migration và dữ liệu mẫu SQL Server.
-- `Documents`: báo cáo, sơ đồ, wireframe và ảnh minh họa.
-
-## Các project
-
-- `QuanLyThuVien.Domain`: entity, enum và quy tắc miền độc lập.
-- `QuanLyThuVien.Application`: DTO, interface, validation và use case.
-- `QuanLyThuVien.Infrastructure`: Entity Framework Core, SQL Server và triển khai repository/service.
-- `QuanLyThuVien.Api`: API dùng chung cho Web và Desktop.
-- `QuanLyThuVien.Web`: ASP.NET Core MVC dành cho độc giả.
-- `QuanLyThuVien.Desktop`: Windows Forms dành cho nhân viên/quản trị.
-- `QuanLyThuVien.UnitTests`: kiểm thử quy tắc nghiệp vụ.
-- `QuanLyThuVien.IntegrationTests`: kiểm thử API và hạ tầng.
-
-## Lệnh cơ bản
-
-```powershell
-dotnet restore QuanLyThuVien.sln
-dotnet build QuanLyThuVien.sln
-dotnet run --project SourceCode/QuanLyThuVien.Api
-dotnet run --project SourceCode/QuanLyThuVien.Web --launch-profile http
-dotnet run --project SourceCode/QuanLyThuVien.Desktop
-dotnet test QuanLyThuVien.sln
-```
-
-Xem hướng dẫn dành cho thành viên mới trong `HUONG_DAN_CAI_DAT_VA_CHAY.md` và phạm vi dự án trong `KE_HOACH_DU_AN.md`.
-=======
 # Hệ thống quản lý thư viện
 
-Ứng dụng quản lý thư viện gồm REST API dùng chung cho WinForms và Web. Solution chính: `QuanLyThuVien.slnx`; nhánh bàn giao: `feat/backend-nhan`.
+Hệ thống gồm một **REST API dùng chung**, một **ứng dụng Desktop WinForms cho quản trị/thủ thư** và một **Web ASP.NET Core MVC cho độc giả**. Cả ba dùng chung database SQL Server.
+
+- Solution duy nhất: [`QuanLyThuVien.slnx`](QuanLyThuVien.slnx)
+- Bản đồ vai trò, module và API: [`docs/MODULE_MAP.md`](docs/MODULE_MAP.md)
+- Hướng dẫn cài đặt và xử lý lỗi: [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md)
 
 ## 1. Công nghệ
 
@@ -44,61 +12,85 @@ Xem hướng dẫn dành cho thành viên mới trong `HUONG_DAN_CAI_DAT_VA_CHAY
 |---|---|
 | Ngôn ngữ / nền tảng | C#, .NET 10 |
 | Backend | ASP.NET Core Web API |
-| Desktop | WinForms |
-| Web | ASP.NET Core MVC (project Web hiện là khung MVC, chưa xác nhận các luồng nghiệp vụ chạy end-to-end) |
-| ORM / CSDL | EF Core, SQL Server 2022 Developer |
+| Desktop | WinForms (`net10.0-windows`) |
+| Web | ASP.NET Core MVC |
+| ORM / CSDL | EF Core 10, SQL Server 2022 Developer |
 | Môi trường CSDL | Docker Compose |
+| Test | xUnit (chưa có test case) |
 
-## 2. Chức năng
+## 2. Cấu trúc
 
-Quản lý sách, thể loại, tác giả, độc giả, nhân viên, tài khoản và phân quyền; lập phiếu mượn, nhận trả, tính/thu phạt; dashboard và báo cáo. API có thể chạy ping khi chưa cấu hình database, nhưng API nghiệp vụ cần `ConnectionStrings:LibraryDb`. Xem báo cáo để biết phần nào đã build, phần nào chưa kiểm chứng runtime.
-
-## 3. Chạy nhanh trên Windows PowerShell
-
-```powershell
-Set-Location .\HeThongQuanLyThuVien
-Copy-Item .env.example .env
-# Mở .env và đặt MSSQL_SA_PASSWORD thành mật khẩu riêng, mạnh.
-docker compose up -d sqlserver
-dotnet user-secrets set "ConnectionStrings:LibraryDb" "Server=127.0.0.1,14333;Database=QuanLyThuVienDB;User Id=sa;Password=<MAT_KHAU_SA>;Encrypt=True;TrustServerCertificate=True" --project .\SourceCode\QuanLyThuVien.Api\QuanLyThuVien.Api.csproj
-# Nếu cần tạo Admin đầu tiên, xem hướng dẫn trong docs/SETUP_GUIDE.md.
-# Kiểm tra và áp dụng schema có chủ đích theo docs/SETUP_GUIDE.md; sao lưu trước.
-$env:DOTNET_ENVIRONMENT = "Development"
-dotnet run --project .\SourceCode\QuanLyThuVien.Api\QuanLyThuVien.Api.csproj --launch-profile http
+```text
+HeThongQuanLyThuVien/
+├── QuanLyThuVien.slnx              # solution duy nhất
+├── docker-compose.yml              # SQL Server 2022, host port 14333
+├── Directory.Build.props           # cho phép build WinForms trên macOS/Linux
+├── Database/
+│   ├── AllTablesAndDemoData.sql    # schema + dữ liệu mẫu cho DB demo trống
+│   └── seeds/                      # seeder C# opt-in
+├── docs/                           # SETUP_GUIDE, MODULE_MAP, báo cáo
+├── SourceCode/
+│   ├── QuanLyThuVien.Domain        # entity, AccountRoles
+│   ├── QuanLyThuVien.Application   # DTO, interface, service nghiệp vụ
+│   ├── QuanLyThuVien.Infrastructure# DbContext, repository, SQL schema
+│   ├── QuanLyThuVien.Api           # 56 endpoint, opaque bearer auth
+│   ├── QuanLyThuVien.Desktop       # WinForms cho Admin + Thủ thư
+│   └── QuanLyThuVien.Web           # MVC cho độc giả (đang phát triển)
+└── Tests/                          # UnitTests, IntegrationTests
 ```
 
-API HTTP chạy tại `http://localhost:5058`. Mở cửa sổ PowerShell khác để chạy Desktop:
+Thư mục `_archive/` ở gốc repo chứa bản Desktop cũ và script SQL ban đầu, chỉ để tham khảo, **không** nằm trong solution.
 
-```powershell
-Set-Location .\HeThongQuanLyThuVien
-dotnet run --project .\SourceCode\QuanLyThuVien.Desktop\QuanLyThuVien.Desktop.csproj
-```
+## 3. Trạng thái từng phần
 
-Compose giữ dữ liệu trong volume `qltv_sql_data`. Không xóa volume để xử lý lỗi thông thường. Xem [Hướng dẫn cài đặt](docs/SETUP_GUIDE.md) trước khi áp dụng SQL vào database đang có.
-
-## 4. Tài khoản demo
-
-Không có mật khẩu demo nào được xác minh trong lượt bàn giao này. API chỉ tạo Admin bootstrap khi database chưa có tài khoản Admin và đủ ba cấu hình bootstrap. Không tự dùng tài khoản/mật khẩu phỏng đoán.
-
-| Quyền | Tài khoản | Mật khẩu |
+| Phần | Phụ trách | Trạng thái |
 |---|---|---|
-| Admin | Chưa xác minh | Chưa xác minh |
-| Thủ thư | Chưa xác minh | Chưa xác minh |
-| Độc giả | Chưa xác minh | Chưa xác minh |
+| API: sách, thể loại, tác giả, độc giả, nhân viên, tài khoản, mượn trả, phạt, dashboard, báo cáo | nhóm | Xong, đã kiểm chứng runtime |
+| Desktop: đăng nhập, phân quyền, CRUD, mượn trả, báo cáo | nhóm | Xong, build được; chỉ chạy trên Windows |
+| Web độc giả: trang chủ, danh mục, tìm kiếm, chi tiết, đăng nhập, lịch sử mượn, phạt | **user** | Khung rỗng, đang làm |
+| Gửi yêu cầu mượn/đặt sách trực tuyến | **user** | Chưa có |
 
-Sau khi tạo và đăng nhập xác nhận tài khoản trên môi trường demo, lưu thông tin nội bộ tại `docs/DEMO_ACCOUNTS.local.md` (file được gitignore); không đưa mật khẩu vào README, source, log hoặc Git. Xem [mẫu ghi nhận](docs/DEMO_ACCOUNTS.example.md) và [cách bootstrap an toàn](docs/SETUP_GUIDE.md#tạo-tài-khoản-admin-đầu-tiên).
+## 4. Chạy nhanh
 
-## 5. Seed dữ liệu demo
+Yêu cầu: .NET 10 SDK, Docker Desktop (hoặc Docker Engine + compose).
 
-Seeder opt-in, chạy riêng và có kiểm tra an toàn; không tự chạy cùng API. Đọc [database/seeds/README.md](database/seeds/README.md) trước. Seeder yêu cầu Developer DB cục bộ, cấu hình tiền phạt hợp lệ và full backup gần đây đã verify; nó không tạo tài khoản đăng nhập.
+```bash
+cd HeThongQuanLyThuVien
+cp .env.example .env          # đặt MSSQL_SA_PASSWORD mạnh
+docker compose up -d sqlserver
+docker compose ps
 
-Muốn một file SQL gộp schema và dữ liệu mẫu cho **database demo trống**, xem [AllTablesAndDemoData.sql](database/AllTablesAndDemoData.sql). Chạy bằng SSMS ở **SQLCMD Mode**; file từ chối chạy khi đã có bảng nghiệp vụ. Không dùng nó để cập nhật database hiện có.
+dotnet build QuanLyThuVien.slnx
 
-## 6. Tài liệu bàn giao
+dotnet user-secrets set "ConnectionStrings:LibraryDb" \
+  "Server=127.0.0.1,14333;Database=QuanLyThuVienDB;User Id=sa;Password=<MAT_KHAU_SA>;Encrypt=True;TrustServerCertificate=True" \
+  --project SourceCode/QuanLyThuVien.Api/QuanLyThuVien.Api.csproj
 
-- [Hướng dẫn cài đặt, schema và xử lý lỗi](docs/SETUP_GUIDE.md)
-- [Seeder và dữ liệu demo](database/seeds/README.md)
-- [Mẫu tài khoản demo](docs/DEMO_ACCOUNTS.example.md)
-- [Báo cáo kiểm thử cuối](docs/FINAL_TEST_REPORT.md)
-- [Checklist bàn giao](docs/HANDOVER_CHECKLIST.md)
->>>>>>> origin/feat/desktop-ui-theme
+dotnet run --project SourceCode/QuanLyThuVien.Api/QuanLyThuVien.Api.csproj --launch-profile http
+```
+
+- API: `http://localhost:5058`
+- Web: `http://localhost:5109`
+- SQL Server: `127.0.0.1,14333`, database `QuanLyThuVienDB`
+
+Tạo database và chạy schema theo thứ tự trong [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md). Desktop chỉ chạy được trên Windows:
+
+```powershell
+dotnet run --project SourceCode\QuanLyThuVien.Desktop\QuanLyThuVien.Desktop.csproj
+```
+
+`dotnet build QuanLyThuVien.slnx` chạy được cả trên macOS/Linux nhờ `Directory.Build.props`, nhưng chỉ là compile-check cho Desktop.
+
+## 5. Tài khoản demo
+
+Không có mật khẩu demo nào được lưu trong repo. API tự tạo Admin đầu tiên khi database chưa có Admin và đủ ba cấu hình `Authentication:BootstrapAdmin:*` — xem [SETUP_GUIDE](docs/SETUP_GUIDE.md#3-cấu-hình-api-và-admin-khởi-tạo).
+
+Ghi thông tin đăng nhập demo vào `docs/DEMO_ACCOUNTS.local.md` (đã gitignore). Mẫu: [`docs/DEMO_ACCOUNTS.example.md`](docs/DEMO_ACCOUNTS.example.md).
+
+## 6. Dữ liệu mẫu
+
+- Schema: 6 file trong `SourceCode/QuanLyThuVien.Infrastructure/Data/Sql/`, chạy theo thứ tự trong SETUP_GUIDE.
+- Gộp schema + dữ liệu mẫu cho database trống: [`Database/AllTablesAndDemoData.sql`](Database/AllTablesAndDemoData.sql), chạy ở **SQLCMD Mode**.
+- Seeder C# có kiểm tra backup: [`Database/seeds/README.md`](Database/seeds/README.md).
+
+Không chạy script gộp hay seeder lên database đang có dữ liệu cần giữ.
