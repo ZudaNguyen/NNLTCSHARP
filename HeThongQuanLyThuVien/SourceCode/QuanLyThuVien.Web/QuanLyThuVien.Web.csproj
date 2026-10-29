@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\QuanLyThuVien.Application\QuanLyThuVien.Application.csproj" />
+    <ProjectReference Include="..\QuanLyThuVien.Domain\QuanLyThuVien.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

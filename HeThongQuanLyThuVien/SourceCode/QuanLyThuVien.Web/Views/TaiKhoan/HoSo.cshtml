@@ -1,0 +1,61 @@
+@model ProfileViewModel
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+    ViewData["Role"] = "reader";
+    var profile = Model.Profile;
+}
+<section class="page-heading">
+    <div>
+        <h1>Thông tin cá nhân</h1>
+        <p>Hồ sơ độc giả do thư viện quản lý. Liên hệ thủ thư nếu cần cập nhật.</p>
+    </div>
+    <div class="date-chip">Mã độc giả #@profile.MaDocGia</div>
+</section>
+
+<div class="profile-layout">
+    <section class="panel">
+        <div class="panel-title"><h2><span class="title-icon tone-blue">♙</span>Hồ sơ độc giả</h2></div>
+        <div class="profile-head">
+            <span class="avatar large">@profile.HoTen.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault()?[..1].ToUpperInvariant()</span>
+            <div>
+                <strong>@profile.HoTen</strong>
+                <small>Thành viên từ @profile.NgayDangKy.ToString("dd/MM/yyyy")</small>
+            </div>
+            <span class="pill @(profile.TrangThai == "Hoạt động" ? "green" : "orange")">@profile.TrangThai</span>
+        </div>
+        <dl class="detail-meta two-col">
+            <div><dt>Ngày sinh</dt><dd>@profile.NgaySinh.ToString("dd/MM/yyyy")</dd></div>
+            <div><dt>Giới tính</dt><dd>@profile.GioiTinh</dd></div>
+            <div><dt>Số điện thoại</dt><dd>@profile.SoDienThoai</dd></div>
+            <div><dt>Email</dt><dd>@(string.IsNullOrWhiteSpace(profile.Email) ? "—" : profile.Email)</dd></div>
+            <div class="span-2"><dt>Địa chỉ</dt><dd>@(string.IsNullOrWhiteSpace(profile.DiaChi) ? "—" : profile.DiaChi)</dd></div>
+        </dl>
+    </section>
+
+    <section class="panel">
+        <div class="panel-title">
+            <h2><span class="title-icon dark">◷</span>Phiếu mượn gần đây</h2>
+            <a asp-action="LichSuMuon">Xem tất cả →</a>
+        </div>
+        @if (Model.RecentLoans.Count == 0)
+        {
+            <div class="empty-state">
+                <b>Chưa có phiếu mượn nào</b>
+                <small>Hãy chọn sách từ danh mục và liên hệ thủ thư để mượn.</small>
+            </div>
+        }
+        else
+        {
+            @foreach (var loan in Model.RecentLoans)
+            {
+                <a class="profile-loan" asp-action="ChiTietMuon" asp-route-id="@loan.MaPhieu">
+                    <div>
+                        <b>@loan.SoPhieu</b>
+                        <small>Mượn @loan.NgayMuon.ToString("dd/MM/yyyy") · hạn trả @loan.HanTra.ToString("dd/MM/yyyy")</small>
+                    </div>
+                    <span class="pill @(loan.SoLuongConMuon > 0 ? "blue" : "green")">@loan.TrangThai</span>
+                </a>
+            }
+        }
+    </section>
+</div>

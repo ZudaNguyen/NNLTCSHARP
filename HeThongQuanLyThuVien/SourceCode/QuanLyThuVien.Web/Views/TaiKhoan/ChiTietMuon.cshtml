@@ -1,0 +1,158 @@
+@model LoanDetailViewModel
+@{
+    ViewData["Title"] = $"Phiếu {Model.Loan.SoPhieu}";
+    ViewData["Role"] = "reader";
+    var loan = Model.Loan;
+    var fine = Model.Fine;
+    var isActive = loan.SoLuongConMuon > 0;
+    var overdue = isActive && loan.HanTra.Date < DateTime.Today;
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) + " đ";
+}
+<section class="page-heading">
+    <div>
+        <h1>Phiếu mượn @loan.SoPhieu</h1>
+        <p><a asp-action="LichSuMuon">← Quay lại lịch sử mượn trả</a></p>
+    </div>
+    <div class="date-chip">
+        @if (overdue)
+        {
+            <span class="pill orange">Quá hạn</span>
+        }
+        else if (isActive)
+        {
+            <span class="pill blue">@loan.TrangThai</span>
+        }
+        else
+        {
+            <span class="pill green">@loan.TrangThai</span>
+        }
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-title"><h2><span class="title-icon tone-blue">▣</span>Thông tin phiếu</h2></div>
+    <dl class="detail-meta two-col">
+        <div><dt>Số phiếu</dt><dd>@loan.SoPhieu</dd></div>
+        <div><dt>Ngày mượn</dt><dd>@loan.NgayMuon.ToString("dd/MM/yyyy")</dd></div>
+        <div><dt>Hạn trả</dt><dd>@loan.HanTra.ToString("dd/MM/yyyy")</dd></div>
+        <div><dt>Người lập phiếu</dt><dd>@(string.IsNullOrWhiteSpace(loan.NguoiLap) ? "—" : loan.NguoiLap)</dd></div>
+        <div><dt>Sách còn mượn</dt><dd>@loan.SoLuongConMuon</dd></div>
+        <div><dt>Trạng thái</dt><dd>@loan.TrangThai</dd></div>
+    </dl>
+</section>
+
+<section class="panel">
+    <div class="panel-title"><h2><span class="title-icon tone-purple">▥</span>Sách trong phiếu</h2></div>
+    @if (loan.ChiTiet.Count == 0)
+    {
+        <div class="empty-state"><b>Phiếu chưa có chi tiết sách.</b></div>
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <th>Tên sách</th>
+                        <th>SL mượn</th>
+                        <th>Đã trả</th>
+                        <th>Còn mượn</th>
+                        <th>Lịch sử trả</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in loan.ChiTiet)
+                    {
+                        <tr>
+                            <td><b>@item.TenSach</b></td>
+                            <td>@item.SoLuongMuon</td>
+                            <td>@item.SoLuongDaXuLy</td>
+                            <td>@item.SoLuongConMuon</td>
+                            <td>
+                                @if (item.LichSuTra.Count == 0)
+                                {
+                                    <span class="muted">Chưa trả</span>
+                                }
+                                else
+                                {
+                                    <ul class="return-list">
+                                        @foreach (var lanTra in item.LichSuTra)
+                                        {
+                                            <li>
+                                                <b>@lanTra.NgayTra.ToString("dd/MM/yyyy")</b>
+                                                · @lanTra.SoLuongXuLy bản
+                                                · @lanTra.TinhTrangSach
+                                                @if (lanTra.SoNgayTre > 0)
+                                                {
+                                                    <em class="text-overdue">· trễ @lanTra.SoNgayTre ngày</em>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="panel">
+    <div class="panel-title"><h2><span class="title-icon tone-orange">★</span>Tiền phạt</h2></div>
+    @if (fine is null)
+    {
+        <div class="empty-state"><b>Chưa có dữ liệu tiền phạt cho phiếu này.</b></div>
+    }
+    else if (fine.CacKhoanPhat.Count == 0)
+    {
+        <div class="empty-state">
+            <b>Không có khoản phạt nào</b>
+            <small>Bạn đã trả sách đúng hạn hoặc phiếu chưa phát sinh việc trả.</small>
+        </div>
+    }
+    else
+    {
+        @if (fine.ChuaCauHinhMucPhat)
+        {
+            <div class="alert alert-warning">Thư viện chưa cấu hình mức phạt mỗi ngày, tiền phạt có thể chưa được tính đầy đủ.</div>
+        }
+        <div class="table-scroll">
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <th>Ngày trả</th>
+                        <th>Tình trạng sách</th>
+                        <th>Số ngày trễ</th>
+                        <th>Mức phạt/ngày</th>
+                        <th>Phải thu</th>
+                        <th>Đã thu</th>
+                        <th>Còn nợ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var khoan in fine.CacKhoanPhat)
+                    {
+                        <tr>
+                            <td>@khoan.NgayTra.ToString("dd/MM/yyyy")</td>
+                            <td>@khoan.TinhTrangSach</td>
+                            <td>@khoan.SoNgayTre</td>
+                            <td>@(khoan.MucPhatMoiNgayApDung is decimal rate ? Money(rate) : "—")</td>
+                            <td>@Money(khoan.SoTienPhatPhaiThu ?? 0)</td>
+                            <td>@Money(khoan.DaThu)</td>
+                            <td><b>@Money(khoan.ConNo ?? 0)</b></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="fine-summary">
+            <div><small>Tổng phải thu</small><b>@Money(fine.TongPhaiThu)</b></div>
+            <div><small>Đã thu</small><b>@Money(fine.DaThu)</b></div>
+            <div><small>Còn nợ</small><b class="@(fine.ConNo > 0 ? "text-overdue" : string.Empty)">@Money(fine.ConNo)</b></div>
+        </div>
+        <p class="fine-note">Tiền phạt được thu trực tiếp tại quầy thư viện.</p>
+    }
+</section>

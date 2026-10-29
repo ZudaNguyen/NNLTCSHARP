@@ -1,0 +1,44 @@
+@model LoginViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập độc giả - Thư Viện</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="auth-body">
+    <main class="auth-card">
+        <a class="auth-brand" asp-controller="Home" asp-action="Index">
+            <span class="brand-mark">▥</span><span>Thư Viện</span>
+        </a>
+        <h1>Đăng nhập độc giả</h1>
+        <p class="auth-sub">Dùng tài khoản độc giả do thư viện cấp để xem sách đang mượn và lịch sử trả sách.</p>
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+
+        <form method="post" asp-action="Login" class="auth-form">
+            <input type="hidden" asp-for="ReturnUrl" />
+
+            <label asp-for="TenDangNhap"></label>
+            <input asp-for="TenDangNhap" autocomplete="username" placeholder="Tên đăng nhập" />
+            <span asp-validation-for="TenDangNhap" class="field-error"></span>
+
+            <label asp-for="MatKhau"></label>
+            <input asp-for="MatKhau" autocomplete="current-password" placeholder="Mật khẩu" />
+            <span asp-validation-for="MatKhau" class="field-error"></span>
+
+            <button type="submit">Đăng nhập</button>
+        </form>
+
+        <p class="auth-note">
+            Tài khoản quản trị/thủ thư vui lòng dùng ứng dụng Desktop.
+        </p>
+        <a class="auth-back" asp-controller="Home" asp-action="Index">← Về trang chủ</a>
+    </main>
+</body>
+</html>

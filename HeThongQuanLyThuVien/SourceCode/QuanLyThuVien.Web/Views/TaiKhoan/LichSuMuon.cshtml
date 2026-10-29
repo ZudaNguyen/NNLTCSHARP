@@ -1,0 +1,97 @@
+@model LoanListViewModel
+@{
+    ViewData["Title"] = "Lịch sử mượn trả";
+    ViewData["Role"] = "reader";
+    var isActiveFilter = Model.Filter == "dang-muon";
+}
+<section class="page-heading">
+    <div>
+        <h1>Lịch sử mượn trả</h1>
+        <p>Theo dõi phiếu mượn, hạn trả và tình trạng sách của bạn.</p>
+    </div>
+    <div class="date-chip">@Model.Loans.Count phiếu</div>
+</section>
+
+@if (Model.ApiError is not null)
+{
+    <div class="alert alert-error">@Model.ApiError</div>
+}
+
+<section class="panel">
+    <div class="panel-title">
+        <div class="tabs">
+            <a class="tab @(isActiveFilter ? string.Empty : "active")" asp-action="LichSuMuon">Tất cả (@Model.Loans.Count)</a>
+            <a class="tab @(isActiveFilter ? "active" : string.Empty)" asp-action="LichSuMuon" asp-route-trangThai="dang-muon">
+                Đang mượn (@Model.ActiveCount)
+            </a>
+        </div>
+        @if (Model.OverdueCount > 0)
+        {
+            <span class="legend warning">@Model.OverdueCount phiếu quá hạn</span>
+        }
+    </div>
+
+    @if (Model.Loans.Count == 0)
+    {
+        <div class="empty-state">
+            <b>Không có phiếu mượn nào</b>
+            <small>@(isActiveFilter ? "Bạn hiện không mượn cuốn sách nào." : "Bạn chưa có lịch sử mượn sách.")</small>
+            <a class="empty-cta" asp-controller="Sach" asp-action="Index">Khám phá danh mục sách</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <th>Số phiếu</th>
+                        <th>Ngày mượn</th>
+                        <th>Hạn trả</th>
+                        <th>Còn mượn</th>
+                        <th>Trạng thái</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var loan in Model.Loans)
+                    {
+                        <tr class="@(loan.IsOverdue ? "row-overdue" : string.Empty)">
+                            <td><b>@loan.SoPhieu</b></td>
+                            <td>@loan.NgayMuon.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                @loan.HanTra.ToString("dd/MM/yyyy")
+                                @if (loan.IsOverdue)
+                                {
+                                    <small class="text-overdue">Quá hạn @(-loan.DaysLeft) ngày</small>
+                                }
+                                else if (loan.IsDueSoon)
+                                {
+                                    <small class="text-soon">Còn @loan.DaysLeft ngày</small>
+                                }
+                            </td>
+                            <td>@loan.SoLuongConMuon</td>
+                            <td>
+                                @if (loan.IsOverdue)
+                                {
+                                    <span class="pill orange">Quá hạn</span>
+                                }
+                                else if (loan.IsActive)
+                                {
+                                    <span class="pill blue">@loan.TrangThai</span>
+                                }
+                                else
+                                {
+                                    <span class="pill green">@loan.TrangThai</span>
+                                }
+                            </td>
+                            <td class="cell-action">
+                                <a asp-action="ChiTietMuon" asp-route-id="@loan.MaPhieu">Chi tiết →</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

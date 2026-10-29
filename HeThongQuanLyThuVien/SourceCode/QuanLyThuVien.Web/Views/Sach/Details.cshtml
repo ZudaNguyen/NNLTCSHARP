@@ -1,0 +1,75 @@
+@model SachDto
+@{
+    ViewData["Title"] = Model.TenSach;
+    ViewData["Role"] = "reader";
+    string[] covers =
+    [
+        "cover-dune", "cover-atomic", "cover-dacnhantam", "cover-alchemist", "cover-cosmos",
+        "cover-sapiens", "cover-thinking", "cover-clean", "cover-change", "cover-mindful"
+    ];
+    var cover = covers[Math.Abs(Model.MaSach) % covers.Length];
+}
+<section class="page-heading">
+    <div>
+        <h1>Chi tiết sách</h1>
+        <p><a asp-action="Index">← Quay lại danh mục</a></p>
+    </div>
+</section>
+
+<div class="detail-layout">
+    <div class="detail-cover-wrap">
+        <div class="book-cover detail-cover @cover">
+            <small>@Model.TenTacGiaHienThi.ToUpperInvariant()</small>
+            <b>@Model.TenSach</b>
+            <em>@Model.TenTheLoai</em>
+        </div>
+    </div>
+
+    <section class="panel detail-panel">
+        <span class="pill blue">@Model.TenTheLoai</span>
+        <h2>@Model.TenSach</h2>
+        <p class="detail-authors">@Model.TenTacGiaHienThi</p>
+
+        <dl class="detail-meta">
+            <div><dt>ISBN</dt><dd>@(string.IsNullOrWhiteSpace(Model.ISBN) ? "—" : Model.ISBN)</dd></div>
+            <div><dt>Nhà xuất bản</dt><dd>@(string.IsNullOrWhiteSpace(Model.NhaXB) ? "—" : Model.NhaXB)</dd></div>
+            <div><dt>Năm xuất bản</dt><dd>@Model.NamXB</dd></div>
+            <div><dt>Thể loại</dt><dd>@Model.TenTheLoai</dd></div>
+            <div><dt>Số lượng</dt><dd>@Model.SoLuong bản</dd></div>
+            <div>
+                <dt>Tình trạng</dt>
+                <dd>
+                    @if (Model.ConHang)
+                    {
+                        <span class="stock stock-in">Còn @Model.SoLuongCon bản</span>
+                    }
+                    else
+                    {
+                        <span class="stock stock-out">Tạm hết sách</span>
+                    }
+                </dd>
+            </div>
+        </dl>
+
+        <h3 class="detail-desc-title">Giới thiệu</h3>
+        <p class="detail-desc">@(string.IsNullOrWhiteSpace(Model.MoTa) ? "Chưa có mô tả cho cuốn sách này." : Model.MoTa)</p>
+
+        <div class="info-callout">
+            <span>♙</span>
+            <span>
+                <b>Muốn mượn cuốn sách này?</b>
+                <small>
+                    Vui lòng mang thẻ độc giả đến quầy thư viện để được lập phiếu mượn.
+                    @if (!Model.ConHang)
+                    {
+                        <text>Sách hiện đã được mượn hết.</text>
+                    }
+                </small>
+            </span>
+        </div>
+
+        <div class="detail-actions">
+            <a class="btn-secondary" asp-action="Index">← Về danh mục</a>
+        </div>
+    </section>
+</div>

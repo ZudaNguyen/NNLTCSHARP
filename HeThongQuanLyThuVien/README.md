@@ -35,7 +35,7 @@ HeThongQuanLyThuVien/
 │   ├── QuanLyThuVien.Infrastructure# DbContext, repository, SQL schema
 │   ├── QuanLyThuVien.Api           # 56 endpoint, opaque bearer auth
 │   ├── QuanLyThuVien.Desktop       # WinForms cho Admin + Thủ thư
-│   └── QuanLyThuVien.Web           # MVC cho độc giả (đang phát triển)
+│   └── QuanLyThuVien.Web           # MVC cho độc giả, gọi REST API
 └── Tests/                          # UnitTests, IntegrationTests
 ```
 
@@ -47,7 +47,7 @@ Thư mục `_archive/` ở gốc repo chứa bản Desktop cũ và script SQL ba
 |---|---|---|
 | API: sách, thể loại, tác giả, độc giả, nhân viên, tài khoản, mượn trả, phạt, dashboard, báo cáo | nhóm | Xong, đã kiểm chứng runtime |
 | Desktop: đăng nhập, phân quyền, CRUD, mượn trả, báo cáo | nhóm | Xong, build được; chỉ chạy trên Windows |
-| Web độc giả: trang chủ, danh mục, tìm kiếm, chi tiết, đăng nhập, lịch sử mượn, phạt | **user** | Khung rỗng, đang làm |
+| Web độc giả: trang chủ, danh mục, tìm kiếm, chi tiết, đăng nhập, lịch sử mượn, phạt | **user** | Xong, đã kiểm chứng runtime với API + SQL Server thật |
 | Gửi yêu cầu mượn/đặt sách trực tuyến | **user** | Chưa có |
 
 ## 4. Chạy nhanh
@@ -72,6 +72,14 @@ dotnet run --project SourceCode/QuanLyThuVien.Api/QuanLyThuVien.Api.csproj --lau
 - API: `http://localhost:5058`
 - Web: `http://localhost:5109`
 - SQL Server: `127.0.0.1,14333`, database `QuanLyThuVienDB`
+
+Web cần API đang chạy (mặc định đọc `ApiBaseUrl` = `http://localhost:5058/` trong `appsettings.json`). Trong terminal khác:
+
+```bash
+dotnet run --project SourceCode/QuanLyThuVien.Web/QuanLyThuVien.Web.csproj --launch-profile http
+```
+
+Trang độc giả: `/`, `/sach`, `/sach/{id}`, `/dang-nhap`, `/lich-su-muon`, `/lich-su-muon/{id}`, `/tai-khoan`. Chỉ tài khoản vai trò `DOC_GIA` đăng nhập được trên Web; Admin/Thủ thư dùng Desktop.
 
 Tạo database và chạy schema theo thứ tự trong [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md). Desktop chỉ chạy được trên Windows:
 

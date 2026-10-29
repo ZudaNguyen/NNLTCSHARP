@@ -1,0 +1,83 @@
+@model BookSearchViewModel
+@{
+    ViewData["Title"] = "Danh mục sách";
+    ViewData["Role"] = "reader";
+    string[] tones = ["tone-blue", "tone-green", "tone-purple", "tone-orange", "tone-pink", "tone-sky"];
+    string[] icons = ["▥", "♙", "▣", "▥", "●", "▦"];
+}
+<section class="page-heading">
+    <div>
+        <h1>Danh mục sách</h1>
+        <p>Tìm theo tên sách, tác giả, ISBN hoặc chọn một thể loại bên dưới.</p>
+    </div>
+    <div class="date-chip">@Model.Books.Count đầu sách</div>
+</section>
+
+@if (Model.ApiError is not null)
+{
+    <div class="alert alert-error">@Model.ApiError</div>
+}
+
+<section class="hero-search">
+    <div>
+        <h2>Tìm cuốn sách bạn muốn đọc</h2>
+        <p>@Model.SelectedCategoryName@(string.IsNullOrWhiteSpace(Model.Search) ? string.Empty : $" · từ khóa \"{Model.Search}\"")</p>
+    </div>
+    <form class="search-box" method="get" asp-action="Index">
+        @if (Model.MaTheLoai is int maTheLoai)
+        {
+            <input type="hidden" name="maTheLoai" value="@maTheLoai" />
+        }
+        <span>⌕</span>
+        <input name="search" value="@Model.Search" placeholder="Tên sách, tác giả hoặc ISBN..." aria-label="Tìm kiếm sách" />
+        <button type="submit">Tìm kiếm</button>
+    </form>
+</section>
+
+<section class="category-strip" id="the-loai">
+    <a class="category-chip @(Model.MaTheLoai is null ? "selected" : string.Empty)"
+       asp-action="Index" asp-route-search="@Model.Search">
+        <i class="tone-blue">▦</i>Tất cả
+    </a>
+    @for (var i = 0; i < Model.Categories.Count; i++)
+    {
+        var category = Model.Categories[i];
+        <a class="category-chip @(Model.MaTheLoai == category.MaTheLoai ? "selected" : string.Empty)"
+           asp-action="Index" asp-route-search="@Model.Search" asp-route-maTheLoai="@category.MaTheLoai"
+           title="@category.TenTheLoai">
+            <i class="@tones[i % tones.Length]">@icons[i % icons.Length]</i>@category.TenTheLoai
+        </a>
+    }
+</section>
+
+<section class="panel books-panel">
+    <div class="panel-title">
+        <h2><span class="title-icon tone-blue">▥</span>@Model.SelectedCategoryName</h2>
+        @if (!string.IsNullOrWhiteSpace(Model.Search))
+        {
+            <a asp-action="Index" asp-route-maTheLoai="@Model.MaTheLoai">Xóa từ khóa ×</a>
+        }
+        else
+        {
+            <span class="legend">@Model.Books.Count kết quả</span>
+        }
+    </div>
+
+    @if (Model.Books.Count == 0)
+    {
+        <div class="empty-state">
+            <b>Không tìm thấy sách phù hợp</b>
+            <small>Thử từ khóa khác hoặc bỏ bộ lọc thể loại.</small>
+            <a class="empty-cta" asp-action="Index">Xem toàn bộ sách</a>
+        </div>
+    }
+    else
+    {
+        <div class="book-grid wide-grid">
+            @foreach (var book in Model.Books)
+            {
+                <partial name="_BookCard" model="book" />
+            }
+        </div>
+    }
+</section>

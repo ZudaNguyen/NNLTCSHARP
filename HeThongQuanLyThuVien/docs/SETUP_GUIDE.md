@@ -133,11 +133,29 @@ Nếu chưa cấu hình connection string, API vẫn khởi động và các rou
 
 ### Web — cổng 5109
 
+Cần API đang chạy ở cổng 5058 (Web **không** truy cập database trực tiếp, mọi dữ liệu đi qua REST API):
+
 ```bash
 dotnet run --project SourceCode/QuanLyThuVien.Web/QuanLyThuVien.Web.csproj --launch-profile http
 ```
 
-Web hiện là khung MVC: chỉ có trang Home mặc định, chưa gọi API. Đây là phần đang phát triển (vai trò độc giả).
+Mở `http://localhost:5109`. Web đọc địa chỉ API từ `ApiBaseUrl` trong `appsettings.json` (mặc định `http://localhost:5058/`); đổi cổng API thì sửa khóa này.
+
+Web dành cho độc giả, dùng cookie authentication: sau khi đăng nhập, token của API được giữ trong claim `api_token` của cookie HttpOnly (`QuanLyThuVien.Reader`, 8 giờ, sliding) — không lưu localStorage và không có session server.
+
+| Route | Nội dung |
+|---|---|
+| `/` | Trang chủ: sách nổi bật, thể loại, sách đang mượn, thông báo hạn trả/quá hạn |
+| `/sach` | Danh mục + tìm kiếm (`?search=`) và lọc thể loại (`?maTheLoai=`) |
+| `/sach/{id}` | Chi tiết sách, tình trạng còn/hết |
+| `/dang-nhap`, `/dang-xuat` | Đăng nhập / đăng xuất (chỉ vai trò `DOC_GIA`) |
+| `/lich-su-muon` | Lịch sử mượn trả (`?trangThai=dang-muon` để lọc phiếu chưa trả hết) |
+| `/lich-su-muon/{id}` | Chi tiết phiếu mượn + tiền phạt từng lần trả |
+| `/tai-khoan` | Hồ sơ độc giả và phiếu mượn gần đây |
+
+Các trang không cần đăng nhập: `/`, `/sach`, `/sach/{id}`, `/dang-nhap`. Các trang còn lại chuyển hướng về `/dang-nhap`.
+
+`/Home/Manager` và `/Home/Admin` vẫn là mockup tĩnh của giao diện Desktop, không dùng dữ liệu thật và không thuộc phần Web độc giả.
 
 ### Desktop — chỉ Windows
 
@@ -198,5 +216,6 @@ Ngày 2026-10-29, trên macOS (Intel i7-8569U), đã chạy thật và đạt:
 - Bootstrap Admin thành công, `POST /api/auth/login` trả token, `GET /api/auth/me` và `GET /api/dev/db-check` trả 200.
 - Tạo độc giả + tài khoản `DOC_GIA` qua API; `GET /api/docgia/me`, `GET /api/muontra/me` trả 200.
 - Phân quyền đúng: độc giả gọi `/api/nhanvien` → 403; admin gọi `/api/muontra/me` → 403.
+- Web chạy ở `http://localhost:5109`: `/`, `/sach`, `/sach/1`, `/dang-nhap` trả 200; đăng nhập `DOC_GIA` tạo cookie và mở được `/lich-su-muon`, `/tai-khoan`; đăng nhập Admin bị từ chối; `/sach/999` trả 404; `/lich-su-muon` khi chưa đăng nhập chuyển về `/dang-nhap`.
 
-Chưa kiểm chứng: giao diện WinForms (cần Windows), các trang Web (chưa có), seeder (cần backup hợp lệ).
+Chưa kiểm chứng: giao diện WinForms (cần Windows), seeder (cần backup hợp lệ).

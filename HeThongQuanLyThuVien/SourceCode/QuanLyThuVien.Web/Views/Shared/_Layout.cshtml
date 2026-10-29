@@ -1,3 +1,4 @@
+@inject ReaderSession ReaderSession
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -12,8 +13,28 @@
 <body>
     @{
         var role = ViewData["Role"]?.ToString() ?? "reader";
-        var roleName = role == "admin" ? "Quản trị viên" : role == "manager" ? "Thủ thư" : "Độc giả";
-        var userName = role == "admin" ? "Nguyễn Minh An" : role == "manager" ? "Trần Thanh Hà" : "Nguyễn Văn An";
+        var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+        var action = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+        var loanTab = Context.Request.Query["trangThai"].ToString();
+        var isReader = role == "reader";
+        var authenticated = isReader && ReaderSession.IsAuthenticated;
+
+        string NavClass(bool active) => active ? "active" : string.Empty;
+        var homeActive = controller == "Home" && action == "Index";
+        var searchActive = controller == "Sach";
+        var activeLoansActive = controller == "TaiKhoan" && action == "LichSuMuon" && loanTab == "dang-muon";
+        var historyActive = controller == "TaiKhoan" && action == "LichSuMuon" && loanTab != "dang-muon";
+        var profileActive = controller == "TaiKhoan" && action == "HoSo";
+
+        var displayName = role switch
+        {
+            "admin" => "Nguyễn Minh An",
+            "manager" => "Trần Thanh Hà",
+            _ => authenticated ? ReaderSession.DisplayName : "Khách"
+        };
+        var roleName = role == "admin" ? "Quản trị viên" : role == "manager" ? "Thủ thư" : authenticated ? "Độc giả" : "Chưa đăng nhập";
+        var initials = role == "admin" ? "MA" : role == "manager" ? "TH" : authenticated ? ReaderSession.Initials : "?";
+        var noticeCount = ViewData["NotificationCount"] as int? ?? 0;
     }
     <div class="app-shell" data-role="@role">
         <aside class="sidebar" id="sidebar">
@@ -21,15 +42,21 @@
                 <span class="brand-mark">▥</span><span>Thư Viện</span>
             </a>
             <nav class="side-nav" aria-label="Điều hướng chính">
-                @if (role == "reader")
+                @if (isReader)
                 {
-                    <a class="active" asp-action="Index"><span>⌂</span>Trang chủ</a>
-                    <a href="#search"><span>⌕</span>Tìm kiếm sách</a>
-                    <a href="#categories"><span>▥</span>Danh mục sách</a>
-                    <a href="#borrowed"><span>▤</span>Sách đã mượn</a>
-                    <a href="#history"><span>◷</span>Lịch sử mượn trả</a>
-                    <a href="#account"><span>♙</span>Thông tin cá nhân</a>
-                    <a href="#notifications"><span>♢</span>Thông báo <b class="nav-badge">2</b></a>
+                    <a class="@NavClass(homeActive)" asp-controller="Home" asp-action="Index"><span>⌂</span>Trang chủ</a>
+                    <a class="@NavClass(searchActive && action == "Index")" asp-controller="Sach" asp-action="Index"><span>⌕</span>Tìm kiếm sách</a>
+                    <a class="@NavClass(searchActive && action == "Details")" asp-controller="Sach" asp-action="Index" asp-fragment="the-loai"><span>▥</span>Danh mục sách</a>
+                    <a class="@NavClass(activeLoansActive)" asp-controller="TaiKhoan" asp-action="LichSuMuon" asp-route-trangThai="dang-muon"><span>▤</span>Sách đang mượn</a>
+                    <a class="@NavClass(historyActive)" asp-controller="TaiKhoan" asp-action="LichSuMuon"><span>◷</span>Lịch sử mượn trả</a>
+                    <a class="@NavClass(profileActive)" asp-controller="TaiKhoan" asp-action="HoSo"><span>♙</span>Thông tin cá nhân</a>
+                    <a asp-controller="Home" asp-action="Index" asp-fragment="notifications">
+                        <span>♢</span>Thông báo
+                        @if (noticeCount > 0)
+                        {
+                            <b class="nav-badge">@noticeCount</b>
+                        }
+                    </a>
                 }
                 else if (role == "manager")
                 {
@@ -53,19 +80,49 @@
                 }
             </nav>
             <div class="sidebar-user">
-                <span class="avatar">@(role == "reader" ? "NA" : role == "manager" ? "TH" : "MA")</span>
-                <span><strong>@userName</strong><small>@roleName</small></span>
-                <button title="Cài đặt" aria-label="Cài đặt">⚙</button>
+                <span class="avatar">@initials</span>
+                <span><strong>@displayName</strong><small>@roleName</small></span>
+                @if (authenticated)
+                {
+                    <form asp-controller="TaiKhoan" asp-action="Logout" method="post">
+                        <button type="submit" title="Đăng xuất" aria-label="Đăng xuất">⏻</button>
+                    </form>
+                }
+                else
+                {
+                    <button title="Cài đặt" aria-label="Cài đặt">⚙</button>
+                }
             </div>
         </aside>
         <div class="app-main">
             <header class="topbar">
                 <button class="menu-toggle" id="menuToggle" aria-label="Mở menu">☰</button>
-                <label class="top-search" for="topSearch"><span>⌕</span><input id="topSearch" name="topSearch" type="search" placeholder="Tìm kiếm..." aria-label="Tìm kiếm" /></label>
+                <form class="top-search" method="get" asp-controller="Sach" asp-action="Index" role="search">
+                    <span>⌕</span>
+                    <input id="topSearch" name="search" type="search" placeholder="Tìm sách, tác giả, ISBN..."
+                           aria-label="Tìm kiếm sách" value="@Context.Request.Query["search"]" />
+                </form>
                 <div class="top-actions">
-                    <button class="icon-button" aria-label="Thông báo">♢<i></i></button>
-                    <span class="avatar small">@(role == "reader" ? "NA" : role == "manager" ? "TH" : "MA")</span>
-                    <strong>@roleName</strong><span class="chevron">⌄</span>
+                    <a class="icon-button" asp-controller="Home" asp-action="Index" asp-fragment="notifications" aria-label="Thông báo" title="Thông báo">
+                        ♢
+                        @if (noticeCount > 0)
+                        {
+                            <i></i>
+                        }
+                    </a>
+                    <span class="avatar small">@initials</span>
+                    <strong>@roleName</strong>
+                    @if (authenticated)
+                    {
+                        <form asp-controller="TaiKhoan" asp-action="Logout" method="post">
+                            <button type="submit" class="top-logout">Đăng xuất</button>
+                        </form>
+                    }
+                    else if (isReader)
+                    {
+                        <a class="top-login" asp-controller="TaiKhoan" asp-action="Login">Đăng nhập</a>
+                    }
+                    <span class="chevron">⌄</span>
                 </div>
             </header>
             <main role="main" class="page-content">

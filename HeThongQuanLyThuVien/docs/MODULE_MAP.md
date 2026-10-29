@@ -118,38 +118,42 @@ Token là opaque bearer, gửi qua header `Authorization: Bearer <accessToken>`.
 
 ## 5. Phần Web độc giả (user) — hiện có gì, còn thiếu gì
 
-Đã có sẵn và **đã kiểm chứng chạy thật**:
+Đã xong và **đã kiểm chứng runtime** (API cổng 5058 + Web cổng 5109 + SQL Server thật):
 
-- Đăng nhập bằng tài khoản `DOC_GIA`, nhận token.
-- `GET /api/docgia/me` trả hồ sơ độc giả.
-- `GET /api/muontra/me` và `/me/{id}` trả lịch sử mượn.
-- `GET /api/muontra/me/{id}/tien-phat` trả tiền phạt.
-- `GET /api/sach`, `/api/theloai`, `/api/tacgia` gọi anonymous được → trang chủ, danh mục, tìm kiếm, chi tiết không cần đăng nhập.
-- Phân quyền đã đúng: độc giả gọi API quản trị trả `403`, admin gọi `/api/muontra/me` trả `403`.
+- Đăng nhập bằng tài khoản `DOC_GIA`; Web dùng cookie authentication, token API nằm trong claim `api_token` của cookie HttpOnly. Tài khoản không phải `DOC_GIA` bị từ chối ngay trên form đăng nhập.
+- `GET /api/docgia/me` → `/tai-khoan` (hồ sơ + 5 phiếu gần nhất).
+- `GET /api/muontra/me` và `/me/{id}` → `/lich-su-muon`, `/lich-su-muon/{id}`.
+- `GET /api/muontra/me/{id}/tien-phat` → bảng tiền phạt từng lần trả (phải thu / đã thu / còn nợ).
+- `GET /api/sach`, `/api/theloai` gọi anonymous được → `/`, `/sach`, `/sach/{id}` không cần đăng nhập.
+- Trang chủ và layout đã thay dữ liệu mockup bằng dữ liệu thật: sách nổi bật, thể loại, sách đang mượn, cảnh báo sắp đến hạn/quá hạn, badge thông báo.
+- Phân quyền đã đúng: độc giả gọi API quản trị trả `403`, admin gọi `/api/muontra/me` trả `403`, admin đăng nhập Web bị chặn.
 
 Còn thiếu (thuộc phần việc user):
 
-1. **Gửi yêu cầu mượn / đặt sách** — chưa có endpoint, chưa có bảng `YeuCauMuon`. Kế hoạch dự án ghi đây là "nên có".
-2. **Tầng gọi API trong project Web** — `QuanLyThuVien.Web` hiện chỉ có `HomeController` và một view mặc định, chưa có `Services/LibraryApiClient` hay xử lý token/cookie.
-3. **Trang và layout** — chưa có layout độc giả, chưa có trang danh mục/chi tiết/lịch sử.
+1. **Gửi yêu cầu mượn / đặt sách** — chưa có endpoint, chưa có bảng `YeuCauMuon`. Kế hoạch dự án ghi đây là "nên có". Hiện `/sach/{id}` chỉ hướng dẫn độc giả ra quầy mượn.
+2. **Đổi mật khẩu trên Web** — API chưa có endpoint cho độc giả tự đổi; hiện phải nhờ thủ thư.
 
-### Gợi ý vị trí đặt code mới
+### Cấu trúc Web hiện tại
 
 ```text
 SourceCode/QuanLyThuVien.Web/
 ├── Controllers/
-│   ├── HomeController.cs        (đã có)
-│   ├── SachController.cs        (mới) danh mục + chi tiết + tìm kiếm
-│   └── TaiKhoanController.cs    (mới) đăng nhập/đăng xuất/lịch sử mượn
+│   ├── HomeController.cs        trang chủ + mockup Manager/Admin
+│   ├── SachController.cs        /sach (tìm kiếm, lọc thể loại) + /sach/{id}
+│   └── TaiKhoanController.cs    đăng nhập/đăng xuất/lịch sử mượn/hồ sơ
 ├── Services/
-│   ├── LibraryApiClient.cs      (mới) gọi API, gắn Bearer token
-│   └── ReaderSession.cs         (mới) giữ token trong cookie auth
-├── ViewModels/                  (đã có thư mục)
+│   ├── LibraryApiClient.cs      cửa ngõ duy nhất gọi REST API, gắn Bearer token
+│   └── ReaderSession.cs         đọc/ghi claim cookie, đăng nhập/đăng xuất
+├── ViewModels/                  Home, BookSearch, Account (login/loan/profile)
 └── Views/
-    ├── Shared/_Layout.cshtml    (đã có, cần chỉnh cho độc giả)
+    ├── Shared/_Layout.cshtml    layout độc giả, menu theo route, badge thông báo
+    ├── Shared/_BookCard.cshtml  thẻ sách dùng lại
+    ├── Home/Index.cshtml
     ├── Sach/Index.cshtml, Details.cshtml
-    └── TaiKhoan/Login.cshtml, LichSuMuon.cshtml
+    └── TaiKhoan/Login.cshtml, LichSuMuon.cshtml, ChiTietMuon.cshtml, HoSo.cshtml
 ```
+
+Quy ước: Web **không** tham chiếu `Infrastructure`/DbContext và không chứa logic nghiệp vụ; mọi thao tác đi qua `LibraryApiClient`. Địa chỉ API cấu hình bằng `ApiBaseUrl` trong `appsettings.json` (mặc định `http://localhost:5058/`).
 
 Nếu cần thêm nghiệp vụ mới, thứ tự thêm để không phá phần đã xong:
 

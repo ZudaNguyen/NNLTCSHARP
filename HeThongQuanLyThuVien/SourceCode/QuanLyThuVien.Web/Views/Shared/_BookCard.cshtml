@@ -1,0 +1,22 @@
+@model SachDto
+@{
+    string[] covers =
+    [
+        "cover-dune", "cover-atomic", "cover-dacnhantam", "cover-alchemist", "cover-cosmos",
+        "cover-sapiens", "cover-thinking", "cover-clean", "cover-change", "cover-mindful"
+    ];
+    var cover = covers[Math.Abs(Model.MaSach) % covers.Length];
+}
+<article class="book-card" data-title="@Model.TenSach @Model.TenTacGiaHienThi @Model.TenTheLoai">
+    <a class="book-cover-link" asp-controller="Sach" asp-action="Details" asp-route-id="@Model.MaSach" title="@Model.TenSach">
+        <div class="book-cover @cover">
+            <small>@Model.TenTacGiaHienThi.ToUpperInvariant()</small>
+            <b>@Model.TenSach</b>
+            <em>@Model.TenTheLoai</em>
+        </div>
+    </a>
+    <h3><a asp-controller="Sach" asp-action="Details" asp-route-id="@Model.MaSach">@Model.TenSach</a></h3>
+    <p>@Model.TenTacGiaHienThi</p>
+    <span>@Model.TenTheLoai</span>
+    <a class="card-cta" asp-controller="Sach" asp-action="Details" asp-route-id="@Model.MaSach">Xem chi tiết</a>
+</article>
