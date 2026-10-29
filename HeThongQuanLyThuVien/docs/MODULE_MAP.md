@@ -149,6 +149,7 @@ Quy tắc nghiệp vụ:
 - `GET /api/muontra/me` và `/me/{id}` → `/lich-su-muon`, `/lich-su-muon/{id}`.
 - `GET /api/muontra/me/{id}/tien-phat` → bảng tiền phạt từng lần trả (phải thu / đã thu / còn nợ).
 - `GET /api/sach`, `/api/theloai` gọi anonymous được → `/`, `/sach`, `/sach/{id}` không cần đăng nhập.
+- `GET /sach/suggest?q=...` trả tối đa 6 gợi ý (tên sách, tác giả, thể loại, số bản còn) cho ô tìm kiếm ở topbar và `/sach`; JS tự debounce, hỗ trợ phím ↑/↓/Enter/Escape.
 - `POST /api/yeucau` → nút **Gửi yêu cầu mượn / Đặt trước** ở `/sach/{id}`; `GET /api/yeucau/me` → `/yeu-cau`; `POST /api/yeucau/me/{id}/huy` → nút **Hủy**.
 - Trang `/sach/{id}` phân biệt 4 trạng thái: khách (mời đăng nhập), đang mượn cuốn này (kèm phiếu), đã có yêu cầu chờ duyệt (kèm nút hủy), còn lại (form đặt mượn).
 - Trang chủ và layout đã thay dữ liệu mockup bằng dữ liệu thật: sách nổi bật, thể loại, sách đang mượn, cảnh báo sắp đến hạn/quá hạn, badge thông báo và badge yêu cầu chờ duyệt.
@@ -165,7 +166,7 @@ Còn thiếu (thuộc phần việc user):
 SourceCode/QuanLyThuVien.Web/
 ├── Controllers/
 │   ├── HomeController.cs        trang chủ + mockup Manager/Admin
-│   ├── SachController.cs        /sach (tìm kiếm, lọc thể loại) + /sach/{id}
+│   ├── SachController.cs        /sach (tìm kiếm, lọc thể loại, gợi ý) + /sach/{id}
 │   ├── YeuCauMuonController.cs  /yeu-cau, gửi yêu cầu, hủy yêu cầu
 │   └── TaiKhoanController.cs    đăng nhập/đăng ký/đăng xuất/lịch sử mượn/hồ sơ
 ├── Services/
@@ -198,6 +199,7 @@ Nếu cần thêm nghiệp vụ mới, thứ tự thêm để không phá phần
 |---|---|---|
 | `GET /` | `Home/Index` | Trang chủ, tổng hợp thông báo |
 | `GET /sach` | `Sach/Index` | Tìm kiếm, lọc thể loại |
+| `GET /sach/suggest?q=` | `Sach/Suggest` | Gợi ý tìm kiếm (JSON, tối đa 6, từ 2 ký tự) |
 | `GET /sach/{id}` | `Sach/Details` | Chi tiết + form đặt mượn |
 | `POST /yeu-cau/dat/{maSach}` | `YeuCauMuon/Create` | Gửi yêu cầu, cần đăng nhập |
 | `GET /yeu-cau` | `YeuCauMuon/Index` | Danh sách + tab trạng thái |

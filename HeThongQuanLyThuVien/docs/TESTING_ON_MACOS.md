@@ -224,6 +224,35 @@ DELETE FROM dbo.DocGia WHERE Email = N'docgia.web@example.invalid';
 COMMIT TRANSACTION;
 ```
 
+### 3.2 Kiểm tra danh mục 35 sách và gợi ý tìm kiếm
+
+Bộ dữ liệu demo có **7 thể loại × 5 đầu sách = 35 sách hiển thị**, số bản mỗi đầu từ 1–5
+(ngoài ra còn 1 sách đã ẩn để kiểm thử lọc). Kiểm tra nhanh:
+
+```sql
+SET QUOTED_IDENTIFIER ON;
+SET NOCOUNT ON;
+SELECT t.TenTheLoai, COUNT(*) AS SoDauSach, MIN(s.SoLuong) AS MinBan, MAX(s.SoLuong) AS MaxBan
+FROM dbo.Sach s
+JOIN dbo.TheLoai t ON t.MaTheLoai = s.MaTheLoai
+WHERE s.IsDeleted = 0
+GROUP BY t.TenTheLoai
+ORDER BY t.TenTheLoai;
+```
+
+Kỳ vọng: 7 dòng, mỗi dòng `SoDauSach = 5`, `MinBan`/`MaxBan` nằm trong 1–5.
+
+Trên Web:
+
+1. Mở `http://localhost:5109/sach` → đếm đủ 35 thẻ sách; bấm từng thể loại → đúng 5 sách.
+2. Gõ ít nhất 2 ký tự vào ô tìm kiếm ở topbar hoặc ô của `/sach` (ví dụ `lập trình`,
+   `DEMO`, `Nguyễn`) → sau ~220 ms hiện tối đa 6 gợi ý kèm tác giả, thể loại và badge
+   `Còn N` / `Hết bản`; bấm gợi ý mở đúng `/sach/{id}`.
+3. Dùng `↓`/`↑` để chọn, `Enter` để mở, `Esc` hoặc bấm ra ngoài để đóng. Gõ chuỗi không
+   khớp (ví dụ `zzzz`) → không hiện dropdown.
+4. Gọi trực tiếp `curl 'http://localhost:5109/sach/suggest?q=DEMO'` → JSON tối đa 6 phần tử,
+   có `maSach`, `tenSach`, `tenTacGia`, `tenTheLoai`, `soLuongCon`, `conHang`, `url`.
+
 ---
 
 ## 4. Dữ liệu test và dọn dẹp

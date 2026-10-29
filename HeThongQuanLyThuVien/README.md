@@ -47,9 +47,13 @@ Thư mục `_archive/` ở gốc repo chứa bản Desktop cũ và script SQL ba
 |---|---|---|
 | API: sách, thể loại, tác giả, độc giả, nhân viên, tài khoản, mượn trả, phạt, dashboard, báo cáo | nhóm | Xong, đã kiểm chứng runtime |
 | Desktop: đăng nhập, phân quyền, CRUD, mượn trả, báo cáo | nhóm | Xong, build được; chỉ chạy trên Windows |
-| Web độc giả: trang chủ, danh mục, tìm kiếm, chi tiết, đăng nhập, lịch sử mượn, phạt | **user** | Xong, đã kiểm chứng runtime với API + SQL Server thật |
+| Web độc giả: trang chủ, danh mục, tìm kiếm (kèm gợi ý), chi tiết, đăng nhập, lịch sử mượn, phạt | **user** | Xong, đã kiểm chứng runtime với API + SQL Server thật |
 | Gửi yêu cầu mượn/đặt sách trực tuyến (`YeuCauMuon`) | **user** | Xong: độc giả gửi/hủy, thủ thư duyệt/từ chối |
 | Tự đăng ký độc giả trên Web (`/dang-ky`) | **user** | Xong: tạo thẻ + tài khoản `Hoạt động` ngay, tự đăng nhập |
+
+Bộ dữ liệu demo trong `Database/AllTablesAndDemoData.sql` có **35 đầu sách hiển thị**,
+chia đều **5 đầu sách cho mỗi thể loại** (7 thể loại); số bản của mỗi đầu sách nằm trong
+khoảng **1–5**. Script còn giữ các ca kiểm thử còn 1 bản, hết bản, nhiều tác giả và sách đã ẩn.
 
 ## 4. Chạy nhanh
 
