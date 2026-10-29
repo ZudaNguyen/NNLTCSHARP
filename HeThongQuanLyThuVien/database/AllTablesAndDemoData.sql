@@ -489,7 +489,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.CauHinhTienPhat WHERE Id = 1)
 IF NOT EXISTS (SELECT 1 FROM dbo.PhieuMuon WHERE IdempotencyKey = '71000000-0000-4000-8000-000000000001')
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM dbo.Sach WHERE ISBN = N'9786040000019' AND IsDeleted = 0 AND SoLuongCon > 0)
-        ;THROW 52001, 'Demo book is missing, hidden, or has no available copies.', 1;
+        THROW 52001, 'Demo book is missing, hidden, or has no available copies.', 1;
 
     INSERT dbo.PhieuMuon (MaDocGia, NguoiLap, NgayMuon, HanTra, IdempotencyKey)
     SELECT d.MaDocGia, N'DEMO - Nhân viên mẫu 01', DATEADD(DAY, -15, CONVERT(date, GETDATE())),
@@ -503,12 +503,121 @@ BEGIN
     UPDATE dbo.Sach SET SoLuongCon = SoLuongCon - 1 WHERE MaSach = @MaSach;
 END;
 
+-- ===== Extended DEMO catalog for reader-facing testing =====
+-- Every row is synthetic and guarded by ISBN/name so the script can be re-run.
+-- Covers: many copies, one copy left, out of stock, multiple authors, hidden book.
+IF NOT EXISTS (SELECT 1 FROM dbo.TheLoai WHERE TenTheLoai = N'Kỹ thuật phần mềm')
+    INSERT dbo.TheLoai (TenTheLoai, MoTa) VALUES (N'Kỹ thuật phần mềm', N'Thể loại giả lập để thử nghiệm.');
+IF NOT EXISTS (SELECT 1 FROM dbo.TheLoai WHERE TenTheLoai = N'Thiếu nhi')
+    INSERT dbo.TheLoai (TenTheLoai, MoTa) VALUES (N'Thiếu nhi', N'Thể loại giả lập để thử nghiệm.');
+IF NOT EXISTS (SELECT 1 FROM dbo.TheLoai WHERE TenTheLoai = N'Lịch sử - Địa lý')
+    INSERT dbo.TheLoai (TenTheLoai, MoTa) VALUES (N'Lịch sử - Địa lý', N'Thể loại giả lập để thử nghiệm.');
+
+DECLARE @DemoTacGiaMoi TABLE
+(
+    TenTacGia nvarchar(200) NOT NULL PRIMARY KEY,
+    QuocTich nvarchar(100) NULL,
+    GioiThieu nvarchar(2000) NULL
+);
+INSERT @DemoTacGiaMoi (TenTacGia, QuocTich, GioiThieu) VALUES
+    (N'DEMO - Nguyễn Văn Lập', N'Việt Nam', N'Nhân vật giả lập.'),
+    (N'DEMO - Đặng Quốc Bảo', N'Việt Nam', N'Nhân vật giả lập.'),
+    (N'DEMO - Trần Thị Minh', N'Việt Nam', N'Nhân vật giả lập.'),
+    (N'DEMO - Lê Hoàng Nam', N'Việt Nam', N'Nhân vật giả lập.'),
+    (N'DEMO - Vũ Minh Châu', N'Việt Nam', N'Nhân vật giả lập.'),
+    (N'DEMO - Phạm Thu Hà', N'Việt Nam', N'Nhân vật giả lập.'),
+    (N'DEMO - Hoàng Anh Tuấn', N'Việt Nam', N'Nhân vật giả lập.');
+
+INSERT dbo.TacGia (TenTacGia, QuocTich, GioiThieu)
+SELECT d.TenTacGia, d.QuocTich, d.GioiThieu
+FROM @DemoTacGiaMoi AS d
+WHERE NOT EXISTS (SELECT 1 FROM dbo.TacGia AS t WHERE t.TenTacGia = d.TenTacGia);
+
+DECLARE @DemoSachMoi TABLE
+(
+    ISBN nvarchar(20) NOT NULL PRIMARY KEY,
+    TenSach nvarchar(300) NOT NULL,
+    TenTheLoai nvarchar(150) NOT NULL,
+    NamXB int NOT NULL,
+    NhaXB nvarchar(200) NOT NULL,
+    SoLuong int NOT NULL,
+    SoLuongCon int NOT NULL,
+    MoTa nvarchar(4000) NULL,
+    IsDeleted bit NOT NULL
+);
+INSERT @DemoSachMoi (ISBN, TenSach, TenTheLoai, NamXB, NhaXB, SoLuong, SoLuongCon, MoTa, IsDeleted) VALUES
+    (N'9786042000017', N'DEMO - Lập trình C# từ cơ bản đến nâng cao', N'Công nghệ thông tin', 2023, N'Nhà xuất bản Demo', 5, 5, N'Sách giả lập: còn nhiều bản.', 0),
+    (N'9786042000024', N'DEMO - Cấu trúc dữ liệu và giải thuật', N'Công nghệ thông tin', 2022, N'Nhà xuất bản Demo', 3, 3, N'Sách giả lập: hai tác giả.', 0),
+    (N'9786042000031', N'DEMO - Kiến trúc phần mềm thực chiến', N'Kỹ thuật phần mềm', 2024, N'Nhà xuất bản Demo', 2, 1, N'Sách giả lập: chỉ còn 1 bản.', 0),
+    (N'9786042000048', N'DEMO - Kiểm thử tự động với .NET', N'Kỹ thuật phần mềm', 2024, N'Nhà xuất bản Demo', 4, 0, N'Sách giả lập: đã hết bản, vẫn cho đặt trước.', 0),
+    (N'9786042000055', N'DEMO - Truyện ngắn chọn lọc', N'Văn học kinh điển', 2020, N'Nhà xuất bản Demo', 3, 2, N'Sách giả lập: thể loại văn học.', 0),
+    (N'9786042000062', N'DEMO - Thơ tình thế kỷ XX', N'Văn học kinh điển', 2019, N'Nhà xuất bản Demo', 2, 2, N'Sách giả lập: thể loại văn học.', 0),
+    (N'9786042000079', N'DEMO - Quản trị tài chính cá nhân', N'Kinh tế - Quản trị', 2023, N'Nhà xuất bản Demo', 6, 4, N'Sách giả lập: thể loại kinh tế.', 0),
+    (N'9786042000086', N'DEMO - Khởi nghiệp tinh gọn', N'Kinh tế - Quản trị', 2021, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập: chỉ có 1 bản.', 0),
+    (N'9786042000093', N'DEMO - Kỹ năng giao tiếp hiệu quả', N'Kỹ năng sống', 2022, N'Nhà xuất bản Demo', 5, 5, N'Sách giả lập: thể loại kỹ năng sống.', 0),
+    (N'9786042000109', N'DEMO - Quản lý thời gian', N'Kỹ năng sống', 2020, N'Nhà xuất bản Demo', 3, 3, N'Sách giả lập: thể loại kỹ năng sống.', 0),
+    (N'9786042000116', N'DEMO - Cuộc phiêu lưu của chú mèo nhỏ', N'Thiếu nhi', 2023, N'Nhà xuất bản Demo', 4, 4, N'Sách giả lập: thể loại thiếu nhi.', 0),
+    (N'9786042000123', N'DEMO - Lịch sử Việt Nam bằng tranh', N'Lịch sử - Địa lý', 2022, N'Nhà xuất bản Demo', 3, 3, N'Sách giả lập: thể loại lịch sử - địa lý.', 0),
+    (N'9786042000130', N'DEMO - Sách đã ẩn (kiểm thử lọc)', N'Công nghệ thông tin', 2018, N'Nhà xuất bản Demo', 1, 1, N'Sách giả lập đã ẩn để kiểm thử lọc danh sách.', 1);
+
+INSERT dbo.Sach (ISBN, TenSach, MaTheLoai, NamXB, NhaXB, SoLuong, SoLuongCon, MoTa, IsDeleted)
+SELECT d.ISBN, d.TenSach, t.MaTheLoai, d.NamXB, d.NhaXB, d.SoLuong, d.SoLuongCon, d.MoTa, d.IsDeleted
+FROM @DemoSachMoi AS d
+INNER JOIN dbo.TheLoai AS t ON t.TenTheLoai = d.TenTheLoai
+WHERE NOT EXISTS (SELECT 1 FROM dbo.Sach AS s WHERE s.ISBN = d.ISBN);
+
+IF EXISTS
+(
+    SELECT 1 FROM @DemoSachMoi AS d
+    WHERE NOT EXISTS (SELECT 1 FROM dbo.Sach AS s WHERE s.ISBN = d.ISBN)
+)
+    THROW 52002, 'Some DEMO catalog rows were not inserted; check categories and ISBN data.', 1;
+
+DECLARE @DemoSachTacGia TABLE
+(
+    ISBN nvarchar(20) NOT NULL,
+    TenTacGia nvarchar(200) NOT NULL,
+    PRIMARY KEY (ISBN, TenTacGia)
+);
+INSERT @DemoSachTacGia (ISBN, TenTacGia) VALUES
+    (N'9786042000017', N'DEMO - Nguyễn Văn Lập'),
+    (N'9786042000024', N'DEMO - Nguyễn Văn Lập'),
+    (N'9786042000024', N'DEMO - Đặng Quốc Bảo'),
+    (N'9786042000031', N'DEMO - Nguyễn Văn Lập'),
+    (N'9786042000048', N'DEMO - Nguyễn Văn Lập'),
+    (N'9786042000048', N'DEMO - Đặng Quốc Bảo'),
+    (N'9786042000055', N'DEMO - Trần Thị Minh'),
+    (N'9786042000062', N'DEMO - Trần Thị Minh'),
+    (N'9786042000079', N'DEMO - Lê Hoàng Nam'),
+    (N'9786042000086', N'DEMO - Lê Hoàng Nam'),
+    (N'9786042000093', N'DEMO - Vũ Minh Châu'),
+    (N'9786042000109', N'DEMO - Vũ Minh Châu'),
+    (N'9786042000116', N'DEMO - Phạm Thu Hà'),
+    (N'9786042000123', N'DEMO - Hoàng Anh Tuấn'),
+    (N'9786042000123', N'DEMO - Trần Thị Minh'),
+    (N'9786042000130', N'DEMO - Nguyễn Văn Lập');
+
+INSERT dbo.Sach_TacGia (MaSach, MaTacGia)
+SELECT s.MaSach, a.MaTacGia
+FROM @DemoSachTacGia AS d
+INNER JOIN dbo.Sach AS s ON s.ISBN = d.ISBN
+INNER JOIN dbo.TacGia AS a ON a.TenTacGia = d.TenTacGia
+WHERE NOT EXISTS (SELECT 1 FROM dbo.Sach_TacGia AS sa WHERE sa.MaSach = s.MaSach AND sa.MaTacGia = a.MaTacGia);
+
 COMMIT TRANSACTION;
 GO
 
 -- Verify sample rows. No credentials are created by this script.
 SELECT MaTheLoai, TenTheLoai FROM dbo.TheLoai WHERE TenTheLoai LIKE N'DEMO -%';
 SELECT MaTacGia, TenTacGia FROM dbo.TacGia WHERE TenTacGia LIKE N'DEMO -%';
-SELECT MaSach, ISBN, TenSach, SoLuong, SoLuongCon FROM dbo.Sach WHERE ISBN = N'9786040000019';
+SELECT MaSach, ISBN, TenSach, SoLuong, SoLuongCon, IsDeleted FROM dbo.Sach WHERE ISBN = N'9786040000019';
 SELECT MaDocGia, HoTen, Email FROM dbo.DocGia WHERE Email = N'demo.reader@example.invalid';
 SELECT MaPhieu, MaDocGia, NgayMuon, HanTra FROM dbo.PhieuMuon WHERE IdempotencyKey = '71000000-0000-4000-8000-000000000001';
+SELECT s.MaSach, s.ISBN, s.TenSach, t.TenTheLoai, s.SoLuong, s.SoLuongCon, s.IsDeleted
+FROM dbo.Sach AS s INNER JOIN dbo.TheLoai AS t ON t.MaTheLoai = s.MaTheLoai
+WHERE s.ISBN LIKE N'9786042000%' ORDER BY s.ISBN;
+SELECT s.ISBN, s.TenSach, a.TenTacGia
+FROM dbo.Sach AS s
+INNER JOIN dbo.Sach_TacGia AS sa ON sa.MaSach = s.MaSach
+INNER JOIN dbo.TacGia AS a ON a.MaTacGia = sa.MaTacGia
+WHERE s.ISBN LIKE N'9786042000%' ORDER BY s.ISBN, a.TenTacGia;
