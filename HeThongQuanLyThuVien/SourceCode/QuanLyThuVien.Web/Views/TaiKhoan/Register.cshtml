@@ -1,0 +1,77 @@
+@model RegisterViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng ký độc giả - Thư Viện</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="auth-body">
+    <main class="auth-card auth-card-register">
+        <a class="auth-brand" asp-controller="Home" asp-action="Index">
+            <span class="brand-mark">▥</span><span>Thư Viện</span>
+        </a>
+        <h1>Đăng ký độc giả</h1>
+        <p class="auth-sub">
+            Tạo tài khoản độc giả để tra cứu sách, gửi yêu cầu mượn và theo dõi lịch sử mượn trả.
+            Thẻ độc giả được kích hoạt ngay sau khi đăng ký.
+        </p>
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+
+        <form method="post" asp-action="Register" class="auth-form">
+            <label asp-for="TenDangNhap"></label>
+            <input asp-for="TenDangNhap" autocomplete="username" placeholder="Ví dụ: docgia.minhan" />
+            <span asp-validation-for="TenDangNhap" class="field-error"></span>
+
+            <label asp-for="MatKhau"></label>
+            <input asp-for="MatKhau" autocomplete="new-password" placeholder="Ít nhất 12 ký tự, có hoa/thường/số/ký tự đặc biệt" />
+            <span asp-validation-for="MatKhau" class="field-error"></span>
+
+            <label asp-for="XacNhanMatKhau"></label>
+            <input asp-for="XacNhanMatKhau" autocomplete="new-password" placeholder="Nhập lại mật khẩu" />
+            <span asp-validation-for="XacNhanMatKhau" class="field-error"></span>
+
+            <label asp-for="HoTen"></label>
+            <input asp-for="HoTen" autocomplete="name" placeholder="Họ và tên" />
+            <span asp-validation-for="HoTen" class="field-error"></span>
+
+            <label asp-for="NgaySinh"></label>
+            <input asp-for="NgaySinh" type="date" autocomplete="bday" />
+            <span asp-validation-for="NgaySinh" class="field-error"></span>
+
+            <label asp-for="GioiTinh"></label>
+            <select asp-for="GioiTinh" class="auth-select">
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+                <option value="Khác">Khác</option>
+            </select>
+            <span asp-validation-for="GioiTinh" class="field-error"></span>
+
+            <label asp-for="SoDienThoai"></label>
+            <input asp-for="SoDienThoai" autocomplete="tel" placeholder="Ví dụ: 0901234567" />
+            <span asp-validation-for="SoDienThoai" class="field-error"></span>
+
+            <label asp-for="Email"></label>
+            <input asp-for="Email" type="email" autocomplete="email" placeholder="email@example.com" />
+            <span asp-validation-for="Email" class="field-error"></span>
+
+            <label asp-for="DiaChi"></label>
+            <input asp-for="DiaChi" autocomplete="street-address" placeholder="Không bắt buộc" />
+            <span asp-validation-for="DiaChi" class="field-error"></span>
+
+            <button type="submit">Tạo tài khoản</button>
+        </form>
+
+        <p class="auth-note">
+            Đã có tài khoản? <a asp-action="Login">Đăng nhập</a>
+        </p>
+        <a class="auth-back" asp-controller="Home" asp-action="Index">← Về trang chủ</a>
+    </main>
+</body>
+</html>

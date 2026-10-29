@@ -46,6 +46,28 @@ public sealed class LibraryApiClient(HttpClient httpClient)
     public Task<AuthUserDto?> GetMeAsync(string token, CancellationToken ct = default) =>
         GetAsync<AuthUserDto>("api/auth/me", token, ct);
 
+    public async Task<LoginResult> RegisterReaderAsync(
+        RegisterReaderRequest request, CancellationToken ct = default)
+    {
+        using var response = await httpClient.PostAsJsonAsync(
+            "api/auth/register",
+            request,
+            JsonOptions,
+            ct);
+
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            return LoginResult.Failed("Bạn đã thử đăng ký quá nhiều lần. Vui lòng chờ một phút.");
+
+        if (!response.IsSuccessStatusCode)
+            return LoginResult.Failed(await ReadProblemAsync(response, ct) ?? "Không đăng ký được.");
+
+        var payload = await response.Content.ReadFromJsonAsync<LoginResponseDto>(JsonOptions, ct);
+        if (payload is null || string.IsNullOrWhiteSpace(payload.AccessToken))
+            return LoginResult.Failed("API trả về dữ liệu đăng ký không hợp lệ.");
+
+        return LoginResult.Success(payload);
+    }
+
     public async Task LogoutAsync(string token, CancellationToken ct = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/logout");
@@ -212,6 +234,18 @@ public sealed class AuthUserDto
     public string VaiTro { get; init; } = string.Empty;
     public int? MaNhanVien { get; init; }
     public int? MaDocGia { get; init; }
+}
+
+public sealed class RegisterReaderRequest
+{
+    public string TenDangNhap { get; init; } = string.Empty;
+    public string MatKhau { get; init; } = string.Empty;
+    public string HoTen { get; init; } = string.Empty;
+    public DateTime NgaySinh { get; init; }
+    public string GioiTinh { get; init; } = string.Empty;
+    public string SoDienThoai { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string? DiaChi { get; init; }
 }
 
 public sealed class SachDto

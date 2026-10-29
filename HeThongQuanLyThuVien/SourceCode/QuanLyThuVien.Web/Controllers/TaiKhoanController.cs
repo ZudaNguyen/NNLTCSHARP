@@ -66,6 +66,65 @@ public sealed class TaiKhoanController(LibraryApiClient api, ReaderSession sessi
         return RedirectToAction("Index", "Home");
     }
 
+    [HttpGet("dang-ky")]
+    public IActionResult Register()
+    {
+        ViewData["Title"] = "Đăng ký độc giả";
+
+        if (session.IsAuthenticated)
+            return RedirectToAction("Index", "Home");
+
+        return View(new RegisterViewModel());
+    }
+
+    [HttpPost("dang-ky")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model, CancellationToken ct)
+    {
+        ViewData["Title"] = "Đăng ký độc giả";
+
+        if (!ModelState.IsValid)
+            return View(model);
+
+        LoginResult result;
+        try
+        {
+            result = await api.RegisterReaderAsync(new RegisterReaderRequest
+            {
+                TenDangNhap = model.TenDangNhap.Trim(),
+                MatKhau = model.MatKhau,
+                HoTen = model.HoTen.Trim(),
+                NgaySinh = model.NgaySinh.Date,
+                GioiTinh = model.GioiTinh,
+                SoDienThoai = model.SoDienThoai.Trim(),
+                Email = model.Email.Trim(),
+                DiaChi = string.IsNullOrWhiteSpace(model.DiaChi) ? null : model.DiaChi.Trim()
+            }, ct);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            ModelState.AddModelError(string.Empty, ApiUnavailable);
+            return View(model);
+        }
+
+        if (!result.Succeeded || result.Payload is null)
+        {
+            ModelState.AddModelError(string.Empty, result.Error ?? "Không đăng ký được.");
+            return View(model);
+        }
+
+        var user = result.Payload.User;
+        if (!ReaderSession.IsReaderRole(user.VaiTro))
+        {
+            ModelState.AddModelError(string.Empty,
+                "Tài khoản vừa tạo không phải độc giả. Vui lòng liên hệ thủ thư.");
+            return View(model);
+        }
+
+        await session.SignInAsync(user, result.Payload.AccessToken, result.Payload.ExpiresAtUtc);
+        return RedirectToAction("Index", "Home");
+    }
+
     [Authorize]
     [HttpPost("dang-xuat")]
     [ValidateAntiForgeryToken]
