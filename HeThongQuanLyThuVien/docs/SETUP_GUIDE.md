@@ -215,7 +215,7 @@ dotnet build QuanLyThuVien.slnx
 dotnet test Tests/QuanLyThuVien.UnitTests/QuanLyThuVien.UnitTests.csproj
 ```
 
-Build thành công **không** xác nhận kết nối database, đăng nhập, CRUD runtime hay hiển thị giao diện. Bộ `Tests/QuanLyThuVien.UnitTests` hiện có **30 test** cho `YeuCauMuonService`, `YeuCauKhoaTaiKhoanService` và `AccountService`.
+Build thành công **không** xác nhận kết nối database, đăng nhập, CRUD runtime hay hiển thị giao diện. Bộ `Tests/QuanLyThuVien.UnitTests` hiện có **39 test** cho `YeuCauMuonService`, `YeuCauKhoaTaiKhoanService` và `AccountService`.
 
 ## 8. Kết quả kiểm chứng gần nhất
 

@@ -40,7 +40,7 @@ Chưa gom thành hằng số; khi sửa phải giữ đúng nguyên văn vì có
 | `Api` | REST API dùng chung cho Desktop và Web | Xong 77 endpoint |
 | `Desktop` | WinForms cho Admin + Thủ thư, có cả màn hình độc giả | Xong phần quản trị |
 | `Web` | ASP.NET Core MVC cho độc giả | Xong: tra cứu, mượn/đặt sách, đăng ký, lịch sử, hồ sơ |
-| `Tests` | xUnit cho nghiệp vụ `YeuCauMuonService`, `YeuCauKhoaTaiKhoanService` và `AccountService` | 30 test |
+| `Tests` | xUnit cho nghiệp vụ `YeuCauMuonService`, `YeuCauKhoaTaiKhoanService` và `AccountService` | 39 test |
 
 ## 4. Ma trận API
 
@@ -235,6 +235,28 @@ Nếu cần thêm nghiệp vụ mới, thứ tự thêm để không phá phần
 | `GET/POST /dang-nhap` | `TaiKhoan/Login` | Cookie auth |
 | `GET/POST /dang-ky` | `TaiKhoan/Register` | Tự đăng ký, tạo tài khoản hoạt động ngay, tự đăng nhập |
 | `POST /dang-xuat` | `TaiKhoan/Logout` | Xóa cookie |
+
+### 5.2 Responsive Web
+
+Web độc giả dùng chung một khối responsive ở cuối `wwwroot/css/site.css` và hàm `setupResponsiveShell()` trong `wwwroot/js/site.js`.
+
+| Breakpoint | Hành vi |
+|---|---|
+| `min-width: 1520px` | Nội dung rộng tối đa 1660px, lưới sách 6 cột |
+| `min-width: 1900px` | Nội dung rộng tối đa 1760px, lưới sách 7 cột, lưới sách trang danh mục 8 cột |
+| `max-width: 900px` | Sidebar chuyển thành off-canvas `286px`, có lớp phủ `#sidebarScrim`; mở bằng `#menuToggle`, đóng bằng nút, chạm nền hoặc `Escape`; nút mở ô tìm kiếm xuất hiện |
+| `max-width: 760px` | Topbar gọn 58px; ô tìm kiếm topbar ẩn, mở thành thanh nổi dưới topbar và tự focus; dashboard/lưới chuyển một cột; bảng rộng cuộn ngang trong khung; input dùng `16px` để tránh iOS tự zoom |
+| `max-width: 560px` | Tiêu đề trang xếp dọc; form đặt mượn và nút hành động chiếm toàn chiều rộng |
+| `max-width: 430px` | Thống kê một cột; lưới sách 2 cột; giảm padding, ẩn avatar topbar |
+
+Quy ước:
+
+- Mọi phần tử lưới (`stat-grid`, `book-grid`, `dashboard-grid`, `manager-grid`, `reader-grid`, `profile-layout`) đặt `min-width: 0` cho con trực tiếp để không bị nội dung dài đẩy tràn.
+- Bảng nhiều cột (`grid-table`, `request-table`, `data-table`) chỉ tràn trong khung cuộn của chính nó, không làm tràn trang.
+- Thêm `aria-controls`/`aria-expanded` cho nút menu và nút tìm kiếm; đóng lớp phủ khi resize vượt breakpoint.
+- Sửa `.cshtml` phải build lại Web vì dự án không bật Razor runtime compilation; sửa CSS/JS thì chỉ cần tải lại trang.
+
+Đã kiểm chứng tự động bằng Playwright trên Chrome ở các width `1920, 1440, 1100, 900, 820, 768, 600, 430, 390, 320` cho 10 trang công khai và riêng tư: **0/100 trang tràn ngang**; 72/72 kiểm tra tương tác đạt (menu, scrim, `Escape`, nút tìm kiếm, focus, gợi ý tìm kiếm, topbar không chồng).
 
 ## 6. Quy ước chung
 

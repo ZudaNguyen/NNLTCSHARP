@@ -16,7 +16,7 @@ Hệ thống gồm một **REST API dùng chung**, một **ứng dụng Desktop 
 | Web | ASP.NET Core MVC |
 | ORM / CSDL | EF Core 10, SQL Server 2022 Developer |
 | Môi trường CSDL | Docker Compose |
-| Test | xUnit (30 test) |
+| Test | xUnit (39 test) |
 
 ## 2. Cấu trúc
 
