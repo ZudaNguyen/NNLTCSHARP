@@ -1,10 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const menu = document.querySelector('#menuToggle');
-    const sidebar = document.querySelector('#sidebar');
-    menu?.addEventListener('click', () => sidebar?.classList.toggle('open'));
-    document.addEventListener('click', event => {
-        if (window.innerWidth <= 760 && sidebar?.classList.contains('open') && !sidebar.contains(event.target) && !menu?.contains(event.target)) sidebar.classList.remove('open');
-    });
+    setupResponsiveShell();
+
     const search = document.querySelector('#bookSearch');
     search?.addEventListener('input', event => {
         const query = event.target.value.trim().toLocaleLowerCase('vi');
@@ -13,6 +9,94 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('[data-search-suggest]').forEach(setupBookSuggestions);
 });
+
+function setupResponsiveShell() {
+    const body = document.body;
+    const sidebar = document.querySelector('#sidebar');
+    const menu = document.querySelector('#menuToggle');
+    const scrim = document.querySelector('#sidebarScrim');
+    const searchForm = document.querySelector('.top-search');
+    const searchToggle = document.querySelector('#searchToggle');
+    const searchInput = searchForm?.querySelector('input[name="search"]');
+    const mobileNav = window.matchMedia('(max-width: 900px)');
+    const compactSearch = window.matchMedia('(max-width: 760px)');
+
+    const closeSidebar = () => {
+        sidebar?.classList.remove('open');
+        body.classList.remove('sidebar-open');
+        menu?.setAttribute('aria-expanded', 'false');
+    };
+
+    const openSidebar = () => {
+        sidebar?.classList.add('open');
+        body.classList.add('sidebar-open');
+        menu?.setAttribute('aria-expanded', 'true');
+    };
+
+    const closeSearch = () => {
+        body.classList.remove('search-open');
+        searchToggle?.setAttribute('aria-expanded', 'false');
+    };
+
+    const openSearch = () => {
+        if (!compactSearch.matches) return;
+        body.classList.add('search-open');
+        searchToggle?.setAttribute('aria-expanded', 'true');
+        requestAnimationFrame(() => searchInput?.focus());
+    };
+
+    menu?.addEventListener('click', () => {
+        if (sidebar?.classList.contains('open')) closeSidebar();
+        else openSidebar();
+    });
+
+    scrim?.addEventListener('click', closeSidebar);
+
+    sidebar?.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            if (mobileNav.matches) closeSidebar();
+        });
+    });
+
+    searchToggle?.addEventListener('click', () => {
+        if (body.classList.contains('search-open')) closeSearch();
+        else openSearch();
+    });
+
+    searchForm?.addEventListener('submit', closeSearch);
+
+    document.addEventListener('click', event => {
+        if (body.classList.contains('sidebar-open')
+            && !sidebar?.contains(event.target)
+            && !menu?.contains(event.target)) {
+            closeSidebar();
+        }
+        if (body.classList.contains('search-open')
+            && !searchForm?.contains(event.target)
+            && !searchToggle?.contains(event.target)) {
+            closeSearch();
+        }
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        if (body.classList.contains('search-open')) {
+            closeSearch();
+            searchToggle?.focus();
+        } else if (body.classList.contains('sidebar-open')) {
+            closeSidebar();
+            menu?.focus();
+        }
+    });
+
+    const syncViewport = () => {
+        if (!mobileNav.matches) closeSidebar();
+        if (!compactSearch.matches) closeSearch();
+    };
+
+    mobileNav.addEventListener('change', syncViewport);
+    compactSearch.addEventListener('change', syncViewport);
+}
 
 function setupBookSuggestions(form) {
     const input = form.querySelector('input[name="search"]');
