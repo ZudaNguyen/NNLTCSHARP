@@ -5,6 +5,7 @@ Hệ thống gồm một **REST API dùng chung**, một **ứng dụng Desktop 
 - Solution duy nhất: [`QuanLyThuVien.slnx`](QuanLyThuVien.slnx)
 - Bản đồ vai trò, module và API: [`docs/MODULE_MAP.md`](docs/MODULE_MAP.md)
 - Hướng dẫn cài đặt và xử lý lỗi: [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md)
+- Chạy lại API + Web hằng ngày trên macOS/Windows: [`docs/RUN_SERVERS.md`](docs/RUN_SERVERS.md)
 
 ## 1. Công nghệ
 
@@ -59,7 +60,7 @@ nhiều tác giả và sách đã ẩn.
 
 ## 4. Chạy nhanh
 
-Yêu cầu: .NET 10 SDK, Docker Desktop (hoặc Docker Engine + compose).
+Yêu cầu: .NET 10 SDK, Docker Desktop (hoặc Docker Engine + compose). Nếu chỉ cần **chạy lại** hệ thống đã cài, xem [`docs/RUN_SERVERS.md`](docs/RUN_SERVERS.md) — có lệnh riêng cho macOS và Windows, kèm cách xử lý cổng bị chiếm.
 
 ```bash
 cd HeThongQuanLyThuVien

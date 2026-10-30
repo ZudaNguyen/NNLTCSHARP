@@ -107,6 +107,8 @@ Tài khoản Thủ thư/Độc giả: tạo qua API (`POST /api/docgia` rồi `P
 
 ## 4. Chạy API, Web và Desktop
 
+> Chỉ cần chạy lại hệ thống (không cài mới)? Xem [`RUN_SERVERS.md`](RUN_SERVERS.md): lệnh riêng cho macOS/Windows, chạy nền, dừng server và xử lý `address already in use`.
+
 ### API — cổng 5058
 
 ```bash
