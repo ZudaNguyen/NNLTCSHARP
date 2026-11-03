@@ -356,3 +356,15 @@ img,svg,video{max-width:100%}
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}
 }
+
+/* Sửa lỗi giao diện phát hiện khi test: placeholder tìm kiếm bị cắt trên điện thoại và ảnh bìa bị cắt ở trang chi tiết */
+.search-box input,.top-search input{text-overflow:ellipsis}
+.search-box input::placeholder,.top-search input::placeholder{text-overflow:ellipsis}
+@media(max-width:760px){
+  .book-cover.detail-cover{height:280px;padding:22px 14px}
+  .book-cover.detail-cover b{font-size:22px}
+}
+@media(max-width:430px){
+  .book-cover.detail-cover{height:260px}
+  .book-cover.detail-cover b{font-size:20px}
+}

@@ -94,7 +94,7 @@ public sealed class TaiKhoanController(LibraryApiClient api, ReaderSession sessi
                 TenDangNhap = model.TenDangNhap.Trim(),
                 MatKhau = model.MatKhau,
                 HoTen = model.HoTen.Trim(),
-                NgaySinh = model.NgaySinh.Date,
+                NgaySinh = model.NgaySinh!.Value.Date,
                 GioiTinh = model.GioiTinh,
                 SoDienThoai = model.SoDienThoai.Trim(),
                 Email = model.Email.Trim(),

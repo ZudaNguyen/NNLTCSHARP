@@ -43,9 +43,11 @@ public sealed class RegisterViewModel : IValidatableObject
     [Display(Name = "Họ và tên")]
     public string HoTen { get; init; } = string.Empty;
 
+    // Nullable để ô ngày sinh bắt đầu trống (thay vì hiện 01/01/0001) và thông báo bắt buộc bằng tiếng Việt.
+    [Required(ErrorMessage = "Vui lòng nhập ngày sinh.")]
     [DataType(DataType.Date)]
     [Display(Name = "Ngày sinh")]
-    public DateTime NgaySinh { get; init; }
+    public DateTime? NgaySinh { get; init; }
 
     [Required(ErrorMessage = "Vui lòng chọn giới tính.")]
     [RegularExpression("^(Nam|Nữ|Khác)$", ErrorMessage = "Giới tính phải là Nam, Nữ hoặc Khác.")]
@@ -69,10 +71,13 @@ public sealed class RegisterViewModel : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (NgaySinh.Date == default)
-            yield return new ValidationResult("Vui lòng nhập ngày sinh.", [nameof(NgaySinh)]);
-        else if (NgaySinh.Date > DateTime.Today)
-            yield return new ValidationResult("Ngày sinh không được ở tương lai.", [nameof(NgaySinh)]);
+        if (NgaySinh is { } ngaySinh)
+        {
+            if (ngaySinh.Date > DateTime.Today)
+                yield return new ValidationResult("Ngày sinh không được ở tương lai.", [nameof(NgaySinh)]);
+            else if (ngaySinh.Year < 1900)
+                yield return new ValidationResult("Ngày sinh không hợp lệ.", [nameof(NgaySinh)]);
+        }
 
         if (!string.IsNullOrEmpty(MatKhau) &&
             (MatKhau.Length < 12 || !MatKhau.Any(char.IsUpper) || !MatKhau.Any(char.IsLower)

@@ -34,6 +34,9 @@ namespace QuanLyThuVien.Desktop.Forms
 
             if (_role == AccountRoles.Reader)
                 LoadUserControl(new ReaderCatalogControl(), "Tra cứu sách");
+            else if (_role == AccountRoles.Admin)
+                // Admin không có quyền xem Dashboard/báo cáo (API trả 403) nên mở thẳng màn hình quản trị đầu tiên.
+                LoadUserControl(new YeuCauKhoaTaiKhoanControl(true), "Duyệt khóa tài khoản");
             else
                 LoadUserControl(new DashboardControl(), "Tổng quan");
         }
@@ -75,12 +78,13 @@ namespace QuanLyThuVien.Desktop.Forms
             }
             else
             {
-                AddNav(nav, "Tổng quan", () => new DashboardControl(), "Tổng quan", firstActive: true);
+                if (!isAdmin)
+                    AddNav(nav, "Tổng quan", () => new DashboardControl(), "Tổng quan", firstActive: true);
                 if (isAdmin)
                 {
-                    // Admin chỉ quản lý tài khoản và duyệt yêu cầu khóa tài khoản.
+                    // Admin chỉ quản lý tài khoản và duyệt yêu cầu khóa tài khoản (không có mục Tổng quan).
                     AddCaption(nav, "QUẢN TRỊ");
-                    AddNav(nav, "Duyệt khóa tài khoản", () => new YeuCauKhoaTaiKhoanControl(true), "Duyệt khóa tài khoản");
+                    AddNav(nav, "Duyệt khóa tài khoản", () => new YeuCauKhoaTaiKhoanControl(true), "Duyệt khóa tài khoản", firstActive: true);
                     AddNav(nav, "Nhân viên", () => new NhanVienControl(), "Nhân viên");
                     AddNav(nav, "Tài khoản", () => new TaiKhoanControl(), "Tài khoản & Phân quyền");
                 }
